@@ -1,0 +1,99 @@
+# -----------------------------
+# CMake generated files and folders
+# -----------------------------
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.make
+
+# If you're using CTest
+Testing/
+
+# If you're using CPack
+_package/
+
+# If you're using CMake GUI
+CMakeSettings.json
+
+# -----------------------------
+# Build output directory
+# -----------------------------
+# You can ignore the directory you use for out-of-source builds
+# Replace 'build/' with your build directory if it's different
+build/
+XCBuildData/
+
+# -----------------------------
+# Editor files and folders
+# -----------------------------
+# Various IDEs and text editors leave behind files that you might not want to track
+*.swp
+*.swo
+*~
+*.sublime-*
+.vscode/
+.idea/
+*.code-workspace
+*.DS_Store
+*.project
+*.cproject
+*.settings/
+
+# -----------------------------
+# Other files generated during build
+# -----------------------------
+*.o
+*.a
+*.so
+*.dylib
+*.lib
+*.d
+*.exe
+*.out
+*.app
+*.iobj
+*.pdb
+*.ilk
+*.map
+*.exp
+*.gch
+*.pch
+*.obj
+*.sdf
+*.opensdf
+*.tlog
+*.user
+*.userosscache
+*.aps
+*.ncb
+*.suo
+*.err
+*.log
+*.vcxproj*
+*.pidb
+*.sdf
+*.sbr
+*.bsc
+*.ilk
+*.mtb
+*.res
+*.ipch
+*.db
+*.opendb
+*.tox
+*.coverage
+*.cache
+*.egg-info
+*.pyc
+__pycache__/
+*.pyo
+.DS_Store
+
+# -----------------------------
+# Package output directories
+# -----------------------------
+*.tar.gz
+*.zip
+*.rar
+*.7z
