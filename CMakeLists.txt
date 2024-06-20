@@ -22,4 +22,5 @@ target_include_directories(testproj PRIVATE
 
 if(EMSCRIPTEN)
 	set_target_properties(testproj PROPERTIES PREFIX "" SUFFIX ".html")
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s INITIAL_MEMORY=268435456 -s ALLOW_MEMORY_GROWTH=1 -s ASSERTIONS=1")
 endif()
