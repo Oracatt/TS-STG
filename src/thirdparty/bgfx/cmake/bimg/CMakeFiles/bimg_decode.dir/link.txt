@@ -1,2 +1,0 @@
-E:\emsdk\upstream\emscripten\emar.bat qc libbimg_decode.a CMakeFiles/bimg_decode.dir/__/__/bimg/3rdparty/tinyexr/deps/miniz/miniz.c.o CMakeFiles/bimg_decode.dir/__/__/bimg/src/image_decode.cpp.o
-E:\emsdk\upstream\emscripten\emranlib.bat libbimg_decode.a
