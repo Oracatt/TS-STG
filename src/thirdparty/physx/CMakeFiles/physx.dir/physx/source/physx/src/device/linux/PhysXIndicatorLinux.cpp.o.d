@@ -1,0 +1,23 @@
+src/thirdparty/physx/CMakeFiles/physx.dir/physx/source/physx/src/device/linux/PhysXIndicatorLinux.cpp.o: \
+  E:\wasmproject\test\src\thirdparty\physx\physx\source\physx\src\device\linux\PhysXIndicatorLinux.cpp \
+  E:\wasmproject\test\src\thirdparty\physx\physx\source\physx\src\device\PhysXIndicator.h \
+  E:\wasmproject\test\src\thirdparty\physx\pxshared\include\foundation\PxPreprocessor.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\c++\v1\stddef.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\c++\v1\__config \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\c++\v1\__config_site \
+  E:\emsdk\upstream\lib\clang\19\include\stddef.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\stddef.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_header_macro.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_ptrdiff_t.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_size_t.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_wchar_t.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_null.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_nullptr_t.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_max_align_t.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_offsetof.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\c++\v1\ciso646 \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\c++\v1\__assert \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\c++\v1\__assertion_handler \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\c++\v1\__verbose_abort \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\c++\v1\__availability \
+  E:\wasmproject\test\src\thirdparty\physx\physx\source\physx\src\device\nvPhysXtoDrv.h

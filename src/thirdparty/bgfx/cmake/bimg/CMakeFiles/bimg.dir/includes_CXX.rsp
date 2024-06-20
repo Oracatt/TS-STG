@@ -1,0 +1,1 @@
+-IE:/wasmproject/test/src/thirdparty/bgfx/bimg/include -I"E:/wasmproject/test/src/thirdparty/bgfx/bimg/3rdparty/astc-encoder/include" -IE:/wasmproject/test/src/thirdparty/bgfx/bimg/3rdparty/tinyexr/deps/miniz -IE:/wasmproject/test/src/thirdparty/bgfx/bx/include -IE:/wasmproject/test/src/thirdparty/bgfx/bx/3rdparty -IE:/wasmproject/test/src/thirdparty/bgfx/bx/include/compat/linux

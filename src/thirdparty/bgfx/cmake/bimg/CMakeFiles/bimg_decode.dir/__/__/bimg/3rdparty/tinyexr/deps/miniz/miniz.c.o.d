@@ -1,0 +1,32 @@
+src/thirdparty/bgfx/cmake/bimg/CMakeFiles/bimg_decode.dir/__/__/bimg/3rdparty/tinyexr/deps/miniz/miniz.c.o: \
+  E:\wasmproject\test\src\thirdparty\bgfx\bimg\3rdparty\tinyexr\deps\miniz\miniz.c \
+  E:\wasmproject\test\src\thirdparty\bgfx\bimg\3rdparty\tinyexr\deps\miniz\miniz.h \
+  E:\emsdk\upstream\lib\clang\19\include\stddef.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\stddef.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_header_macro.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_ptrdiff_t.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_size_t.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_wchar_t.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_null.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_max_align_t.h \
+  E:\emsdk\upstream\lib\clang\19\include\__stddef_offsetof.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\compat\time.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\time.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\features.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\bits\alltypes.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\assert.h \
+  E:\emsdk\upstream\lib\clang\19\include\stdint.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\stdint.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\bits\stdint.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\compat\stdlib.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\stdlib.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\alloca.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\compat\string.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\string.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\strings.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\stdio.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\wasi\api.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\compat\sys\stat.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\sys\stat.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\bits\stat.h \
+  E:\emsdk\upstream\emscripten\cache\sysroot\include\utime.h
