@@ -35,37 +35,14 @@ static const uint16_t s_cubeIndices[] =
 void initBgfx()
 {
     bgfx::Init init;
-    init.type = bgfx::RendererType::OpenGLES;
+    init.type = bgfx::RendererType::OpenGL;
     init.resolution.width = 800;
     init.resolution.height = 600;
     init.resolution.reset = BGFX_RESET_VSYNC;
 
-    EmscriptenWebGLContextAttributes attr;
-    emscripten_webgl_init_context_attributes(&attr);
-    attr.alpha = false;
-    attr.depth = true;
-    attr.stencil = true;
-    attr.antialias = true;
-    attr.premultipliedAlpha = false;
-    attr.preserveDrawingBuffer = false;
-    attr.failIfMajorPerformanceCaveat = false;
-    attr.enableExtensionsByDefault = true;
-    attr.explicitSwapControl = false;
-    attr.renderViaOffscreenBackBuffer = false;
-
-    // Debug: Check if the canvas element exists
-    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context = emscripten_webgl_create_context("#canvas", &attr);
-    if (context <= 0) {
-        std::cerr << "Failed to create WebGL context! Check if the canvas element with id 'canvas' exists." << std::endl;
-        return;
-    }
-
-    emscripten_webgl_make_context_current(context);
-
     // 设置平台数据
     bgfx::PlatformData pd;
     pd.nwh = (void *)"#canvas";
-    pd.context = (void*)(uintptr_t)context;
     init.platformData = pd;
 
     if (!bgfx::init(init)) {
@@ -73,10 +50,17 @@ void initBgfx()
         return;
     }
 
+    bgfx::setViewClear(0
+			, BGFX_CLEAR_COLOR|BGFX_CLEAR_DEPTH
+			, 0x303030ff
+			, 1.0f
+			, 0
+			);
+
     // 创建顶点布局
     ms_layout.begin()
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true, true)
+        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
         .end();
 
     // 创建顶点缓冲
@@ -98,7 +82,7 @@ void initBgfx()
 
 void renderFrame()
 {
-    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xff0000ff, 1.0f, 0);
+    bgfx::setViewRect(0, 0, 0, 800, 600);
     bgfx::touch(0);
 
     // 设置视图矩阵
@@ -106,12 +90,12 @@ void renderFrame()
     bx::mtxIdentity(view);
     float proj[16];
     bx::mtxOrtho(proj, -1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 100.0f, 0.0f, false);
-    bgfx::setViewTransform(0, view, proj);
+    //bgfx::setViewTransform(0, view, proj);
 
     // 设置模型矩阵
     float mtx[16];
     bx::mtxRotateXY(mtx, 0.0f, 0.0f);
-    bgfx::setTransform(mtx);
+    //bgfx::setTransform(mtx);
 
     // 设置顶点和索引缓冲
     bgfx::setVertexBuffer(0, m_vbh);
@@ -124,12 +108,17 @@ void renderFrame()
 				| BGFX_STATE_WRITE_A
 				| BGFX_STATE_WRITE_Z
 				| BGFX_STATE_DEPTH_TEST_LESS
-				| BGFX_STATE_CULL_CW;
+				| BGFX_STATE_CULL_CCW;
 
     bgfx::setState(state);
-    // 提交绘制命令
     bgfx::submit(0, m_program);
-
+    
+    bgfx::dbgTextPrintf(0, 0, 0x0f, "Press F1 to toggle stats.");
+	bgfx::dbgTextPrintf(0, 1, 0x0f, "Color can be changed with ANSI \x1b[9;me\x1b[10;ms\x1b[11;mc\x1b[12;ma\x1b[13;mp\x1b[14;me\x1b[0m code too.");
+	bgfx::dbgTextPrintf(80, 1, 0x0f, "\x1b[;0m    \x1b[;1m    \x1b[; 2m    \x1b[; 3m    \x1b[; 4m    \x1b[; 5m    \x1b[; 6m    \x1b[; 7m    \x1b[0m");
+	bgfx::dbgTextPrintf(80, 2, 0x0f, "\x1b[;8m    \x1b[;9m    \x1b[;10m    \x1b[;11m    \x1b[;12m    \x1b[;13m    \x1b[;14m    \x1b[;15m    \x1b[0m");
+    
+    bgfx::setDebug(BGFX_DEBUG_TEXT);
     // 交换帧缓冲
     bgfx::frame();
 }
