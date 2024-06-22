@@ -22,18 +22,48 @@ struct PosColorVertex
 
 static PosColorVertex s_cubeVertices[] =
 {
-    { 0.0f,  0.5f, 0.0f, 0xff0000ff },
-    { 0.5f, -0.5f, 0.0f, 0xff00ff00 },
-    {-0.5f, -0.5f, 0.0f, 0xffff0000 },
+	{-1.0f,  1.0f,  1.0f, 0xff000000 },
+	{ 1.0f,  1.0f,  1.0f, 0xff0000ff },
+	{-1.0f, -1.0f,  1.0f, 0xff00ff00 },
+	{ 1.0f, -1.0f,  1.0f, 0xff00ffff },
+	{-1.0f,  1.0f, -1.0f, 0xffff0000 },
+	{ 1.0f,  1.0f, -1.0f, 0xffff00ff },
+	{-1.0f, -1.0f, -1.0f, 0xffffff00 },
+	{ 1.0f, -1.0f, -1.0f, 0xffffffff },
 };
 
 static const uint16_t s_cubeIndices[] =
 {
-    0, 1, 2,
+	0, 1, 2, // 0
+	1, 3, 2,
+	4, 6, 5, // 2
+	5, 6, 7,
+	0, 2, 4, // 4
+	4, 2, 6,
+	1, 5, 3, // 6
+	5, 7, 3,
+	0, 4, 1, // 8
+	4, 5, 1,
+	2, 3, 6, // 10
+	6, 3, 7,
 };
+
+static EM_BOOL canvasResizeCb(int32_t _eventType, const void* _reserved, void* _userData)
+{
+	return false;
+}
 
 void initBgfx()
 {
+	EmscriptenFullscreenStrategy fullscreenStrategy = {};
+	fullscreenStrategy.scaleMode = EMSCRIPTEN_FULLSCREEN_SCALE_DEFAULT;
+	fullscreenStrategy.canvasResolutionScaleMode = EMSCRIPTEN_FULLSCREEN_CANVAS_SCALE_NONE;
+	fullscreenStrategy.filteringMode = EMSCRIPTEN_FULLSCREEN_FILTERING_DEFAULT;
+	fullscreenStrategy.canvasResizedCallback = canvasResizeCb;
+	fullscreenStrategy.canvasResizedCallbackUserData = nullptr;
+
+	emscripten_request_fullscreen_strategy("#canvas", EM_FALSE, &fullscreenStrategy);
+
     bgfx::Init init;
     init.type = bgfx::RendererType::OpenGL;
     init.resolution.width = 800;
@@ -86,16 +116,21 @@ void renderFrame()
     bgfx::touch(0);
 
     // 设置视图矩阵
-    float view[16];
-    bx::mtxIdentity(view);
-    float proj[16];
-    bx::mtxOrtho(proj, -1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 100.0f, 0.0f, false);
-    //bgfx::setViewTransform(0, view, proj);
+   	const bx::Vec3 at  = { 0.0f, 0.0f,   0.0f };
+	const bx::Vec3 eye = { 0.0f, 0.0f, -10.0f };
+	float view[16];
+	bx::mtxLookAt(view, eye, at);
+
+	float proj[16];
+	bx::mtxProj(proj, 60.0f, 1.33f, 0.1f, 100.0f, bgfx::getCaps()->homogeneousDepth);
+	bgfx::setViewTransform(0, view, proj);
 
     // 设置模型矩阵
     float mtx[16];
-    bx::mtxRotateXY(mtx, 0.0f, 0.0f);
-    //bgfx::setTransform(mtx);
+    static float k = 0;
+    k += 0.03f;
+    bx::mtxRotateXYZ(mtx, k, k * 0.8f, k * 0.5f);
+    bgfx::setTransform(mtx);
 
     // 设置顶点和索引缓冲
     bgfx::setVertexBuffer(0, m_vbh);
@@ -107,8 +142,8 @@ void renderFrame()
 				| BGFX_STATE_WRITE_B
 				| BGFX_STATE_WRITE_A
 				| BGFX_STATE_WRITE_Z
-				| BGFX_STATE_DEPTH_TEST_LESS
-				| BGFX_STATE_CULL_CCW;
+				| BGFX_STATE_DEPTH_TEST_LESS;
+				// | BGFX_STATE_CULL_CCW;
 
     bgfx::setState(state);
     bgfx::submit(0, m_program);
