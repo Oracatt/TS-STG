@@ -49,7 +49,6 @@ XCBuildData/
 *.dylib
 *.lib
 *.d
-*.exe
 *.out
 *.app
 *.iobj
