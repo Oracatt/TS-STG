@@ -25,7 +25,7 @@ endif()
 include(CMakeDependentOption)
 
 option(BX_AMALGAMATED "Amalgamated bx build for faster compilation" OFF)
-option(BX_CONFIG_DEBUG "Log debug messages (default: on in debug)" OFF)
+option(BX_CONFIG_DEBUG "Log debug messages (default: on in debug)" ON)
 option(BGFX_AMALGAMATED "Amalgamated bgfx build for faster compilation" OFF)
 option(BGFX_BUILD_TOOLS "Build bgfx tools." OFF)
 cmake_dependent_option(BGFX_BUILD_TOOLS_BIN2C "Build bx binary to c converter." ON BGFX_BUILD_TOOLS OFF)
