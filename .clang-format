@@ -40,4 +40,5 @@ SpaceBeforeInheritanceColon: true
 SpaceBeforeRangeBasedForLoopColon: true
 SpacesBeforeTrailingComments: 1
 SpacesInContainerLiterals: false
+AccessModifierOffset: -4
 Standard: Cpp11
