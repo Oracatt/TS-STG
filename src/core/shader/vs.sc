@@ -1,5 +1,5 @@
-layout(location = 0) in vec3 a_position;
-layout(location = 1) in vec4 a_color0;
+$input a_position, a_color0;
+$output v_color0
 
 #include "varying.def.sc"
 

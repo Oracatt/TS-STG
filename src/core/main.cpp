@@ -35,14 +35,37 @@ static const uint16_t s_cubeIndices[] =
 void initBgfx()
 {
     bgfx::Init init;
-    init.type = bgfx::RendererType::Count;
+    init.type = bgfx::RendererType::OpenGLES;
     init.resolution.width = 800;
     init.resolution.height = 600;
     init.resolution.reset = BGFX_RESET_VSYNC;
 
+    EmscriptenWebGLContextAttributes attr;
+    emscripten_webgl_init_context_attributes(&attr);
+    attr.alpha = false;
+    attr.depth = true;
+    attr.stencil = true;
+    attr.antialias = true;
+    attr.premultipliedAlpha = false;
+    attr.preserveDrawingBuffer = false;
+    attr.failIfMajorPerformanceCaveat = false;
+    attr.enableExtensionsByDefault = true;
+    attr.explicitSwapControl = false;
+    attr.renderViaOffscreenBackBuffer = false;
+
+    // Debug: Check if the canvas element exists
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context = emscripten_webgl_create_context("#canvas", &attr);
+    if (context <= 0) {
+        std::cerr << "Failed to create WebGL context! Check if the canvas element with id 'canvas' exists." << std::endl;
+        return;
+    }
+
+    emscripten_webgl_make_context_current(context);
+
     // 设置平台数据
     bgfx::PlatformData pd;
     pd.nwh = (void *)"#canvas";
+    pd.context = (void*)(uintptr_t)context;
     init.platformData = pd;
 
     if (!bgfx::init(init)) {
@@ -75,6 +98,7 @@ void initBgfx()
 
 void renderFrame()
 {
+    bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0xff0000ff, 1.0f, 0);
     bgfx::touch(0);
 
     // 设置视图矩阵
@@ -93,6 +117,16 @@ void renderFrame()
     bgfx::setVertexBuffer(0, m_vbh);
     bgfx::setIndexBuffer(m_ibh);
 
+    uint64_t state = 0
+				| BGFX_STATE_WRITE_R
+				| BGFX_STATE_WRITE_G
+				| BGFX_STATE_WRITE_B
+				| BGFX_STATE_WRITE_A
+				| BGFX_STATE_WRITE_Z
+				| BGFX_STATE_DEPTH_TEST_LESS
+				| BGFX_STATE_CULL_CW;
+
+    bgfx::setState(state);
     // 提交绘制命令
     bgfx::submit(0, m_program);
 

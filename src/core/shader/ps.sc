@@ -1,6 +1,6 @@
-#include "varying.def.sc"
+$input v_color0
 
-precision mediump float;
+#include "varying.def.sc"
 
 void main()
 {
