@@ -1,194 +1,145 @@
 #pragma once
 #include "iunknown.h"
+#include "iweakreference.h"
+
+#define GENERATE_OBJECT_BODY()                                                                                         \
+    template<class T, class... Args> friend ComPtr<T> CreateObject(Args&&...);                                         \
+                                                                                                                       \
+private:                                                                                                               \
+    class WeakRefResolver : public virtual IWeakReference                                                              \
+    {                                                                                                                  \
+    private:                                                                                                           \
+        ComPtr<IUnknown> mRefSource;                                                                                   \
+        std::atomic_uint32_t mRef = 0;                                                                                 \
+                                                                                                                       \
+    public:                                                                                                            \
+        WeakRefResolver(IUnknown* source) : mRefSource(source) {}                                                      \
+                                                                                                                       \
+        void SetExpired()                                                                                              \
+        {                                                                                                              \
+            mRefSource.Reset();                                                                                        \
+        }                                                                                                              \
+                                                                                                                       \
+        bool Resolve(const GUID& guid, void** ppv) override                                                            \
+        {                                                                                                              \
+            if (!mRefSource)                                                                                           \
+            {                                                                                                          \
+                *ppv = nullptr;                                                                                        \
+                return false;                                                                                          \
+            }                                                                                                          \
+            return mRefSource->QueryInterface(guid, ppv);                                                              \
+        }                                                                                                              \
+                                                                                                                       \
+        uint32_t AddRef() override                                                                                     \
+        {                                                                                                              \
+            return ++mRef;                                                                                             \
+        }                                                                                                              \
+                                                                                                                       \
+        uint32_t Release() override                                                                                    \
+        {                                                                                                              \
+            uint32_t ref = --mRef;                                                                                     \
+            if (ref == 0)                                                                                              \
+            {                                                                                                          \
+                delete this;                                                                                           \
+            }                                                                                                          \
+            return ref;                                                                                                \
+        }                                                                                                              \
+                                                                                                                       \
+        bool QueryInterface(const GUID& guid, void** ppv) override                                                     \
+        {                                                                                                              \
+            auto it = gInterfaceQueryFuncTable.find(guid);                                                             \
+            if (it != gInterfaceQueryFuncTable.end())                                                                  \
+            {                                                                                                          \
+                auto ptr = it->second(static_cast<IUnknown*>(this));                                                   \
+                if (ptr)                                                                                               \
+                {                                                                                                      \
+                    this->AddRef();                                                                                    \
+                }                                                                                                      \
+                *ppv = ptr;                                                                                            \
+                return true;                                                                                           \
+            }                                                                                                          \
+            *ppv = nullptr;                                                                                            \
+            return false;                                                                                              \
+        }                                                                                                              \
+    };                                                                                                                 \
+                                                                                                                       \
+private:                                                                                                               \
+    std::atomic_uint32_t mRef = 0;                                                                                     \
+    ComPtr<WeakRefResolver> mWeakRef;                                                                                  \
+                                                                                                                       \
+public:                                                                                                                \
+    uint32_t AddRef() override                                                                                         \
+    {                                                                                                                  \
+        uint32_t ref = ++mRef;                                                                                         \
+        if (ref == 1 && !mWeakRef)                                                                                     \
+        {                                                                                                              \
+            mWeakRef = new WeakRefResolver(this);                                                                      \
+        }                                                                                                              \
+        return ref;                                                                                                    \
+    }                                                                                                                  \
+                                                                                                                       \
+    uint32_t Release() override                                                                                        \
+    {                                                                                                                  \
+        uint32_t ref = --mRef;                                                                                         \
+        if (ref == 0)                                                                                                  \
+        {                                                                                                              \
+            if (mWeakRef)                                                                                              \
+            {                                                                                                          \
+                mWeakRef->SetExpired();                                                                                \
+            }                                                                                                          \
+            delete this;                                                                                               \
+        }                                                                                                              \
+        return ref;                                                                                                    \
+    }                                                                                                                  \
+                                                                                                                       \
+    bool QueryInterface(const GUID& guid, void** ppv) override                                                         \
+    {                                                                                                                  \
+        auto it = gInterfaceQueryFuncTable.find(guid);                                                                 \
+        if (it != gInterfaceQueryFuncTable.end())                                                                      \
+        {                                                                                                              \
+            auto ptr = it->second(static_cast<IUnknown*>(this));                                                       \
+            if (ptr)                                                                                                   \
+            {                                                                                                          \
+                this->AddRef();                                                                                        \
+            }                                                                                                          \
+            *ppv = ptr;                                                                                                \
+            return true;                                                                                               \
+        }                                                                                                              \
+        *ppv = nullptr;                                                                                                \
+        return false;                                                                                                  \
+    }                                                                                                                  \
+                                                                                                                       \
+    bool GetWeakReference(IWeakReference** ppv) override                                                               \
+    {                                                                                                                  \
+        return mWeakRef.As(ppv);                                                                                       \
+    }                                                                                                                  \
+                                                                                                                       \
+private:                                                                                                               \
+    void* operator new(size_t size)                                                                                    \
+    {                                                                                                                  \
+        return ::operator new(size);                                                                                   \
+    }                                                                                                                  \
+    void operator delete(void* ptr)                                                                                    \
+    {                                                                                                                  \
+        ::operator delete(ptr);                                                                                        \
+    }                                                                                                                  \
+    void* operator new[](size_t size) = delete;                                                                        \
+    void operator delete[](void* ptr) = delete;
 
 namespace tsstg
 {
-    template<class T> class ObjectPtr;
-
-    class Object : public virtual IUnknown
+    class Object : public virtual IUnknown, public virtual IWeakReferenceSource
     {
-        template<class T, class... Args> friend ObjectPtr<T> CreateObject(Args&&...);
+        GENERATE_OBJECT_BODY();
 
-        IMPL_IUNKNOWN_REFCOUNTER();
-
-        IMPL_IUNKNOWN_QUERY_BEGIN();
-        IMPL_IUNKNOWN_QUERY(IUnknown);
-        IMPL_IUNKNOWN_QUERY_END();
-
-    private:
-        Object();
+    public:
         Object(const Object&) = delete;
         Object(Object&&) = delete;
         Object& operator=(const Object&) = delete;
         Object& operator=(Object&&) = delete;
     };
 
-    template<class T> class ObjectPtr
-    {
-        T* mPtr;
-
-    public:
-        ObjectPtr()
-        {
-            mPtr = nullptr;
-        }
-
-        ObjectPtr(T* ptr)
-        {
-            mPtr = ptr;
-            if (mPtr)
-            {
-                mPtr->AddRef();
-            }
-        }
-
-        template<typename TP, typename = typename std::enable_if<std::is_convertible<TP*, T*>::value>::type>
-        ObjectPtr(const ObjectPtr<TP>& val) noexcept
-        {
-            mPtr = val.Get();
-            if (mPtr)
-            {
-                mPtr->AddRef();
-            }
-        }
-
-        ObjectPtr(const ObjectPtr<T>& val) noexcept
-        {
-            mPtr = val.mPtr;
-            if (mPtr)
-            {
-                mPtr->AddRef();
-            }
-        }
-
-        ObjectPtr(ObjectPtr<T>&& val) noexcept
-        {
-            mPtr = val.mPtr;
-            val.mPtr = nullptr;
-        }
-
-        ~ObjectPtr()
-        {
-            if (mPtr)
-            {
-                mPtr->Release();
-            }
-            mPtr = 0;
-        }
-
-        ObjectPtr<T>& operator=(const ObjectPtr<T>& val)
-        {
-            T* oldPtr = mPtr;
-            mPtr = val.mPtr;
-            if (mPtr)
-            {
-                mPtr->AddRef();
-            }
-            if (oldPtr)
-            {
-                oldPtr->Release();
-            }
-            return *this;
-        }
-
-        ObjectPtr<T>& operator=(T* val)
-        {
-            T* oldPtr = mPtr;
-            mPtr = val;
-            if (mPtr)
-            {
-                mPtr->AddRef();
-            }
-            if (oldPtr)
-            {
-                oldPtr->Release();
-            }
-            return *this;
-        }
-
-        friend bool operator!=(const ObjectPtr<T>& lhs, const ObjectPtr<T>& rhs)
-        {
-            return !(lhs.mPtr == rhs.mPtr);
-        }
-
-        friend bool operator!=(T* lhs, const ObjectPtr<T>& rhs)
-        {
-            return !(lhs == rhs.mPtr);
-        }
-
-        friend bool operator!=(const ObjectPtr<T>& lhs, T* rhs)
-        {
-            return !(lhs.mPtr == rhs);
-        }
-
-        friend bool operator==(const ObjectPtr<T>& lhs, T* rhs)
-        {
-            return lhs.mPtr == rhs;
-        }
-
-        friend bool operator==(T* lhs, const ObjectPtr<T>& rhs)
-        {
-            return lhs == rhs.mPtr;
-        }
-
-        friend bool operator==(const ObjectPtr<T>& lhs, const ObjectPtr<T>& rhs)
-        {
-            return (lhs.mPtr == rhs.mPtr);
-        }
-
-        friend bool operator<(const ObjectPtr<T>& lhs, const ObjectPtr<T>& rhs)
-        {
-            return (lhs.mPtr < rhs.mPtr);
-        }
-
-        inline T* operator->()
-        {
-            return mPtr;
-        }
-
-        inline bool IsValid() const
-        {
-            return mPtr != nullptr;
-        }
-
-        inline operator bool() const
-        {
-            return IsValid();
-        }
-
-        inline T* operator->() const
-        {
-            return mPtr;
-        }
-
-        inline operator T*()
-        {
-            return mPtr;
-        }
-
-        inline operator const void*() const = delete;
-
-        inline operator const T*() const
-        {
-            return mPtr;
-        }
-
-        inline T* Get() const
-        {
-            return mPtr;
-        }
-
-        void Reset()
-        {
-            if (mPtr)
-            {
-                mPtr->Release();
-            }
-            mPtr = nullptr;
-        }
-    };
-
-    template<class T, class... Args> ObjectPtr<T> CreateObject(Args&&... args)
+    template<class T, class... Args> ComPtr<T> CreateObject(Args&&... args)
     {
         return new T(std::forward<Args>(args)...);
     }

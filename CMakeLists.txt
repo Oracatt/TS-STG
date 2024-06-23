@@ -16,6 +16,7 @@ add_subdirectory(src/thirdparty/bgfx)
 target_link_libraries(testproj PRIVATE physx bgfx bimg bx)
 
 target_include_directories(testproj PRIVATE
+	src/core
 	src/thirdparty/bgfx/bgfx/include
 	src/thirdparty/bgfx/bimg/include
 	src/thirdparty/bgfx/bx/include)
