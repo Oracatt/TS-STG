@@ -37,15 +37,6 @@ namespace tsstg
             }
         }
 
-        template<class TP, class = class std::enable_if<std::is_convertible<TP*, T*>::value>::type>
-        WeakPtr(TP* ptr) : WeakPtr()
-        {
-            if (ptr)
-            {
-                ptr->GetWeakReference(&mReference);
-            }
-        }
-
         WeakPtr(const WeakPtr<T>& val) noexcept
         {
             mReference = val.mReference;
@@ -65,7 +56,8 @@ namespace tsstg
             }
         }
 
-        WeakPtr(const ComPtr<T>& val) noexcept : WeakPtr()
+        WeakPtr(const ComPtr<T>& val) noexcept
+            : WeakPtr()
         {
             if (val)
             {
@@ -82,7 +74,8 @@ namespace tsstg
             }
         }
 
-        WeakPtr(WeakPtr<T>&& val) noexcept : WeakPtr()
+        WeakPtr(WeakPtr<T>&& val) noexcept
+            : WeakPtr()
         {
             mReference = val.mReference;
             val.mReference = nullptr;
@@ -135,24 +128,11 @@ namespace tsstg
             return *this;
         }
 
-        WeakPtr<T>& operator=(T* val)
+        WeakPtr<T>&
+        operator=(T* val)
         {
             T* oldRef = mReference;
-            if (val)
-            {
-                val->GetWeakReference(&mReference);
-            }
-            if (oldRef)
-            {
-                oldRef->Release();
-            }
-            return *this;
-        }
-
-        template<class TP, class = class std::enable_if<std::is_convertible<TP*, T*>::value>::type>
-        WeakPtr<T>& operator=(TP* val)
-        {
-            T* oldRef = mReference;
+            mReference = nullptr;
             if (val)
             {
                 val->GetWeakReference(&mReference);
@@ -167,6 +147,7 @@ namespace tsstg
         WeakPtr<T>& operator=(const ComPtr<T>& val)
         {
             T* oldRef = mReference;
+            mReference = nullptr;
             if (val)
             {
                 val->GetWeakReference(&mReference);
@@ -182,6 +163,7 @@ namespace tsstg
         WeakPtr<T>& operator=(const ComPtr<TP>& val)
         {
             T* oldRef = mReference;
+            mReference = nullptr;
             if (val)
             {
                 val->GetWeakReference(&mReference);
@@ -193,7 +175,8 @@ namespace tsstg
             return *this;
         }
 
-        friend bool operator!=(const WeakPtr<T>& lhs, const WeakPtr<T>& rhs)
+        friend bool
+        operator!=(const WeakPtr<T>& lhs, const WeakPtr<T>& rhs)
         {
             return !(lhs.Lock() == rhs.Lock());
         }

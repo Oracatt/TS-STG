@@ -35,17 +35,7 @@ namespace tsstg
             }
         }
 
-        template<class TP, class = class std::enable_if<std::is_convertible<TP*, T*>::value>::type>
-        ComPtr(TP* val) noexcept : ComPtr()
-        {
-            if (val)
-            {
-                val->QueryInterface(GUID_OF(T), reinterpret_cast<void**>(&mPtr));
-            }
-        }
-
-        ComPtr(const ComPtr<T>& val) noexcept
-            : ComPtr()
+        ComPtr(const ComPtr<T>& val) noexcept : ComPtr()
         {
             mPtr = val.mPtr;
             if (mPtr)
@@ -104,6 +94,7 @@ namespace tsstg
         ComPtr<T>& operator=(const ComPtr<TP>& val)
         {
             T* oldPtr = mPtr;
+            mPtr = nullptr;
             if (val)
             {
                 val->QueryInterface(GUID_OF(T), reinterpret_cast<void**>(&mPtr));
@@ -131,23 +122,7 @@ namespace tsstg
             return *this;
         }
 
-        template<class TP, class = class std::enable_if<std::is_convertible<TP*, T*>::value>::type>
-        ComPtr<T>& operator=(TP* val)
-        {
-            T* oldPtr = mPtr;
-            if (val)
-            {
-                val->QueryInterface(GUID_OF(T), reinterpret_cast<void**>(&mPtr));
-            }
-            if (oldPtr)
-            {
-                oldPtr->Release();
-            }
-            return *this;
-        }
-
-        friend bool
-        operator!=(const ComPtr<T>& lhs, const ComPtr<T>& rhs)
+        friend bool operator!=(const ComPtr<T>& lhs, const ComPtr<T>& rhs)
         {
             return !(lhs.mPtr == rhs.mPtr);
         }
