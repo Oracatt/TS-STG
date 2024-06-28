@@ -1,11 +1,11 @@
 #pragma once
 
-#include "common/public/base/iunknown.h"
+#include "common/public/interface/iunknown.h"
 
 namespace tsstg
 {
+    DEFINE_CLASS_GUID(IGameInstance, 0x85e7d0f0b2f07d1dULL, 0x8a84d1e3e0f9702fULL);
     class IGameInstance : public virtual IUnknown
     {
-        DEFINE_INTERFACE_GUID(0x85e7d0f0b2f07d1dULL, 0x8a84d1e3e0f9702fULL);
     };
 } // namespace tsstg

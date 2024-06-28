@@ -1,14 +1,13 @@
 #pragma once
-#include <stdint.h>
+#include <cstdint>
 #include <atomic>
-#include "guid.h"
+#include "common/public/guiddef.h"
 
 namespace tsstg
 {
+    DEFINE_IUNKNOWN_GUID(IUnknown, 0xb6a3e64ce75c8230ULL, 0xb382c010acdeb7cfULL);
     class IUnknown
     {
-        DEFINE_INTERFACE_GUID(0xb6a3e64ce75c8230ULL, 0xb382c010acdeb7cfULL);
-
     public:
         virtual ~IUnknown() {}
         virtual uint32_t AddRef() = 0;
@@ -191,6 +190,13 @@ namespace tsstg
                 return false;
             }
             return mPtr->QueryInterface(GUID_OF(TP), reinterpret_cast<void**>(val));
+        }
+
+        template<class TP> ComPtr<TP> Cast()
+        {
+            ComPtr<TP> ptr;
+            this->As(&ptr);
+            return ptr;
         }
 
         void Reset()
