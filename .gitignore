@@ -44,10 +44,6 @@ XCBuildData/
 # Other files generated during build
 # -----------------------------
 *.o
-*.a
-*.so
-*.dylib
-*.lib
 *.d
 *.out
 *.app
