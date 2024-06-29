@@ -7,8 +7,8 @@ set(CMAKE_BUILD_TYPE RelWithDebInfo)
  
 project(tsstg)
  
-file(GLOB_RECURSE WASM_SOURCES src/core/*.cpp)
-add_executable(tsstg ${WASM_SOURCES})
+file(GLOB_RECURSE TSSTG_SOURCES src/core/*.cpp)
+add_executable(tsstg ${TSSTG_SOURCES})
 
 add_subdirectory(src/thirdparty/physx)
 add_subdirectory(src/thirdparty/bgfx)
