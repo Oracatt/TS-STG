@@ -1,9 +1,7 @@
-project(quickjs)
-
-file(STRINGS VERSION version)
+project(quickjs LANGUAGES C)
 
 set(quickjs_src quickjs.c libunicode.c libregexp.c cutils.c quickjs-libc.c)
-set(quickjs_def CONFIG_VERSION="${version}" _GNU_SOURCE)
+set(quickjs_def CONFIG_VERSION="2024-02-14" _GNU_SOURCE)
 
 option(QUICKJS_BIGNUM "Compile BigNum support" ON)
 
