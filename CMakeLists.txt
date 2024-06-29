@@ -4,17 +4,30 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_BUILD_TYPE RelWithDebInfo)
+
+option(USE_PREBUILT_LIB "Use prebuilt lib" ON)
  
 project(tsstg)
  
 file(GLOB_RECURSE TSSTG_SOURCES src/core/*.cpp)
 add_executable(tsstg ${TSSTG_SOURCES})
 
-add_subdirectory(src/thirdparty/physx)
-add_subdirectory(src/thirdparty/bgfx)
-add_subdirectory(src/thirdparty/quickjs)
+if(USE_PREBUILT_LIB)
+	if(EMSCRIPTEN)
+		target_link_libraries(tsstg PRIVATE 
+			prebuilt/bgfx/emscripten/libbgfx.a
+			prebuilt/bgfx/emscripten/libbimg.a
+			prebuilt/bgfx/emscripten/libbx.a
+			prebuilt/physx/emscripten/libphysx.a
+			prebuilt/quickjs/emscripten/libquickjs.a)
+	endif()
+else()
+	add_subdirectory(src/thirdparty/physx)
+	add_subdirectory(src/thirdparty/bgfx)
+	add_subdirectory(src/thirdparty/quickjs)
 
-target_link_libraries(tsstg PRIVATE physx bgfx bimg bx quickjs)
+	target_link_libraries(tsstg PRIVATE physx bgfx bimg bx quickjs)
+endif()
 
 target_include_directories(tsstg PRIVATE
 	src/core
