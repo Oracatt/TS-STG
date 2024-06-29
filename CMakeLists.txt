@@ -12,14 +12,16 @@ add_executable(tsstg ${WASM_SOURCES})
 
 add_subdirectory(src/thirdparty/physx)
 add_subdirectory(src/thirdparty/bgfx)
+add_subdirectory(src/thirdparty/quickjs)
 
-target_link_libraries(tsstg PRIVATE physx bgfx bimg bx)
+target_link_libraries(tsstg PRIVATE physx bgfx bimg bx quickjs)
 
 target_include_directories(tsstg PRIVATE
 	src/core
 	src/thirdparty/bgfx/bgfx/include
 	src/thirdparty/bgfx/bimg/include
-	src/thirdparty/bgfx/bx/include)
+	src/thirdparty/bgfx/bx/include
+	src/thirdparty/quickjs)
 
 if(EMSCRIPTEN)
 	set_target_properties(tsstg PROPERTIES PREFIX "" SUFFIX ".html")
