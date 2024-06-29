@@ -1,6 +1,6 @@
 #pragma once
-#include "common/public/interface/igameinstance.h"
-#include "common/public/types.h"
+#include "common/interface/igameinstance.h"
+#include "common/types.h"
 
 namespace tsstg
 {

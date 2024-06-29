@@ -5,23 +5,15 @@
 
 #define MAKE_GUID(hguid, lguid)                                                                                        \
     {                                                                                                                  \
-        ((uint64_t)hguid >> 32) & 0xffffffff, ((uint64_t)hguid >> 16) & 0xffff, (((uint64_t)hguid) & 0xffff),          \
+        (uint32_t)((hguid >> 32) & 0xffffffff), (uint16_t)((hguid >> 16) & 0xffff), (uint16_t)(hguid & 0xffff),        \
         {                                                                                                              \
-            (((uint64_t)lguid >> 56) & 0xff), (((uint64_t)lguid >> 48) & 0xff), (((uint64_t)lguid >> 40) & 0xff),      \
-                (((uint64_t)lguid >> 32) & 0xff), (((uint64_t)lguid >> 24) & 0xff), (((uint64_t)lguid >> 16) & 0xff),  \
-                (((uint64_t)lguid >> 8) & 0xff), (((uint64_t)lguid) & 0xff)                                            \
+            (uint8_t)((lguid >> 56) & 0xff), (uint8_t)((lguid >> 48) & 0xff), (uint8_t)((lguid >> 40) & 0xff),         \
+                (uint8_t)((lguid >> 32) & 0xff), (uint8_t)((lguid >> 24) & 0xff), (uint8_t)((lguid >> 16) & 0xff),     \
+                (uint8_t)((lguid >> 8) & 0xff), (uint8_t)((lguid) & 0xff)                                              \
         }                                                                                                              \
     }
 
 #define GUID_OF(cls) TypeGUID<cls>::guid
-
-#define DEFINE_IUNKNOWN_GUID(cls, hguid, lguid)                                                                        \
-    class cls;                                                                                                         \
-    template<> struct TypeGUID<cls>                                                                                    \
-    {                                                                                                                  \
-        static constexpr GUID guid = MAKE_GUID(hguid, lguid);                                                          \
-    };                                                                                                                 \
-    static guid::GUIDRegister _gGUIDRegister_##cls(GUID_OF(cls), +[](IUnknown* thiz) -> void* { return thiz; });
 
 #define DEFINE_CLASS_GUID(cls, hguid, lguid)                                                                           \
     class cls;                                                                                                         \
@@ -29,24 +21,24 @@
     {                                                                                                                  \
         static constexpr GUID guid = MAKE_GUID(hguid, lguid);                                                          \
     };                                                                                                                 \
-    static guid::GUIDRegister _gGUIDRegister_##cls(                                                                    \
-        GUID_OF(cls), +[](IUnknown* thiz) -> void* { return dynamic_cast<cls*>(thiz); });
+    template<> struct GUIDType<hguid, lguid>                                                                           \
+    {                                                                                                                  \
+        using type = cls;                                                                                              \
+    };
 
 #define DEFINE_CLASS_GUID_ANONYMOUS(cls)                                                                               \
     class cls;                                                                                                         \
     template<> struct TypeGUID<cls>                                                                                    \
     {                                                                                                                  \
-        static constexpr GUID guid = guid::GenerateAnonmousGUIDFromClassName(#cls);                                    \
+        static constexpr GUID guid = GenerateAnonmousGUIDFromClassName(#cls);                                          \
     };                                                                                                                 \
-    static guid::GUIDRegister _gGUIDRegister_##cls(                                                                    \
-        GUID_OF(cls), +[](IUnknown* thiz) -> void* { return dynamic_cast<cls*>(thiz); });
+    template<> struct GUIDType<GetHighPartOfGUID(TypeGUID<cls>::guid), GetLowPartOfGUID(TypeGUID<cls>::guid)>          \
+    {                                                                                                                  \
+        using type = cls;                                                                                              \
+    };
 
 namespace tsstg
 {
-    class IUnknown;
-
-    typedef void* (*InterfaceQueryFunc)(IUnknown*);
-
     struct GUID
     {
         uint32_t data1;
@@ -84,35 +76,32 @@ namespace tsstg
     }
 
     template<class T> struct TypeGUID;
+    template<uint64_t hguid, uint64_t lguid> struct GUIDType;
 
-    namespace guid
+    constexpr uint64_t GetHighPartOfGUID(GUID guid)
     {
-        TSSTG_API InterfaceQueryFunc GetInterfaceQueryFunc(const GUID& guid);
-        TSSTG_API void SetInterfaceQueryFunc(const GUID& guid, InterfaceQueryFunc func);
+        return ((uint64_t)guid.data1) << 32 | ((uint64_t)guid.data2) << 16 | (uint64_t)guid.data3;
+    }
 
-        struct GUIDRegister
+    constexpr uint64_t GetLowPartOfGUID(GUID guid)
+    {
+        uint64_t ret = 0;
+        for (int i = 0; i < 8; i++)
         {
-            GUIDRegister(const GUID& guid, InterfaceQueryFunc func)
-            {
-                guid::SetInterfaceQueryFunc(guid, func);
-            }
-        };
-
-        template<size_t N> constexpr uint64_t GetStringHash(const char (&str)[N], uint64_t hash = 0)
-        {
-            // for (size_t i = 0; i < N; ++i)
-            // {
-            //     hash = (hash * 131) + str[i];
-            // }
-            // return hash;
-            return 0;
+            ret |= ((uint64_t)guid.data4[i]) << (56 - i * 8);
         }
+        return ret;
+    }
 
-        template<size_t N> constexpr GUID GenerateAnonmousGUIDFromClassName(const char (&clsName)[N])
+    template<size_t N> constexpr GUID GenerateAnonmousGUIDFromClassName(const char (&clsName)[N])
+    {
+        uint64_t hash1 = 0;
+        uint64_t hash2 = 0x9e3779b97f4a7c15;
+        for (size_t i = 0; i < N - 1; ++i)
         {
-            constexpr uint64_t hash1 = GetStringHash(clsName);
-            constexpr uint64_t hash2 = GetStringHash(clsName, 0x9e3779b97f4a7c15);
-            return MAKE_GUID(hash1, hash2);
+            hash1 = (hash1 * 131) + clsName[i];
+            hash2 = (hash2 * 131) + clsName[i];
         }
-    } // namespace guid
+        return MAKE_GUID(hash1, hash2);
+    }
 } // namespace tsstg

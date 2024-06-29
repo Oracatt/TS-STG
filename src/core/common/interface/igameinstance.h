@@ -1,6 +1,6 @@
 #pragma once
 
-#include "common/public/interface/iunknown.h"
+#include "common/interface/iunknown.h"
 
 namespace tsstg
 {
