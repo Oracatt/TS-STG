@@ -20088,7 +20088,7 @@ static void                       dump_token(JSParseState *s,
                                              const JSToken *token)
 #else 
 static void __attribute((unused)) dump_token(JSParseState *s,
-                                             const JSToken *token
+                                             const JSToken *token)
 #endif
 {
     switch(token->val) {
