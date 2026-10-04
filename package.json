@@ -1,0 +1,25 @@
+{
+  "name": "ts-stg-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/thlib", "games/touhou20", "games/rushboss"],
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "test:integration": "node tools/verify-integration.mjs",
+    "test:backends": "node tools/verify-backends.mjs",
+    "test:package": "node tools/verify-thlib-package.mjs",
+    "test:th20": "node tools/verify-th20-runtime.mjs",
+    "test:rushboss": "node tools/verify-rushboss-runtime.mjs",
+    "test:rushboss:quickjs": "node tools/verify-rushboss-quickjs.mjs",
+    "test:rushboss:graphics": "node tools/verify-rushboss-graphics.mjs",
+    "test:rushboss:player": "node tools/verify-rushboss-player.mjs",
+    "test:rushboss:player:graphics": "node tools/verify-rushboss-player-graphics.mjs",
+    "test:rushboss:portrait": "node tools/verify-rushboss-portrait-runtime.mjs",
+    "test:rushboss:portrait:graphics": "node tools/verify-rushboss-portrait-graphics.mjs",
+    "test:rushboss:dialogue": "node tools/verify-rushboss-dialogue.mjs",
+    "benchmark": "node tools/benchmark.mjs",
+    "benchmark:native": "node tools/benchmark-native.mjs"
+  },
+  "engines": { "node": ">=24" }
+}

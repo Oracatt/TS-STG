@@ -1,0 +1,32 @@
+{
+  "name": "@ts-stg/thlib",
+  "version": "0.1.0",
+  "description": "Portable JavaScript Touhou-style STG gameplay library for TS-STG",
+  "type": "module",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./assets/*": "./assets/*",
+    "./*": "./src/*.js",
+    "./touhou": {
+      "types": "./src/touhou/index.d.ts",
+      "import": "./src/touhou/index.js",
+      "default": "./src/touhou/index.js"
+    },
+    "./touhou/*": {
+      "types": "./src/touhou/*.d.ts",
+      "import": "./src/touhou/*.js",
+      "default": "./src/touhou/*.js"
+    }
+  },
+  "files": [
+    "src",
+    "assets"
+  ],
+  "license": "MIT"
+}

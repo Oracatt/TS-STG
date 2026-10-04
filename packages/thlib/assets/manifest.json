@@ -1,0 +1,55 @@
+{
+  "format": "ts-stg-builtin-sounds-v1",
+  "license": "MIT",
+  "origin": "Original procedural synthesis created for TS-STG; contains no imported game audio.",
+  "sounds": {
+    "shot": {
+      "file": "audio/shot.wav",
+      "format": "pcm-s16le",
+      "channels": 1,
+      "sampleRate": 22050,
+      "frames": 1984,
+      "sha256": "b96533b37271f4607cd522c3ee4c3124d815598d2df6d693928325e4ce09568f"
+    },
+    "graze": {
+      "file": "audio/graze.wav",
+      "format": "pcm-s16le",
+      "channels": 1,
+      "sampleRate": 22050,
+      "frames": 2205,
+      "sha256": "de9c2d061b6b062581455ca047b3504514437d01ee5425fd828889cdc4f4b715"
+    },
+    "pickup": {
+      "file": "audio/pickup.wav",
+      "format": "pcm-s16le",
+      "channels": 1,
+      "sampleRate": 22050,
+      "frames": 3528,
+      "sha256": "9787dee279a88e18e9b3d3e98f28936a86b288abae978d7aa035f2aadb693b8e"
+    },
+    "hit": {
+      "file": "audio/hit.wav",
+      "format": "pcm-s16le",
+      "channels": 1,
+      "sampleRate": 22050,
+      "frames": 7717,
+      "sha256": "802b41ccd41df75a360f6107b4a493a8fd7f8f75ad13b38789f2331ac95fd0bc"
+    },
+    "bomb": {
+      "file": "audio/bomb.wav",
+      "format": "pcm-s16le",
+      "channels": 1,
+      "sampleRate": 22050,
+      "frames": 26460,
+      "sha256": "3f90f101a82aeb29ef010c855770b66529bad9b9c9bbe50589c09346680eb5b3"
+    },
+    "select": {
+      "file": "audio/select.wav",
+      "format": "pcm-s16le",
+      "channels": 1,
+      "sampleRate": 22050,
+      "frames": 2205,
+      "sha256": "746c93b23bbda45eb640bfee0b2fab104918fd5d99b877b084131eb12d0230d8"
+    }
+  }
+}

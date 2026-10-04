@@ -1,0 +1,1 @@
+export * from '@ts-stg/thlib/touhou/font'; export { TouhouTextOptions as Th20TextOptions, touhouGlyphIndex as th20GlyphIndex, touhouGroupedScore as th20GroupedScore, TouhouBitmapFont as Th20BitmapFont } from '@ts-stg/thlib/touhou/font';

@@ -1,0 +1,16 @@
+import { spawnSync } from 'node:child_process';
+import { resolve } from 'node:path';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { compareDistortion } from '../native/tests/distortion-compare.js';
+const projectRoot = fileURLToPath(new URL('../', import.meta.url));
+const executable = process.argv[2] ?? resolve('build/Release/tsstg-distortion-oracle.exe');
+const result = spawnSync(executable, [], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+if (result.error || result.status !== 0) throw result.error ?? new Error(result.stderr);
+console.log(JSON.stringify({ reference: 'isolated reconstructed C++ formulas, not original executable', backend: 'node', ...compareDistortion(JSON.parse(result.stdout)) }));
+mkdirSync(resolve(projectRoot, 'build'), { recursive: true });
+writeFileSync(resolve(projectRoot, 'build/distortion-oracle.json'), result.stdout);
+const host = process.argv[3] ?? resolve(projectRoot, 'build/Release/ts-stg.exe');
+const native = spawnSync(host, ['native/tests/distortion-quickjs.js', '--root', projectRoot, '--headless', '--frames', '1'], { encoding: 'utf8' });
+if (native.error || native.status !== 0) throw native.error ?? new Error(native.stderr);
+process.stdout.write(native.stdout);

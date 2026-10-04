@@ -1,0 +1,33 @@
+/build*/
+/cmake-build-*/
+/dist/
+/userdata/
+node_modules/
+*.log
+/.cache/
+
+# Local editor state, caches and configuration containing credentials.
+/.vs/
+__pycache__/
+*.py[cod]
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Imported reference media stays local; its importers and source notices are tracked.
+/games/touhou20/assets/
+/games/rushboss/assets/
+/packages/thlib/assets/reference-common/
+/packages/thlib/assets/touhou-common/
+/packages/thlib/assets/spell-common/
+
+# Generated verification output is reproducible. Keep the authored capture notes.
+/reports/**
+!/reports/touhou/
+!/reports/touhou/scene-transition/
+!/reports/touhou/scene-transition/README.md

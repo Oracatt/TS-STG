@@ -1,0 +1,1 @@
+export * from '@ts-stg/thlib/touhou/anm-projection'; export { TouhouProjectionViewport as Th20ProjectionViewport, TouhouProjectionCamera as Th20ProjectionCamera, createTouhouCamera as createTh20Camera } from '@ts-stg/thlib/touhou/anm-projection';

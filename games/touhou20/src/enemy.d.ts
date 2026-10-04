@@ -1,0 +1,1 @@
+export * from '@ts-stg/thlib/touhou/enemy'; export { TouhouVector as Th20Vector, TouhouMotionOptions as Th20MotionOptions, TouhouMotion as Th20Motion, touhouEnemyDeathScript as th20EnemyDeathScript, TouhouEnemyContext as Th20EnemyContext, TouhouEnemyOptions as Th20EnemyOptions, TouhouEnemy as Th20Enemy } from '@ts-stg/thlib/touhou/enemy';

@@ -1,0 +1,9 @@
+# Store source text consistently across Windows and other development hosts.
+* text=auto eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Preserve authored media and test fixtures byte-for-byte.
+*.png binary
+*.bmp binary
+*.wav binary

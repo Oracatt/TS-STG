@@ -1,0 +1,1 @@
+export * from '@ts-stg/thlib/touhou/lasers'; export { TouhouCurveSample as Th20CurveSample, TouhouCurveNode as Th20CurveNode, touhouCurveSample as th20CurveSample, TouhouLaserParameters as Th20LaserParameters, TouhouLaser as Th20Laser, TouhouLaserField as Th20LaserField } from '@ts-stg/thlib/touhou/lasers';

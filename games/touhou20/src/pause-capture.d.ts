@@ -1,0 +1,1 @@
+export * from '@ts-stg/thlib/touhou/pause-capture'; export { TouhouPixelSurface as Th20PixelSurface, TouhouPixelRect as Th20PixelRect, TouhouPixelServices as Th20PixelServices, TouhouPauseCapture as Th20PauseCapture } from '@ts-stg/thlib/touhou/pause-capture';

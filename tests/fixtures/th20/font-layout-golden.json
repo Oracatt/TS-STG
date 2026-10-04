@@ -1,0 +1,20 @@
+{
+  "scope": "Pre-cache bitmap layout and complete draw-command outputs, 14 font modes x 54 geometry cases. Source numeric layout unchanged; this fixture tests optimization equivalence, not independent source equivalence.",
+  "fontSourceSha256": "3010800d95603baa85aa1bef9b06301c6229594200102b8d67e08a5b4f7ea279",
+  "hashes": [
+    "28a9741345c1c961ea9458a27d4e9bfad081a272ca23f5167d65dd72082f9cd3",
+    "ca95c579dbe747f42902f04bee13c81fdd93c38d6cfc8265b12491c51157ee52",
+    "99f5d2b4ca69f0957ce723b98627a3776da200d60cda0b560408bda034013e29",
+    "c0a862fc20ace53471d092529232461ba317558a7217bfd5e97e3508de64cfe7",
+    "c883aa253ef2c3227d09b8673b064293a4f8e6aa39f97d6dc0e8bd6467e51cfe",
+    "5fd24a05a47a0a455262b543ae8d5af5f4d2f95d4c698d4f32c2d0bcd72865b5",
+    "b6eaf815455781c6d8a49a650ab60dd35330fd711821e4df50612d3066ef599c",
+    "ecabd924825d23c4761b9c96806d9c55dc8ff68add5b3e7b72b55be052527878",
+    "279ff3fb76506fe2985b00caa8694b204c55297f40ca133ae81ef607f9a733f7",
+    "604aae8fb2a023177ea073e124da13fc4d4cebd2c51d63566e3bd902b63dceac",
+    "7fe7dccd37115b1503d9d779820d5640f56bfb2965a58e6d0ee39ffef3b81639",
+    "278c1d88f3fe757c300313caeb17827344a407fb5165cc825adcd4662a36f0ba",
+    "27bab6de80dc6d13ec20d0f2b20050c702aad9921dbe4c7bd99f6f1c2ba3d381",
+    "3e60a6fdb5f9442ae6fbebb58080925a2fedc86d4c50eeebea59505f26b27a8d"
+  ]
+}
