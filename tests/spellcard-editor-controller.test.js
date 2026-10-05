@@ -84,6 +84,28 @@ test('newer JS source wins even if an older module finishes loading afterwards',
   assert.equal(f.calls.filter(call=>call[0]==='reset'&&call[1]==='old').length,0);
 });
 
+test('late errors from superseded source cannot replace the active source status',async()=>{
+  const requests=new Map(),f=fixture({loadModule:path=>new Promise((resolve,reject)=>requests.set(path,{resolve,reject}))});
+  f.module('./abandoned.js');f.commands({action:'play'});f.controller.update();await flushImports();
+  f.module('./current.js');f.commands({action:'seek',frame:4});f.controller.update();await flushImports();
+  requests.get('./current.js').resolve(exportedSpell('current'));await flushImports();f.controller.update();
+  requests.get('./abandoned.js').reject(new SyntaxError('obsolete syntax error'));await flushImports();f.controller.update();
+  const status=f.controller.snapshot().editor;
+  assert.equal(status.error,null);assert.equal(status.document.id,'current');assert.equal(status.documentRevision,2);
+  assert.equal(status.requestedDocumentRevision,2);assert.equal(status.frame,4);assert.equal(status.playing,false);
+});
+
+test('pause requested during source loading overrides the earlier queued play',async()=>{
+  let resolveModule;const f=fixture({modulePath:'./pending.js',loadModule:()=>new Promise(resolve=>{resolveModule=resolve;})});
+  f.commands({action:'seek',frame:40},{action:'play'});f.controller.update();await flushImports();
+  f.commands({action:'pause'});f.controller.update();
+  assert.equal(f.controller.snapshot().editor.commandId,0);
+  resolveModule(exportedSpell('paused'));await flushImports();f.controller.update();
+  const status=f.controller.snapshot().editor;
+  assert.equal(status.commandId,3);assert.equal(status.playing,false);assert.equal(status.seeking,false);
+  assert.equal(status.frame,0,'pause cancels a queued seek before the new scene advances');
+});
+
 test('syntax, export and factory failures preserve the last good scene and retain error stacks',async()=>{
   const modules=new Map([
     ['./syntax.js',()=>{throw new SyntaxError('Unexpected token at spell-2.js:8');}],

@@ -1,56 +1,31 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-s4RBjgXFRXx2WkykFzIwCrKSS8zjxZCk5/OGpf+vcZ0='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'">
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <title>TS-STG · 符卡编辑器</title>
-  <link rel="stylesheet" href="/editor/styles.css">
-</head>
-<body>
-  <header class="toolbar">
-    <div class="brand"><span class="brand-mark">✦</span><div><strong>TS-STG</strong><span>符卡编辑器</span></div></div>
-    <div class="document-title"><label for="card-name">符卡名称</label><input id="card-name" maxlength="120" autocomplete="off" spellcheck="false"><span id="save-status" class="save-status">正在载入</span></div>
-    <nav class="file-actions" aria-label="文件操作">
-      <button id="new-document" title="新建符卡 JavaScript">新建</button><button id="import-document">导入 JS</button><button id="export-document">导出 JS</button>
-      <button id="native-preview" class="primary" disabled>原生试玩 <span aria-hidden="true">↗</span></button>
-    </nav>
-    <input id="import-file" type="file" accept=".js,.mjs,.json,text/javascript,application/javascript,application/json" hidden>
-  </header>
-  <div id="notice" class="notice" role="status" hidden><span id="notice-text"></span><button id="dismiss-notice" aria-label="关闭提示">×</button></div>
-  <main class="workspace">
-    <aside class="panel event-panel">
-      <div class="panel-heading"><h1>事件编排</h1><span id="event-count" class="badge">0</span></div>
-      <div class="event-actions"><select id="add-type" aria-label="新增事件类型"><option value="bullet">弹幕发射</option><option value="laser">激光发射</option><option value="move">Boss 移动</option><option value="charge">聚能 / 释放</option><option value="sound">音效</option><option value="clear">消弹</option></select><button id="add-event" class="accent" title="在当前帧添加事件">＋ 添加</button></div>
-      <div class="list-caption"><span>事件</span><span>开始帧</span></div>
-      <div id="event-list" class="event-list" role="list" aria-label="符卡事件"></div>
-      <div class="event-footer"><button id="duplicate-event" disabled>复制事件</button><button id="delete-event" class="danger-text" disabled>删除</button></div>
-      <p class="panel-note">按时间安排弹幕、移动与特效。点击时间轴跳转，拖动事件调整开始帧。</p>
-    </aside>
-    <section class="preview-panel" aria-label="轨迹预览">
-      <div class="preview-heading"><div><span class="live-dot"></span><strong>轨迹预览</strong><span class="preview-disclaimer">完整效果请原生试玩</span></div><div class="history"><button id="preview-mode" class="mode-button" hidden>坐标编排</button><button id="undo" title="撤销 Ctrl+Z" disabled>↶</button><button id="redo" title="重做 Ctrl+Y" disabled>↷</button></div></div>
-      <div class="canvas-stage"><div class="canvas-shell" id="native-preview-host"><canvas id="native-frame" width="960" height="720" tabindex="0" aria-label="原生引擎预览，点击后用方向键移动，Z 射击，X 使用 Bomb，Shift 低速"></canvas><canvas id="preview" width="768" height="896" aria-label="符卡轨迹预览，可拖动 Boss、发射点和自机瞄准目标"></canvas><div id="preview-busy" class="preview-busy" hidden>正在模拟…</div><div class="canvas-corner top-left">PLAY FIELD</div><div class="canvas-corner bottom-right" id="object-count">0 弹 · 0 激光</div></div></div>
-      <div class="preview-options"><label><input id="show-collision" type="checkbox">判定圆</label><label><input id="show-direction" type="checkbox">运动方向</label><span>拖动 <i class="key-dot boss"></i> Boss · <i class="key-dot emitter"></i> 发射点 · <i class="key-dot player"></i> 瞄准目标</span></div>
-      <div class="transport"><div class="play-buttons"><button id="reset" title="回到第 0 帧">↤</button><button id="play" class="play-button" title="播放 / 暂停（空格）">▶ 播放</button><button id="step" title="前进一帧">▸│</button></div><div class="frame-readout"><strong id="current-frame">00000</strong><span>/ <span id="total-frames">00000</span> 帧</span></div><span id="time-readout">0.00 s</span></div>
-      <div class="scrubber"><input id="seek" type="range" min="0" max="1800" value="0" step="1" aria-label="当前模拟帧"></div>
-      <div class="timeline-header"><span>时间轴</span><span id="timeline-range">60 帧 / 秒</span></div>
-      <div id="timeline" class="timeline" tabindex="0" aria-label="事件时间轴"><div id="timeline-ticks" class="timeline-ticks"></div><div id="timeline-events" class="timeline-events"></div><div id="playhead" class="playhead"><span></span></div></div>
-      <footer class="preview-footer"><span id="preview-state">准备就绪</span><span>空格 播放 / 暂停 · Ctrl Z 撤销</span></footer>
-    </section>
-    <aside class="panel inspector-panel authoring-panel">
-      <div class="authoring-tabs" role="tablist" aria-label="编辑方式"><button id="source-tab" role="tab" aria-selected="true" aria-controls="source-pane">JS 源码</button><button id="visual-tab" role="tab" aria-selected="false" aria-controls="visual-pane">可视化</button><span id="source-sync-state">可视化已同步</span></div>
-      <section id="source-pane" class="source-pane" role="tabpanel" aria-labelledby="source-tab">
-        <div class="source-toolbar"><label><input id="auto-preview" type="checkbox" checked>自动预览</label><button id="apply-source" class="accent" title="应用源码到原生引擎（Ctrl+Enter）">运行 Ctrl ↵</button></div>
-        <div class="code-editor"><label for="source-code" class="sr-only">符卡 JavaScript 源码</label><textarea id="source-code" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="source-help"></textarea></div>
-        <div class="source-status"><span id="source-position">Ln 1, Col 1</span><span id="source-preview-status">等待预览</span><button id="save-source" title="保存 JS 文件（Ctrl+S）">保存 JS</button></div>
-        <p id="source-help" class="source-help">直接编辑 createSpell。停止输入 450 ms 后在原生引擎中运行；Ctrl+Enter 立即运行，Ctrl+S 保存。</p>
-      </section>
-      <section id="visual-pane" class="visual-pane" role="tabpanel" aria-labelledby="visual-tab" hidden><div class="panel-heading"><h2 id="inspector-title">符卡设置</h2><button id="select-document" title="编辑符卡基本设置">设置</button></div><p id="visual-readonly" class="visual-readonly" hidden>当前源码没有可安全回写的数据块。源码仍可编辑、运行和保存。</p><div id="inspector" class="inspector"></div><div class="inspector-footer" id="inspector-hint">所有时间以帧为单位，60 帧 = 1 秒。</div></section>
-      <section id="source-errors" class="source-errors" role="alert" hidden><div><strong>预览错误</strong><button id="error-goto" hidden>跳到源码</button></div><pre id="source-error"></pre></section>
-    </aside>
-  </main>
-  <script type="importmap">{"imports":{"@ts-stg/thlib/touhou":"/thlib/touhou/index.js","@ts-stg/thlib":"/thlib/index.js"}}</script>
-  <script type="module" src="/editor/editor.js"></script>
-</body>
-</html>
+<html lang="zh-CN"><head>
+<meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>TS-STG · JavaScript 符卡工作台</title><link rel="stylesheet" href="/editor/styles.css">
+</head><body>
+<header class="app-header">
+  <div class="brand"><span class="brand-symbol" aria-hidden="true">✦</span><strong>TS-STG</strong><span class="brand-divider"></span><span>符卡工作台</span></div>
+  <nav class="file-actions" aria-label="文件"><button id="new-document">新建</button><button id="import-document">打开</button><button id="save-source" title="保存 Ctrl+S">保存</button><button id="export-document">另存为</button></nav>
+  <div class="run-actions"><label class="auto-preview"><input id="auto-preview" type="checkbox" checked>自动运行</label><button id="apply-source" class="primary" title="运行当前源码 Ctrl+Enter">▶ 运行 <kbd>Ctrl ↵</kbd></button></div>
+  <input id="import-file" type="file" accept=".js,.mjs,text/javascript,application/javascript" hidden>
+</header>
+<div id="notice" class="notice" role="status" hidden><span id="notice-text"></span><button id="dismiss-notice" aria-label="关闭提示">×</button></div>
+<main id="workspace" class="workspace">
+  <section class="source-panel" aria-label="JavaScript 编辑器">
+    <header class="pane-heading"><div class="file-tab"><span class="language-icon">JS</span><span id="file-name">untitled.spell.js</span><span id="file-dirty" class="dirty-dot" title="文件有未保存修改" hidden></span></div><div class="editor-actions"><button id="undo" title="撤销 Ctrl+Z" disabled>↶</button><button id="redo" title="重做 Ctrl+Shift+Z" disabled>↷</button><button id="search-source" title="搜索与替换 Ctrl+F">搜索</button><button id="goto-line" title="跳转到行 Ctrl+G">行号</button><button id="fold-source" title="折叠所有代码块">折叠</button></div></header>
+    <div id="source-code" class="code-editor"></div>
+    <section id="source-errors" class="source-errors" role="alert" hidden><div class="error-heading"><strong>运行错误</strong><span>修改后重新运行</span><button id="error-goto" hidden>定位源码 ↗</button></div><pre id="source-error"></pre></section>
+    <footer class="editor-status"><span id="source-position">Ln 1, Col 1</span><span>空格: 2</span><span>UTF-8</span><span>JavaScript</span><span id="save-status">本地草稿</span></footer>
+  </section>
+  <div id="pane-divider" class="pane-divider" role="separator" aria-label="调整源码与预览宽度" aria-orientation="vertical" aria-valuemin="32" aria-valuemax="68" aria-valuenow="54" tabindex="0"></div>
+  <section class="preview-panel" aria-label="TS-STG 原生引擎预览">
+    <header class="pane-heading preview-heading"><div><span id="engine-dot" class="engine-dot"></span><strong>原生预览</strong><span class="engine-tag">TS-STG</span></div><button id="native-preview" class="quiet" title="重新运行源码，恢复引擎预览">重新加载 ↻</button></header>
+    <div class="preview-details"><strong id="card-name">等待运行</strong><span id="runtime-metadata">固定步长 60 FPS · 固定随机种子</span></div>
+    <div class="canvas-stage"><div id="native-preview-host" class="native-preview-host"><canvas id="native-frame" width="960" height="720" tabindex="0" aria-label="原生游戏画面：点击后使用方向键移动，Z 射击，X Bomb，Shift 低速"></canvas><div id="preview-placeholder" class="preview-placeholder"><span>TS-STG</span><p id="placeholder-text">正在连接原生引擎…</p></div></div></div>
+    <p class="input-hint">点击画面操作 <span>方向键 移动</span><span>Z 射击</span><span>X Bomb</span><span>Shift 低速</span></p>
+    <div class="transport"><div class="play-buttons"><button id="reset" title="重置到第 0 帧">↤</button><button id="play" class="play-button" title="播放 / 暂停（空格）">▶ 播放</button><button id="step" title="单帧前进">▸│</button></div><div class="frame-readout"><strong id="current-frame">00000</strong><span>/ <span id="total-frames">00000</span> 帧</span></div><span id="time-readout">0.00 s</span></div>
+    <div class="scrubber"><input id="seek" type="range" min="0" max="1800" value="0" step="1" aria-label="预览帧"><div><span>00:00</span><span id="duration-time">00:30</span></div></div>
+    <div class="preview-status"><span id="preview-state">准备预览</span><span id="object-count">0 弹 · 0 激光</span></div>
+    <footer class="preview-footer"><span id="source-preview-status">停止输入 450 ms 后自动运行</span><span>Ctrl+Enter 立即运行</span></footer>
+  </section>
+</main><script type="module" src="/editor/editor.js"></script></body></html>

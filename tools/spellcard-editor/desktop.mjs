@@ -7,8 +7,8 @@ import {fileURLToPath} from 'node:url';
 import {randomUUID} from 'node:crypto';
 import {FrameStreamDecoder} from './frame-stream.mjs';
 import {createSpellCardEditorServer} from './server.mjs';
-import {createTouhouSpellCard,validateTouhouSpellCard,parseTouhouSpellCard} from '../../packages/thlib/src/touhou/spellcard.js';
-import {generateSpellSource,readVisualDocument,validateSpellSource} from './source.js';
+import {createTouhouSpellCard,parseTouhouSpellCard} from '../../packages/thlib/src/touhou/spellcard.js';
+import {generateSpellSource,validateSpellSource} from './source.js';
 
 const directory=path.dirname(fileURLToPath(import.meta.url)),root=path.resolve(directory,'../..');
 const session=`spellcard-editor/${randomUUID()}`,folder=`build/${session}`;
@@ -18,7 +18,8 @@ const selfTest=process.argv.includes('--self-test');
 let win,server,child=null,url='',savedPath=null,lastStatus={},nativeError=null,closing=false,commandId=0;
 let frameServer,frameSocket,frameId=0,framePending=0;
 const pipeName=`\\\\.\\pipe\\ts-stg-frames-${randomUUID()}`;
-let bounds={x:0,y:0,width:1,height:1,visible:false},document=createTouhouSpellCard();
+let bounds={x:0,y:0,width:1,height:1,visible:false};
+const document={...createTouhouSpellCard(),events:[]};
 let state={revision:0,documentRevision:0,document,commands:[]},io=Promise.resolve();
 const serialize=task=>{const next=io.then(task);io=next.catch(()=>{});return next;};
 function sourceText(value){
@@ -107,7 +108,6 @@ async function start(){
   });
   handle('preview:update',async value=>{
     const source=sourceText(value?.source),revision=state.documentRevision+1;
-    document=validateTouhouSpellCard(readVisualDocument(source)??value.document??document);
     // Unique module URLs bypass the native ESM cache without evaluating any
     // authored JavaScript in Electron. The existing engine imports this file.
     const modulePath=`./spell-${revision}.js`;

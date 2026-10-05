@@ -1,128 +1,187 @@
 import assert from 'node:assert/strict';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import path from 'node:path';
-import {generateSpellSource,readVisualDocument} from './source.js';
 
-/** Runs only with --self-test, in an isolated ephemeral renderer partition.
- * Exercises the actual editor controls and live embedded engine, not a mock. */
+/** Isolated --self-test window: actual CodeMirror, IPC, files and native engine.
+ * Only the OS file picker is replaced, to choose a disposable test file. */
 export async function verifyDesktop({win,root,files,readStatus,dialog,child}){
   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-  const evaluate=code=>win.webContents.executeJavaScript(code);
+  const evaluate=async code=>{try{return await win.webContents.executeJavaScript(code);}catch(error){throw new Error(`Renderer check failed: ${code.slice(0,180)}`,{cause:error});}};
   const wait=async(predicate,label)=>{const start=Date.now();while(Date.now()-start<20000){if(await predicate())return;await pause(100);}throw Error(`Timed out: ${label}; status ${JSON.stringify(await readStatus())}`);};
   const click=id=>evaluate(`document.getElementById(${JSON.stringify(id)}).click()`);
   const change=(selector,value,event='change')=>evaluate(`{const element=document.querySelector(${JSON.stringify(selector)});element.value=${JSON.stringify(value)};element.dispatchEvent(new Event(${JSON.stringify(event)},{bubbles:true}));}`);
+  const text=()=>evaluate('globalThis.__checkCodeView.state.doc.toString()');
+  const setText=source=>evaluate(`globalThis.__checkCodeView.dispatch({changes:{from:0,to:globalThis.__checkCodeView.state.doc.length,insert:${JSON.stringify(source)}},selection:{anchor:0}})`);
+  const shortcut=(key,code)=>evaluate(`{const view=globalThis.__checkCodeView;view.focus();view.contentDOM.dispatchEvent(new KeyboardEvent('keydown',{key:${JSON.stringify(key)},code:${JSON.stringify(code)},ctrlKey:true,bubbles:true,cancelable:true}));}`);
+  const loaded=async()=>{const s=await readStatus();return s.documentRevision>=1&&s.documentRevision===s.requestedDocumentRevision&&!s.loading&&!s.seeking&&!s.error;};
+  const control=()=>readFile(path.join(root,files.control),'utf8').then(JSON.parse);
   win.show();
-  await wait(async()=>(await readStatus()).documentRevision>=1,'initial preview');
-  await wait(async()=>JSON.parse(await readFile(path.join(root,files.bounds),'utf8')).visible===true,'visible embedded viewport');
-  assert.ok(child()?.pid);assert.equal((await readStatus()).error,null);
+  await wait(async()=>evaluate('!!document.querySelector(".cm-editor")'),'CodeMirror is ready');
+  await evaluate(`(async()=>{globalThis.__checkCodeView=(await import('/editor/dist/code-editor.bundle.js')).getEditorView(document.querySelector('.cm-editor'));})()`);
+  assert.equal(await evaluate('!!globalThis.__checkCodeView'),true);
+  assert.equal(await evaluate('!!document.querySelector("#event-list,#inspector,#timeline,#preview-mode,#visual-tab")'),false,'event authoring must be removed');
+  assert.ok(await evaluate('document.querySelectorAll(".cm-lineNumbers .cm-gutterElement").length')>1,'code has visible line numbers');
+  await wait(loaded,'initial module preview');
+  await wait(async()=>JSON.parse(await readFile(path.join(root,files.bounds),'utf8')).visible,'embedded viewport');
+  assert.ok(child()?.pid);assert.equal((await readStatus()).document.events.length,0);
   assert.equal(await evaluate('window.spellCardEditor.desktop'),true);
-  await evaluate(`document.querySelector('[data-id="bullet-1"]').click()`);
-  await change('[data-field="count"]','18');
-  await wait(async()=>JSON.parse(await readFile(path.join(root,files.control),'utf8')).document.events[1].count===18,'inspector edits document');
-  await wait(async()=>(await readStatus()).documentRevision>=2,'edited preview');
-  await wait(async()=>{const draft=await evaluate('window.spellCardEditor.loadDraft()');return readVisualDocument(draft.source)?.events[1]?.count===18;},'persistent desktop JS draft');
+  const initial=await text();
+  assert.ok(initial.includes('function fireRing('));
+  assert.ok(!initial.includes('@spellcard-editor:'));
+
+  // Test ordinary JS expressions and closures, with no visual event data.
+  const custom=`// Ordinary JavaScript; no managed regions or editor event model.
+const title = 'JS Preview';
+export const spellCard = {
+  format: 'ts-stg-spellcard', version: 1, id: 'desktop-js', name: title,
+  duration: 60 * 30, hp: 3000, seed: 123, boss: {x: 60, y: 96}, events: [],
+};
+
+export function createSpell(context) {
+  let frame = 0, alive = true;
+  function ring(angle) {
+    context.bullets.emit({
+      x: context.boss.x, y: context.boss.y,
+      type: 0, color: 6, pattern: 3,
+      count: 12, rows: 1, speed: 2, angle,
+    });
+  }
+  return {
+    get frame() { return frame; },
+    get alive() { return alive; },
+    update() {
+      if (!alive) return;
+      if (frame % 12 === 0) ring(frame / 60);
+      if (++frame >= spellCard.duration) alive = false;
+    },
+    stop() { alive = false; },
+  };
+}
+`;
+  let revision=(await readStatus()).documentRevision;
+  await setText(custom);
+  await wait(async()=>await loaded()&&(await readStatus()).documentRevision>revision&&(await readStatus()).document.name==='JS Preview','automatic code reload');
+  await wait(async()=>(await evaluate('window.spellCardEditor.loadDraft()')).source===custom,'persistent JS draft');
+  assert.equal(await text(),custom,'metadata evaluation must not rewrite source');
+  await click('fold-source');assert.ok(await evaluate('document.querySelectorAll(".cm-foldPlaceholder").length')>0);
+  await click('fold-source');assert.equal(await evaluate('document.querySelectorAll(".cm-foldPlaceholder").length'),0);
   await click('play');await wait(async()=>(await readStatus()).frame>=100,'play native frames');
-  await click('play');await wait(async()=>!(await readStatus()).playing,'pause');
+  await click('play');await wait(async()=>!(await readStatus()).playing,'pause native frames');
   const paused=(await readStatus()).frame;await pause(250);assert.equal((await readStatus()).frame,paused);
   await change('#seek','180','input');
   await wait(async()=>{const s=await readStatus();return s.frame===180&&!s.seeking;},'seek to 180');
+  assert.ok((await readStatus()).bullets>0,'handwritten JS emitted actual native bullets');
   await click('step');await wait(async()=>(await readStatus()).frame===181,'single step');
-  await click('preview-mode');
-  await wait(async()=>JSON.parse(await readFile(path.join(root,files.bounds),'utf8')).visible===false,'coordinate editor hides native frames');
-  await wait(async()=>!(await evaluate('document.body.classList.contains("native-preview")')),'coordinate mode UI');
-  await click('preview-mode');
-  await wait(async()=>JSON.parse(await readFile(path.join(root,files.bounds),'utf8')).visible===true,'native frames resume');
-  await wait(async()=>{const s=await readStatus();return s.frame===181&&!s.seeking;},'mode switch retains frame');
-  const before=JSON.parse(await readFile(path.join(root,files.bounds),'utf8'));win.setSize(1200,850);
-  await wait(async()=>JSON.parse(await readFile(path.join(root,files.bounds),'utf8')).width!==before.width,'resize native viewport');
-  const after=JSON.parse(await readFile(path.join(root,files.bounds),'utf8'));
-  assert.ok(after.width>0&&after.height>0&&Math.abs(after.width/after.height-4/3)<.02);
-  win.show();win.focus();await pause(500);
-  const output=path.join(root,'reports/spellcard-editor');await mkdir(output,{recursive:true});
-  await wait(async()=>Number(await evaluate('document.getElementById("native-frame").dataset.frame'))>0,'native frame arrives');
-  const colored=await evaluate(`(()=>{const canvas=document.getElementById('native-frame'),pixels=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;let colored=0;
-    for(let at=0;at<pixels.length;at+=16){const high=Math.max(pixels[at],pixels[at+1],pixels[at+2]),low=Math.min(pixels[at],pixels[at+1],pixels[at+2]);if(high>110&&high-low>50)colored++;}return colored;})()`);
-  assert.ok(colored>1000,`Native canvas must contain game pixels; found ${colored} colorful samples`);
-  const capture=await win.webContents.capturePage();assert.equal(capture.isEmpty(),false);
-  await writeFile(path.join(output,'desktop.png'),capture.toPNG());
-  // Exercise the same focused-canvas input route used by the player, then
-  // confirm that the actual native thlib player moved and blur releases input.
-  const playerX=(await readStatus()).player.x;
-  await click('play');await wait(async()=>(await readStatus()).playing,'resume for input');
-  await evaluate(`{const canvas=document.getElementById('native-frame');canvas.focus();canvas.dispatchEvent(new KeyboardEvent('keydown',{code:'ArrowLeft',bubbles:true}));}`);
-  await wait(async()=>(await readStatus()).player.x<playerX-8,'native player receives editor input');
-  await evaluate(`document.getElementById('native-frame').blur()`);
-  await wait(async()=>JSON.parse(await readFile(path.join(root,files.control),'utf8')).input===0,'blur releases held input');
-  await click('play');await wait(async()=>!(await readStatus()).playing,'pause after input');
-  assert.equal(await evaluate('document.getElementById("notice").hidden'),true,'No hidden layout or preview error may pass the desktop check');
-  // Only the OS file picker is replaced; use actual UI actions, preload IPC,
-  // validation and filesystem persistence for save/open/cancel/error paths.
+  await change('#seek','600','input');await click('play');
+  await wait(async()=>{const s=await readStatus();return s.playing&&!s.seeking&&s.frame>=600;},'play preserves a preceding queued seek');
+  await click('play');await wait(async()=>!(await readStatus()).playing,'pause after queued seek and play');
+  await change('#seek','181','input');await wait(async()=>{const s=await readStatus();return s.frame===181&&!s.seeking;},'restore code test frame');
+
+  // CodeMirror's own find/replace and history, not a stand-in text field.
+  await shortcut('h','KeyH');
+  await wait(async()=>evaluate('!!document.querySelector(".cm-search input[name=search]")'),'search and replace panel');
+  await change('.cm-search input[name=search]','JS Preview');
+  await change('.cm-search input[name=replace]','JS Search');
+  await evaluate('document.querySelector(".cm-search button[name=replaceAll]").click()');
+  await wait(async()=>(await text()).includes("const title = 'JS Search'"),'replace edits source');
+  await evaluate('document.querySelector(".cm-search button[name=close]").click()');
+  await shortcut('z','KeyZ');await wait(async()=>(await text())===custom,'native code undo');
+  await shortcut('y','KeyY');await wait(async()=>(await text()).includes("const title = 'JS Search'"),'native code redo');
+  await wait(async()=>await loaded()&&(await readStatus()).document.name==='JS Search','search edit preview');
+  const goodSource=await text();
+
+  // Actual save/open persistence, including raw code that uses expressions.
   const saved=path.join(root,path.dirname(files.control),'roundtrip.spell.js');
   const originalSave=dialog.showSaveDialog,originalOpen=dialog.showOpenDialog;
   try{
     let savePrompts=0;
     dialog.showSaveDialog=async()=>{savePrompts++;return{canceled:false,filePath:saved};};
     dialog.showOpenDialog=async()=>({canceled:false,filePaths:[saved]});
-    await evaluate(`{const input=document.getElementById('card-name');input.focus();input.dispatchEvent(new KeyboardEvent('keydown',{key:'s',ctrlKey:true,bubbles:true}));}`);
-    await wait(async()=>{try{return readVisualDocument(await readFile(saved,'utf8')).events[1].count===18;}catch{return false;}},'save JS while text input focused');
+    await shortcut('s','KeyS');
+    await wait(async()=>{try{return await readFile(saved,'utf8')===goodSource;}catch{return false;}},'save exact JS while editing');
     assert.equal(savePrompts,1);
-    await click('new-document');await click('import-document');
-    await wait(async()=>JSON.parse(await readFile(path.join(root,files.control),'utf8')).document.events[1].count===18,'open restores saved document');
+    await click('new-document');await wait(async()=>(await text())!==goodSource,'new code document');
+    await click('import-document');await wait(async()=>(await text())===goodSource,'open exact saved source');
+    await wait(async()=>await loaded()&&(await readStatus()).document.name==='JS Search','opened source runs');
     const invalid=path.join(root,path.dirname(files.control),'invalid-legacy.json');await writeFile(invalid,'{"format":"invalid"}');
-    dialog.showOpenDialog=async()=>({canceled:false,filePaths:[invalid]});
-    await click('import-document');await wait(async()=>String(await evaluate('document.getElementById("notice-text").textContent')).includes('打开失败'),'invalid import reports error');
-    assert.equal(JSON.parse(await readFile(path.join(root,files.control),'utf8')).document.events[1].count,18);
+    dialog.showOpenDialog=async()=>({canceled:false,filePaths:[invalid]});await click('import-document');
+    await wait(async()=>String(await evaluate('document.getElementById("notice-text").textContent')).includes('打开失败'),'invalid legacy import reports error');
+    assert.equal(await text(),goodSource);
     dialog.showOpenDialog=async()=>({canceled:true,filePaths:[]});await click('dismiss-notice');await click('import-document');
-    await pause(200);assert.equal(await evaluate('document.getElementById("notice").hidden'),true);
+    await pause(200);assert.equal(await text(),goodSource);
+    // A delayed save belongs to its original document even after New was used.
+    let releaseSave;const late=path.join(root,path.dirname(files.control),'late-save.spell.js');
+    dialog.showSaveDialog=()=>new Promise(resolve=>{releaseSave=resolve;});
+    await click('export-document');await wait(async()=>!!releaseSave,'delayed save is pending');
+    await click('new-document');await wait(async()=>(await text())!==goodSource,'new file while old save is pending');
+    releaseSave({canceled:false,filePath:late});
+    await wait(async()=>{try{return await readFile(late,'utf8')===goodSource;}catch{return false;}},'old source saved to its own file');
+    await pause(200);assert.equal(await evaluate('document.getElementById("file-name").textContent'),'untitled.spell.js','late save cannot claim the new document');
+    assert.equal(await evaluate('document.getElementById("file-dirty").hidden'),false);
+    dialog.showOpenDialog=async()=>({canceled:false,filePaths:[saved]});await click('import-document');
+    await wait(async()=>(await text())===goodSource&&await loaded()&&(await readStatus()).document.name==='JS Search','return to saved test source');
   }finally{dialog.showSaveDialog=originalSave;dialog.showOpenDialog=originalOpen;}
-  await click('source-tab');
-  const originalSource=await evaluate('document.getElementById("source-code").value');
-  const empty={...readVisualDocument(originalSource),name:'JS Live Test',events:[]};
-  const custom=generateSpellSource(empty).replace('timeline.update();',`if (frame % 12 === 0) {
-        context.boss.x = 60;
-        context.bullets.emit({x:60,y:96,type:0,color:6,pattern:3,count:12,rows:1,speed:2,angle:frame / 60});
-      }
-      timeline.update();`);
-  let previous=(await readStatus()).documentRevision;
-  await change('#source-code',custom,'input');
-  await wait(async()=>{const s=await readStatus();return s.documentRevision>previous&&!s.loading&&s.document?.name==='JS Live Test';},'handwritten JS loads');
-  await click('play');
-  await wait(async()=>{const s=await readStatus();return s.documentRevision>previous&&!s.seeking&&s.document?.name==='JS Live Test'&&s.bullets>0;},'handwritten JS emits actual native bullets');
-  assert.equal((await readStatus()).document.events.length,0,'the tested bullets come from handwritten JS, not visual events');
-  // A visual edit must retain the user's update body byte for byte.
-  await change('#card-name','JS Preserved');
-  await wait(async()=>String(await evaluate('document.getElementById("source-code").value')).includes('JS Preserved'),'visual edit regenerates JS metadata');
-  assert.ok((await evaluate('document.getElementById("source-code").value')).includes('context.boss.x = 60;'));
-  await wait(async()=>{const s=await readStatus();return s.document?.name==='JS Preserved'&&!s.loading&&!s.seeking;},'visual and manual JS reload together');
-  const goodSource=await evaluate('document.getElementById("source-code").value'),goodRevision=(await readStatus()).documentRevision;
-  const broken='export const spellCard = ;';
-  await change('#source-code',broken,'input');
-  await wait(async()=>{const s=await readStatus();return s.requestedDocumentRevision>goodRevision&&!!s.error;},'native syntax error returned');
-  assert.equal((await readStatus()).documentRevision,goodRevision,'syntax errors keep the last working native scene');
-  await wait(async()=>String(await evaluate('document.getElementById("source-error").textContent')).length>0,'inline source diagnostic');
-  assert.equal(await evaluate('document.getElementById("source-code").value'),broken);
-  await wait(async()=>(await evaluate('window.spellCardEditor.loadDraft()')).source===broken,'invalid JS draft is preserved');
-  await change('#source-code',goodSource,'input');
-  await wait(async()=>{const s=await readStatus();return s.documentRevision>goodRevision&&!s.loading&&!s.error&&!s.seeking;},'editing source fixes syntax error without restarting editor');
-  // Expressions inside metadata deliberately opt out of visual regeneration.
-  previous=(await readStatus()).documentRevision;
-  const pure=goodSource.replace('// @spellcard-editor:begin','// plain JS').replace('// @spellcard-editor:end','// end plain JS');
+
+  // Diagnostics have real native file/line positions and never replace text.
+  const goodRevision=(await readStatus()).documentRevision;
+  const broken='// incomplete JS\nconst unfinished = 1;\nexport const spellCard = ;';
+  await setText(broken);
+  await wait(async()=>{const s=await readStatus();return s.requestedDocumentRevision>goodRevision&&!!s.error;},'native syntax error');
+  assert.equal((await readStatus()).documentRevision,goodRevision,'keep the last working native scene');
+  await wait(async()=>String(await evaluate('document.getElementById("source-error").textContent')).includes('.js:3'),'native source position');
+  await wait(async()=>evaluate('!!document.querySelector(".cm-lintRange-error")'),'diagnostic underlined in CodeMirror');
+  await click('error-goto');
+  assert.equal(await evaluate('globalThis.__checkCodeView.state.doc.lineAt(globalThis.__checkCodeView.state.selection.main.head).number'),3);
+  assert.equal(await text(),broken);
+  await wait(async()=>(await evaluate('window.spellCardEditor.loadDraft()')).source===broken,'invalid JS draft retained');
+  await setText(goodSource);await wait(async()=>await loaded()&&(await readStatus()).documentRevision>goodRevision,'correction recovers');
+
+  // Automatic mode can be suspended; Ctrl+Enter still applies the current file.
+  revision=(await readStatus()).documentRevision;
   await click('auto-preview');
-  await change('#source-code',pure,'input');
-  await pause(600);assert.equal((await readStatus()).documentRevision,previous,'automatic preview can be suspended while editing');
-  await evaluate(`document.getElementById('source-code').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',ctrlKey:true,bubbles:true}))`);
-  await wait(async()=>{const s=await readStatus();return s.documentRevision>previous&&!s.loading&&!s.seeking&&!s.error;},'source-only ES module runs');
-  assert.equal(await evaluate('document.getElementById("add-event").disabled'),true,'source-only module cannot be overwritten by visual edits');
-  await change('#seek','180','input');await wait(async()=>{const s=await readStatus();return s.frame===180&&!s.seeking&&!s.playing;},'seek handwritten logic to a stable inspection frame');
-  await evaluate(`{const input=document.getElementById('source-code');input.focus();const at=input.value.indexOf('    update()');input.setSelectionRange(at,at);input.scrollTop=32*parseFloat(getComputedStyle(input).lineHeight);}`);
-  await pause(200);
-  await writeFile(path.join(output,'desktop-js.png'),(await win.webContents.capturePage()).toPNG());
+  const manual=goodSource.replace('JS Search','JS Manual');await setText(manual);
+  await pause(650);assert.equal((await readStatus()).documentRevision,revision);
+  await shortcut('Enter','Enter');
+  await wait(async()=>await loaded()&&(await readStatus()).documentRevision>revision&&(await readStatus()).document.name==='JS Manual','manual Ctrl+Enter');
+  await pause(200);assert.equal((await readStatus()).documentRevision,revision+1,'one shortcut submits exactly one source revision');
+  await change('#seek','180','input');await wait(async()=>{const s=await readStatus();return s.frame===180&&!s.seeking&&!s.playing;},'stable code inspection frame');
+  assert.equal(await text(),manual,'all preview controls leave the source untouched');
+
+  // Focused native input and resize continue to use the full game renderer.
+  const playerX=(await readStatus()).player.x;
+  await click('play');await wait(async()=>(await readStatus()).playing,'resume for input');
+  await evaluate(`{const canvas=document.getElementById('native-frame');canvas.focus();canvas.dispatchEvent(new KeyboardEvent('keydown',{code:'ArrowLeft',bubbles:true}));}`);
+  await wait(async()=>(await readStatus()).player.x<playerX-8,'native player input');
+  await evaluate(`document.getElementById('native-frame').dispatchEvent(new KeyboardEvent('keyup',{code:'ArrowLeft',ctrlKey:true,bubbles:true}))`);
+  await wait(async()=>(await control()).input===0,'Ctrl during key release cannot latch movement');
+  await evaluate(`document.getElementById('native-frame').dispatchEvent(new KeyboardEvent('keydown',{code:'KeyZ',bubbles:true}))`);
+  await wait(async()=>((await control()).input&16)!==0,'held fire reaches native engine');
+  await evaluate('document.getElementById("native-frame").blur()');
+  await wait(async()=>(await control()).input===0,'blur releases held input');
+  await click('play');await wait(async()=>!(await readStatus()).playing,'pause after input');
+  assert.equal(await evaluate(`(()=>{const button=document.getElementById('save-source');button.focus();const event=new KeyboardEvent('keydown',{key:' ',code:'Space',bubbles:true,cancelable:true});button.dispatchEvent(event);return event.defaultPrevented;})()`),false,'Space must keep focused button behavior');
+  await change('#seek','180','input');await wait(async()=>{const s=await readStatus();return s.frame===180&&!s.seeking;},'restore inspection frame');
+  const before=JSON.parse(await readFile(path.join(root,files.bounds),'utf8'));win.setSize(1320,880);
+  await wait(async()=>JSON.parse(await readFile(path.join(root,files.bounds),'utf8')).width!==before.width,'resize native viewport');
+  const after=JSON.parse(await readFile(path.join(root,files.bounds),'utf8'));
+  assert.ok(after.width>0&&after.height>0&&Math.abs(after.width/after.height-4/3)<.02);
+  const oldSplit=await evaluate('document.getElementById("pane-divider").getAttribute("aria-valuenow")');
+  await evaluate(`document.getElementById('pane-divider').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowLeft',bubbles:true}))`);
+  assert.notEqual(await evaluate('document.getElementById("pane-divider").getAttribute("aria-valuenow")'),oldSplit);
+  await evaluate(`document.getElementById('pane-divider').dispatchEvent(new KeyboardEvent('keydown',{key:'Home',bubbles:true}))`);
+  const output=path.join(root,'reports/spellcard-editor');await mkdir(output,{recursive:true});
+  await wait(async()=>Number(await evaluate('document.getElementById("native-frame").dataset.frame'))>0,'native pixels arrive');
+  const colored=await evaluate(`(()=>{const canvas=document.getElementById('native-frame'),pixels=canvas.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data;let count=0;
+    for(let at=0;at<pixels.length;at+=16){const high=Math.max(pixels[at],pixels[at+1],pixels[at+2]),low=Math.min(pixels[at],pixels[at+1],pixels[at+2]);if(high>110&&high-low>50)count++;}return count;})()`);
+  assert.ok(colored>1000,`Native canvas should contain game pixels: ${colored}`);
+  await evaluate('globalThis.__checkCodeView.focus()');win.focus();await pause(250);
+  const capture=await win.webContents.capturePage();assert.equal(capture.isEmpty(),false);
+  await writeFile(path.join(output,'desktop-js.png'),capture.toPNG());
   const oldChild=child(),oldFrame=Number(await evaluate('document.getElementById("native-frame").dataset.frame'));
-  oldChild.kill();await wait(async()=>!(await readStatus()).running,'owned preview exits without closing editor');
+  oldChild.kill();await wait(async()=>!(await readStatus()).running,'owned preview exits');
   await click('native-preview');
-  await wait(async()=>child()?.pid&&child().pid!==oldChild.pid&&!(await readStatus()).error,'native preview restarts');
-  await wait(async()=>Number(await evaluate('document.getElementById("native-frame").dataset.frame'))>oldFrame,'restarted preview supplies fresh pixels');
-  await wait(async()=>{const s=await readStatus();return s.documentRevision===s.requestedDocumentRevision&&!s.loading&&!s.seeking&&!s.error&&s.frame===180&&s.bullets>0;},'restarted preview restores the authored module and inspection frame');
+  await wait(async()=>child()?.pid&&child().pid!==oldChild.pid&&await loaded()&&(await readStatus()).frame===180&&(await readStatus()).bullets>0,'restart restores authored scene');
+  await wait(async()=>Number(await evaluate('document.getElementById("native-frame").dataset.frame'))>oldFrame,'restarted native pixels');
   await writeFile(path.join(output,'verification.json'),JSON.stringify({passed:true,preview:await readStatus(),resize:after,
-    verified:['visual editing generates JS','live native playback','pause','seeded seek','single step','coordinate/native switch','embedded resize','native RGBA canvas pixels','native player input','blur releases input','editor capture','JS save/open roundtrip with OS picker stub','invalid/cancelled import preserves document','handwritten JS creates native bullets','visual edits preserve manual functions','syntax error retains scene and source','source-only ES module','automatic preview toggle and manual Ctrl+Enter','native process exit and authored scene restart']},null,2));
+    verified:['source-only UI without event authoring','CodeMirror syntax and line numbers','JS closures and metadata expressions','automatic native reload','draft preservation','pause','seeded seek','single step','find/replace','undo/redo and code folding','JS save/open roundtrip','invalid/cancelled import preserves code','late save preserves new document ownership','native diagnostics and goto line','syntax error retains scene and draft','automatic preview toggle and single Ctrl+Enter dispatch','focused native input and modified key release','blur releases keys','Space preserves button keyboard behavior','adjustable split and embedded resize','native RGBA pixels','source untouched by preview controls','native process exit and authored scene restart']},null,2));
 }

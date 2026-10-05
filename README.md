@@ -54,9 +54,9 @@ node tools/import-rushboss-dialogue.mjs D:\c++\TouhouRushBoss-main
 
 两个 Demo 共用 thlib 的 `TouhouGameplayCompositor`：根据原作回调顺序交替合成背景与前景，符卡开场双圈参与背景扭曲，敌弹主体在背景之后绘制，符卡名在最终界面合成之后绘制。接入与裁剪规则见 [公共图层合成](docs/touhou-rendering.md)，源码依据见 [图层审计](docs/TOUHOU_RENDER_SOURCE_AUDIT.md)。
 
-## 可视化编辑符卡
+## JavaScript 符卡预览
 
-运行 `start-spellcard-editor.cmd` 打开独立桌面编辑器。可视化编排弹幕、激光、Boss 移动、聚能、音效与消弹并生成 `.spell.js`，也可直接修改 JS 函数、循环和 thlib 调用。源码修改后自动加载到真实引擎预览，支持暂停、逐帧和跳转；保存的 ES 模块可直接导入游戏。首次启动需要安装编辑器自己的桌面依赖。结构、使用与范围见 [SpellCardEditor](docs/spellcard-editor.md)。
+运行 `start-spellcard-editor.cmd` 打开独立桌面 JS 符卡工具。在代码区编写普通 `.spell.js`，通过内嵌 TS-STG 引擎实时预览；支持语法高亮、查找替换、错误定位，以及暂停、逐帧和按固定种子跳转。源码是唯一编辑对象，工具不生成或回写事件图。保存的 ES 模块可直接导入游戏。首次启动需要安装编辑器自己的桌面依赖。结构、使用与范围见 [SpellCardEditor](docs/spellcard-editor.md)。
 
 ## 依赖 thlib 制作自己的游戏
 

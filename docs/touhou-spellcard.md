@@ -40,4 +40,4 @@ timeline.stop();
 
 校验拒绝未知版本/字段/事件、非法数值、重复 ID、越界帧、过量发射。限制为 36,000 帧、256 事件、单次 2,048 发、单帧总计 8,192 发；同时存活上限仍由使用方弹幕池配置决定。
 
-可选的 SpellCardEditor 是独立开发工具，生成用户可继续编辑的 `.spell.js` 模块，并在原生引擎内实时预览。模块导出 `spellCard` 元数据与 `createSpell(context)`，默认使用本页的公共时间轴；手写循环、函数和额外发射逻辑与可视化事件可并存。使用方直接导入生成的 JavaScript，不需要 Node、Electron 或编辑器代码。编辑器不包含在默认 SDK 中；旧 JSON 数据入口继续保留。
+可选的 SpellCardEditor 是独立的 JS 源码编辑与原生预览工具，已移除事件编排和可视化回写。模块导出 `spellCard` 元数据与 `createSpell(context)`；新建模板直接编写固定帧 JS 发弹逻辑，使用方也可以主动组合本页的公共时间轴。直接导入保存的 JavaScript 不需要 Node、Electron 或编辑器代码。编辑器不包含在默认 SDK 中；本页的公共数据 API 与旧 JSON 导入继续保留，与编辑器界面无关。

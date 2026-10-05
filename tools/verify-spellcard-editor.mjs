@@ -24,6 +24,49 @@ assert.deepEqual(snapshots[0],snapshots[1],'QuickJS/V8 authored rehearsal snapsh
 assert.equal(snapshots[0].timeline.frame,360);assert.ok(snapshots[0].game.bullets.count>0);
 console.log('PASS: authored card + actual TouhouGame, 360 frames, exact QuickJS/V8 snapshot parity');
 
+// New files are executable JS, with no event arrangement or browser geometry
+// adapter. Run that exact default template through the real preview controller.
+writeFileSync(resolve(folder,'source-default.js'),generateSpellSource());
+writeFileSync(resolve(folder,'source-default-check.js'),`import {createControlledPreview} from '../../tools/spellcard-editor/controller.js';
+function check(condition,message){if(!condition)throw Error(message);}
+const paths={control:'build/spellcard-check/virtual-default-source.json',status:'spellcard-check/default-source-status.json'};
+const fallback=${JSON.stringify({...createTouhouSpellCard(),id:'unused-fallback',duration:20,events:[]})};
+let state={revision:1,documentRevision:1,document:fallback,modulePath:'./source-default.js',
+  commands:[{id:1,action:'seek',frame:90}],input:0};
+const host={...tsstg,readText:file=>file===paths.control?JSON.stringify(state):tsstg.readText(file)};
+const controller=createControlledPreview(host,paths,{loadModule:path=>import(path)});
+let seekCheck=0,firstSnapshot='';
+globalThis.__tsstg_game={
+  update(){controller.update();const result=controller.snapshot(),status=result.editor;if(status.error)throw Error(status.error);
+    if(status.documentRevision!==1||status.loading||status.seeking)return;
+    if(seekCheck===0&&status.frame===90){firstSnapshot=JSON.stringify(result.preview);seekCheck=1;
+      state={...state,revision:state.revision+1,commands:[{id:2,action:'seek',frame:0}]};
+    }else if(seekCheck===1&&status.frame===0&&status.commandId===2){seekCheck=2;
+      state={...state,revision:state.revision+1,commands:[{id:3,action:'seek',frame:90}]};
+    }else if(seekCheck===2&&status.frame===90&&status.commandId===3){
+      check(JSON.stringify(result.preview)===firstSnapshot,'Backward/forward source-only seek changed the seeded native scene');seekCheck=3;
+    }
+  },
+  render:()=>[],snapshot(){const result=controller.snapshot();
+    check(result.editor.documentRevision===1&&!result.editor.loading,'Default JS source never became active');
+    check(result.editor.document.id!==fallback.id&&result.editor.document.duration>fallback.duration,'Preview used fallback metadata instead of executed module exports');
+    check(result.editor.document.events.length===0,'The new-file template still depends on arranged events');
+    check(result.editor.frame===90&&result.editor.bullets>0,'The direct JS template did not emit native bullets during seek');
+    check(seekCheck===3,'Repeated source-only seek did not complete');
+    return result.preview;
+  },
+};
+`);
+const defaultSourceSnapshots=[];
+for(const backend of ['quickjs','v8']){
+  const output=resolve(folder,`${backend}-default-source.json`);
+  const result=spawnSync(resolve(root,'build/Release/ts-stg.exe'),['build/spellcard-check/source-default-check.js','--root',root,
+    '--backend',backend,'--headless','--frames','60','--snapshot',output],{cwd:root,encoding:'utf8',windowsHide:true,timeout:60000});
+  assert.equal(result.status,0,result.stderr||result.error?.message);defaultSourceSnapshots.push(JSON.parse(readFileSync(output,'utf8')));
+}
+assert.deepEqual(defaultSourceSnapshots[0],defaultSourceSnapshots[1],'QuickJS/V8 direct JS template snapshots');
+console.log('PASS: source-only new-file JS, native-evaluated metadata, seeded seek and real bullets on QuickJS/V8');
+
 // Exercise the desktop adapter against the actual native host and shared ANM
 // assets. Spies observe the audio boundary while still decoding/playing through
 // the host; only the editor control file is supplied from memory.
