@@ -9,6 +9,7 @@ let editRevision=0,submittedEdit=-1,documentRevision=0,commandId=0,reloadToken=0
 let frame=0,duration=1800,playing=false,playIntent=false,nativeLoading=false,sourcePending=true,invincible=false;
 let reloadTimer=null,noticeTimer=null,boundsFrame=0,statusBusy=false,updating=0,controlsPending=0;
 let operations=Promise.resolve(),errorLocation=null,errorText='',draftDirty=false,folded=false,lastStatus=null;
+let transportWarning=null;
 let restartPosition=false;
 let documentEpoch=0;
 let releaseInput=()=>{};
@@ -18,6 +19,14 @@ function enqueue(operation){const next=operations.catch(()=>{}).then(operation);
 function receipt(value){if(Number.isInteger(value?.documentRevision))documentRevision=value.documentRevision;if(Number.isInteger(value?.commandId))commandId=value.commandId;}
 function setPlaying(value){playing=!!value;$('play').textContent=playing?'Ⅱ 暂停':'▶ 播放';}
 function sourceState(text){$('source-preview-status').textContent=text;}
+function renderPreviewState(){
+  const status=lastStatus??{};
+  if(status.running===false){$('engine-dot').classList.remove('ready');$('preview-state').textContent='引擎已停止 · 重新加载可恢复';}
+  else if(errorText)$('preview-state').textContent='运行错误';
+  else if(transportWarning)$('preview-state').textContent='预览通信暂时中断，正在重试…';
+  else if(!status.error)$('preview-state').textContent=nativeLoading?'正在载入源码…':status.exited?'已返回编辑器 · 播放可重试':status.seeking?'正在按种子定位…':status.gamePaused?'游戏菜单':status.settling?'结算演出':status.completed?'播放完成':playing?(invincible?'无敌观察':'真实试玩'):'已暂停';
+}
+function setTransportWarning(value){transportWarning=value?String(value):null;renderPreviewState();}
 function renderFile(){const name=documentPath?.split(/[\\/]/).at(-1)??'untitled.spell.js';$('file-name').textContent=name;$('file-name').title=documentPath??name;$('file-dirty').hidden=sourceText===savedSource;}
 function renderTransport(){frame=clamp(frame,0,duration);$('current-frame').textContent=String(frame).padStart(5,'0');$('total-frames').textContent=String(duration).padStart(5,'0');$('time-readout').textContent=`${(frame/60).toFixed(2)} s`;
   $('seek').max=duration;$('seek').value=frame;$('seek').disabled=!bridge||!invincible;$('seek').title=invincible?'按固定种子重新模拟到指定帧':'真实试玩从头进行；开启无敌观察后可跳帧';const seconds=Math.floor(duration/60);$('duration-time').textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;}
@@ -27,7 +36,7 @@ function setError(value){
   const location=text.match(/spell-\d+\.js:(\d+)(?::(\d+))?/)??text.match(/<anonymous>:(\d+)(?::(\d+))?/);
   errorLocation=location?{line:Number(location[1]),column:Number(location[2]??1)}:null;$('error-goto').hidden=!errorLocation;
   editor?.diagnostics(errorLocation?[{...errorLocation,message:text.split('\n')[0]}]:[]);
-  if(text){sourceState('运行失败 · 源码与草稿已保留');$('preview-state').textContent='运行错误';}
+  if(text)sourceState('运行失败 · 源码与草稿已保留');renderPreviewState();
 }
 async function persist(){
   const source=sourceText;draftDirty=true;$('save-status').textContent='保存草稿…';
@@ -45,6 +54,9 @@ function changed(source){
 function updateEditorStatus(value){$('source-position').textContent=`Ln ${value.line}, Col ${value.column}`;$('undo').disabled=!value.undo;$('redo').disabled=!value.redo;}
 function applyStatus(status){
   if(!status)return;lastStatus=status;
+  // Transport is independent of source revisions and command acknowledgments.
+  // A stalled command must still show recovery status without replacing diagnostics.
+  setTransportWarning(status.transportWarning);
   const requested=status.requestedDocumentRevision??status.documentRevision??0;
   // Failed imports cannot acknowledge queued controls, but old runtime errors
   // must not undo a later play/restart command in the same loaded revision.
@@ -55,17 +67,16 @@ function applyStatus(status){
   if((status.documentRevision??0)<documentRevision||(status.commandId??0)<commandId)return;
   nativeLoading=!!status.loading;
   invincible=status.invincible===true;$('invincible').checked=invincible;
-  if(matches&&!nativeLoading&&!status.error){setError(null);sourceState('当前源码已在原生引擎中运行');sourcePending=false;}
+  if(matches&&!nativeLoading&&!status.error&&!status.waitingForControl&&!transportWarning){setError(null);sourceState('当前源码已在原生引擎中运行');sourcePending=false;}
   if(status.document&&!nativeLoading&&!status.error&&!restartPosition){const document=status.document;
     if(Number.isInteger(document.duration)&&document.duration>0)duration=document.duration;
     $('card-name').textContent=String(document.name??'未命名符卡');$('runtime-metadata').textContent=`种子 ${document.seed??'—'} · HP ${document.hp??'—'} · 60 FPS`;
   }
   if(Number.isFinite(status.frame)&&!restartPosition)frame=Math.round(status.frame);
-  if(!restartPosition){setPlaying(!!status.playing&&!status.completed);if(!nativeLoading&&!status.seeking)playIntent=playing;}
+  if(!restartPosition&&!status.waitingForControl){setPlaying(!!status.playing&&!status.completed);if(!nativeLoading&&!status.seeking)playIntent=playing;}
   renderTransport();$('object-count').textContent=`${Number(status.bullets??0)} 弹 · ${Number(status.lasers??0)} 激光`;
   $('engine-dot').classList.toggle('ready',!!status.running&&!status.error);
-  if(!status.error)$('preview-state').textContent=nativeLoading?'正在载入源码…':status.exited?'已返回编辑器 · 播放可重试':status.seeking?'正在按种子定位…':status.gamePaused?'游戏菜单':status.settling?'结算演出':status.completed?'播放完成':playing?(invincible?'无敌观察':'真实试玩'):'已暂停';
-  if(status.running===false){$('engine-dot').classList.remove('ready');$('preview-state').textContent='引擎已停止 · 重新加载可恢复';}
+  renderPreviewState();
 }
 async function reload(){
   clearTimeout(reloadTimer);reloadTimer=null;
@@ -101,7 +112,7 @@ async function control(command){
 }
 async function pollStatus(){if(!bridge||statusBusy||updating||controlsPending)return;statusBusy=true;const token=reloadToken,command=controlToken,edit=editRevision;
   try{const status=await bridge.preview.status();if(token===reloadToken&&command===controlToken)applyStatus(status);}
-  catch(error){if(token===reloadToken&&command===controlToken&&edit===editRevision)setError(error);}finally{statusBusy=false;}}
+  catch(error){if(token===reloadToken&&command===controlToken&&edit===editRevision)setTransportWarning(error);}finally{statusBusy=false;}}
 function fitPreview(){const stage=document.querySelector('.canvas-stage'),style=getComputedStyle(stage),host=$('native-preview-host');
   const width=stage.clientWidth-parseFloat(style.paddingLeft)-parseFloat(style.paddingRight)-2,height=stage.clientHeight-parseFloat(style.paddingTop)-parseFloat(style.paddingBottom)-2;
   const fitted=Math.max(2,Math.min(width,height*4/3));host.style.width=`${fitted+2}px`;host.style.height=`${fitted*3/4+2}px`;}

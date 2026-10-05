@@ -56,6 +56,7 @@ CodeMirror 6 随工具在本地构建，提供 JavaScript 语法高亮、行号�
 
 - 语法或模块构造失败：保留上一份有效场景，暂停并报告错误。
 - 运行中出错：暂停在出错处；修正源码后重载。
+- 控制通信短暂中断：停在当前帧并自动重试，恢复后保留原运行器继续；持续中断时显示独立提示，不标记源码错误，也不清除已有源码诊断。
 - 原生预览进程退出：保留源码与最后画面，再次运行可重建预览。
 
 源码具有原生脚本后端提供的能力，属于用户项目代码。预览执行普通 JS；编辑器不承诺静态证明脚本行为，也不将任意代码转成事件图。自动预览会重新执行模块初始化逻辑。
@@ -163,9 +164,12 @@ Electron 页面关闭 Node 集成，启用上下文隔离与沙箱。页面和�
 npm --prefix tools/spellcard-editor run build
 node --test tests/spellcard-editor-*.test.js
 node tools/verify-spellcard-editor.mjs
+node tools/verify-spellcard-editor-transport.mjs
 tools/spellcard-editor/node_modules/electron/dist/electron.exe tools/spellcard-editor --self-test
 ```
 
-验证覆盖源码模板、文件服务边界、原生控制、QuickJS/V8 模块加载、手写 JS 发弹、确定性跳转及错误恢复。桌面验证使用真实代码组件、文件 IPC 与原生画面，只有系统文件选择器的返回值被替换；验证源码编辑、保存/打开、自动/手动预览、播放、暂停、逐帧、键盘输入及进程重建。
+验证覆盖源码模板、文件服务边界、原生控制、QuickJS/V8 模块加载、手写 JS 发弹、确定性跳转及错误恢复。桌面验证使用真实代码组件、文件 IPC 与原生画面，系统文件选择器的返回值使用测试文件；验证源码编辑、保存/打开、自动/手动预览、播放、暂停、逐帧、键盘输入及进程重建。它还会短暂破坏自身测试会话的控制数据再恢复，检查停帧、独立通信提示与原运行器续播，以及已有源码诊断不被通信状态覆盖。
 
 界面截图与验证结果写入 `reports/spellcard-editor/`，只截取编辑器自己的页面。测试结束后关闭测试窗口及其预览进程。
+
+通信压力验证在独立会话中同时执行 Node 文件替换与 QuickJS/V8 原生读取，检查短暂读取冲突不会重建运行器、丢失或重复执行命令。它不注入故障，实际冲突次数取决于 Windows 调度；结果写入 `reports/spellcard-editor-transport/`。

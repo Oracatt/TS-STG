@@ -47,8 +47,10 @@ async function atomic(file,text){
 }
 async function publish(){await atomic(path.join(root,files.control),JSON.stringify(state));}
 async function readStatus(){
-  try{lastStatus=JSON.parse(await readFile(path.join(root,'userdata',files.status),'utf8'));}catch{}
-  return {...lastStatus,...(nativeError?{error:nativeError}:{}),running:!!child};
+  let transportWarning=null;
+  try{lastStatus=JSON.parse(await readFile(path.join(root,'userdata',files.status),'utf8'));}
+  catch{if(child&&Number.isInteger(lastStatus.revision))transportWarning='预览状态暂时无法读取，正在重试。';}
+  return {...lastStatus,...(transportWarning?{transportWarning}:{}),...(nativeError?{error:nativeError}:{}),running:!!child};
 }
 async function queue(command){
   const status=await readStatus();state.commands=state.commands.filter(item=>item.id>(status.commandId??0));

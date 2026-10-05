@@ -34,12 +34,13 @@ function fixture({duration=600,loadModule,modulePath='./initial.js',invincible=t
       preview.reset(source,options);return preview;
     }});
   function readNext(){const before=reads;for(let i=0;i<7&&reads===before;i++)controller.update(123);assert.ok(reads>before);}
-  return{controller,preview,calls,files,paths,readNext,
+  return{controller,preview,calls,files,paths,host,readNext,
     async ready(){controller.update();await flushImports();controller.update();},
     commands(...commands){for(const command of commands)if(command.action==='invincible')state.invincible=command.value;state={...state,revision:state.revision+1,commands:[...state.commands,...commands.map(command=>({...command,id:++id}))]};},
     replace(source){state={...state,revision:state.revision+1,documentRevision:state.documentRevision+1,document:source,commands:[]};},
     module(path,source=state.document){state={...state,revision:state.revision+1,documentRevision:state.documentRevision+1,document:source,modulePath:path,commands:[]};},
     revise(){state={...state,revision:state.revision+1};},
+    input(mask){state={...state,revision:state.revision+1,input:mask};},
     pauseAt(frame){pauseAt=frame;},exit(){preview.exited=true;runner.alive=false;},failAt(frame){failAt=frame;},finishAt(frame){finishAt=frame;},tail(frames){tail=frames;},
   };
 }
@@ -257,4 +258,90 @@ test('leaving the native menu keeps the editor session available for retry',asyn
   assert.equal(f.controller.snapshot().editor.exited,true);assert.equal(f.controller.snapshot().editor.playing,false);
   f.commands({action:'play'});f.controller.update();
   assert.equal(f.controller.snapshot().editor.exited,false);assert.equal(f.preview.runner.frame,1);
+});
+
+test('a contended control read freezes one frame, retains the runner and resumes with fresh input',async()=>{
+  const f=fixture();await f.ready();f.commands({action:'play'});f.input(17);f.controller.update();
+  const runner=f.preview.runner,frame=runner.frame,calls=f.calls.length,read=f.host.readText;
+  f.host.readText=()=>{throw Error('Cannot read: control.json');};
+  f.input(0);assert.doesNotThrow(()=>f.controller.update());
+  assert.equal(runner.frame,frame);assert.equal(f.calls.length,calls,'stale held input is never simulated');
+  let status=f.controller.snapshot().editor;
+  assert.equal(status.waitingForControl,true);assert.equal(status.playing,true);
+  assert.equal(status.error,null);assert.equal(status.transportWarning,null,'one missed read does not flash an error');
+  f.host.readText=read;f.controller.update();status=f.controller.snapshot().editor;
+  assert.equal(f.preview.runner,runner);assert.equal(runner.frame,frame+1);
+  assert.equal(status.waitingForControl,false);assert.equal(status.error,null);
+  assert.deepEqual(f.calls.filter(call=>call[0]==='update').at(-1),['update',frame,0,false]);
+});
+
+test('missing startup control retries without allocating a scene or aborting the native host',async()=>{
+  const f=fixture(),read=f.host.readText;
+  f.host.readText=()=>{throw Error('Cannot read: initial control.json');};
+  f.commands({action:'play'});
+  for(let i=0;i<40;i++)assert.doesNotThrow(()=>f.controller.update());
+  let status=f.controller.snapshot().editor;
+  assert.equal(status.error,null);assert.equal(status.documentRevision,-1);
+  assert.match(status.transportWarning,/Cannot read/);assert.equal(f.calls.length,0);
+  assert.equal(f.controller.snapshot().preview,null);
+  f.host.readText=read;await f.ready();status=f.controller.snapshot().editor;
+  assert.equal(status.transportWarning,null);assert.equal(status.error,null);
+  assert.equal(status.documentRevision,0);assert.equal(status.commandId,1);assert.equal(status.frame,1);
+});
+
+test('extended transport failure mutes and holds playback without repeating or losing queued commands',async()=>{
+  const f=fixture();await f.ready();f.commands({action:'step'},{action:'play'});f.controller.update();
+  const frame=f.preview.runner.frame,runner=f.preview.runner,read=f.host.readText;
+  f.host.readText=()=>{throw Error('Cannot read: control.json');};
+  f.commands({action:'step'},{action:'step'},{action:'pause'});
+  for(let i=0;i<45;i++)f.controller.update();
+  let status=f.controller.snapshot().editor;
+  assert.equal(status.commandId,2);assert.equal(status.frame,frame);assert.equal(status.playing,true);
+  assert.match(status.transportWarning,/Cannot read/);assert.equal(status.error,null);assert.equal(f.preview.silent,true);
+  f.host.readText=read;f.controller.update();status=f.controller.snapshot().editor;
+  assert.equal(f.preview.runner,runner);assert.equal(status.frame,frame+2);assert.equal(status.commandId,5);
+  assert.equal(status.playing,false);assert.equal(status.transportWarning,null);
+  for(let i=0;i<5;i++)f.controller.update();assert.equal(f.preview.runner.frame,frame+2);
+  f.commands({action:'play'});f.controller.update();assert.equal(f.preview.silent,false);
+});
+
+test('partial or invalid control messages preserve an in-progress seek until the next complete message',async()=>{
+  const f=fixture();await f.ready();f.commands({action:'seek',frame:75});f.controller.update();
+  const runner=f.preview.runner,read=f.host.readText;
+  assert.equal(runner.frame,30);
+  for(const text of ['', '{', 'null', '{"revision":0,"documentRevision":0,"commands":{}}']){
+    f.host.readText=()=>text;f.controller.update();
+    assert.equal(runner.frame,30);assert.equal(f.controller.snapshot().editor.seeking,true);
+    assert.equal(f.controller.snapshot().editor.error,null);
+  }
+  f.host.readText=read;f.controller.update();f.controller.update();
+  assert.equal(f.preview.runner,runner);assert.equal(runner.frame,75);
+  assert.equal(f.controller.snapshot().editor.seeking,false);assert.equal(f.controller.snapshot().editor.transportWarning,null);
+});
+
+test('status write contention cannot abort the host, stop play or reapply acknowledged commands',async()=>{
+  const f=fixture();await f.ready();const write=f.host.writeText,runner=f.preview.runner;
+  f.host.writeText=()=>{throw Error('Cannot write: status.json');};
+  f.commands({action:'step'},{action:'play'});
+  for(let i=0;i<18;i++)assert.doesNotThrow(()=>f.controller.update());
+  let status=f.controller.snapshot().editor;
+  assert.equal(status.frame,19);assert.equal(status.commandId,2);assert.equal(status.playing,true);
+  assert.equal(status.error,null);assert.match(status.transportWarning,/Cannot write/);assert.equal(f.preview.runner,runner);
+  f.host.writeText=write;for(let i=0;i<12;i++)f.controller.update();
+  status=f.controller.snapshot().editor;
+  assert.equal(status.frame,31);assert.equal(status.commandId,2);assert.equal(status.transportWarning,null);
+  const report=f.files.get(`userdata/${f.paths.status}`);
+  assert.equal(report.commandId,2);assert.equal(report.error,null);assert.equal(report.transportWarning,null);
+});
+
+test('transport recovery never clears a genuine source error or starts its failed runner',async()=>{
+  const f=fixture();await f.ready();f.commands({action:'play'});f.controller.update();f.failAt(1);f.controller.update();
+  const original=f.controller.snapshot().editor.error,read=f.host.readText;
+  assert.match(original,/fixture update failure/);
+  f.host.readText=()=>{throw Error('Cannot read: control.json');};
+  for(let i=0;i<40;i++)f.controller.update();
+  f.host.readText=read;f.controller.update();
+  const status=f.controller.snapshot().editor;
+  assert.equal(status.error,original);assert.equal(status.transportWarning,null);
+  assert.equal(status.frame,1);assert.equal(status.playing,false);assert.equal(f.preview.silent,true);
 });

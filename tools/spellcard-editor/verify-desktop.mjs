@@ -15,6 +15,16 @@ export async function verifyDesktop({win,root,files,readStatus,dialog,child,init
   const shortcut=(key,code)=>evaluate(`{const view=globalThis.__checkCodeView;view.focus();view.contentDOM.dispatchEvent(new KeyboardEvent('keydown',{key:${JSON.stringify(key)},code:${JSON.stringify(code)},ctrlKey:true,bubbles:true,cancelable:true}));}`);
   const loaded=async()=>{const s=await readStatus();return s.documentRevision>=1&&s.documentRevision===s.requestedDocumentRevision&&!s.loading&&!s.seeking&&!s.error;};
   const control=()=>readFile(path.join(root,files.control),'utf8').then(JSON.parse);
+  async function interruptControl(check){
+    // Corrupt only this disposable self-test session's transport, never user files.
+    const file=path.join(root,files.control),saved=await readFile(file,'utf8');
+    try{
+      await writeFile(file,'{');
+      await wait(async()=>{const s=await readStatus();return s.waitingForControl&&!!s.transportWarning;},'recoverable control interruption');
+      await check();
+    }finally{await writeFile(file,saved);}
+    await wait(async()=>{const s=await readStatus();return !s.waitingForControl&&!s.transportWarning;},'control communication recovers');
+  }
   win.show();
   await wait(async()=>evaluate('!!document.querySelector(".cm-editor")'),'CodeMirror is ready');
   await evaluate(`(async()=>{globalThis.__checkCodeView=(await import('/editor/dist/code-editor.bundle.js')).getEditorView(document.querySelector('.cm-editor'));})()`);
@@ -89,6 +99,31 @@ export function createSpell(context) {
   assert.equal(await text(),custom,'metadata evaluation must not rewrite source');
   await click('fold-source');assert.ok(await evaluate('document.querySelectorAll(".cm-foldPlaceholder").length')>0);
   await click('fold-source');assert.equal(await evaluate('document.querySelectorAll(".cm-foldPlaceholder").length'),0);
+
+  // A second construction fails deliberately: recovery must keep the same JS
+  // closure, not merely restart the process or rebuild to an equivalent frame.
+  const transportSource=custom.replace('export function createSpell(context) {',
+    "let constructions = 0;\nexport function createSpell(context) {\n  if (++constructions > 1) throw Error('Transport recovery rebuilt the runner');");
+  revision=(await readStatus()).documentRevision;await setText(transportSource);
+  await wait(async()=>await loaded()&&(await readStatus()).documentRevision>revision,'transport test source loads');
+  await click('play');await wait(async()=>(await readStatus()).frame>=24,'transport test is playing');
+  const transportProcess=child().pid,transportRevision=(await readStatus()).documentRevision;
+  let frozenFrame;
+  await interruptControl(async()=>{
+    const frozen=await readStatus();frozenFrame=frozen.frame;
+    assert.equal(frozen.error,null);assert.equal(frozen.playing,true,'communication failure preserves play intent');
+    await wait(async()=>String(await evaluate('document.getElementById("preview-state").textContent')).includes('通信暂时中断'),'separate communication message');
+    await pause(250);assert.equal((await readStatus()).frame,frozenFrame,'simulation freezes while control is unreadable');
+    assert.equal(await evaluate('document.getElementById("source-errors").hidden'),true);
+    assert.equal(await evaluate('!!document.querySelector(".cm-lintRange-error")'),false);
+    assert.equal(await text(),transportSource);
+  });
+  await wait(async()=>{const s=await readStatus();return s.playing&&!s.error&&s.frame>frozenFrame+12;},'same runner resumes from the frozen frame');
+  assert.equal(child().pid,transportProcess);assert.equal((await readStatus()).documentRevision,transportRevision);
+  await wait(async()=>!String(await evaluate('document.getElementById("preview-state").textContent')).includes('通信暂时中断'),'communication message clears automatically');
+  await click('play');await wait(async()=>!(await readStatus()).playing,'pause recovered runner');
+  await setText(custom);await wait(async()=>await loaded()&&(await readStatus()).documentRevision>transportRevision,'restore ordinary code test');
+
   await click('play');await wait(async()=>(await readStatus()).frame>=100,'play native frames');
   await click('play');await wait(async()=>!(await readStatus()).playing,'pause native frames');
   const paused=(await readStatus()).frame;await pause(250);assert.equal((await readStatus()).frame,paused);
@@ -172,6 +207,13 @@ export function createSpell(context) {
   assert.equal((await readStatus()).documentRevision,goodRevision,'keep the last working native scene');
   await wait(async()=>String(await evaluate('document.getElementById("source-error").textContent')).includes('.js:3'),'native source position');
   await wait(async()=>evaluate('!!document.querySelector(".cm-lintRange-error")'),'diagnostic underlined in CodeMirror');
+  const diagnostic=await evaluate('document.getElementById("source-error").textContent');
+  await interruptControl(async()=>{
+    assert.equal(await evaluate('document.getElementById("source-error").textContent'),diagnostic);
+    assert.equal(await evaluate('!!document.querySelector(".cm-lintRange-error")'),true,'communication warnings must not clear source diagnostics');
+    assert.equal(await evaluate('document.getElementById("preview-state").textContent'),'运行错误');
+  });
+  assert.equal(await evaluate('document.getElementById("source-error").textContent'),diagnostic,'communication recovery does not acknowledge a failed import');
   await click('error-goto');
   assert.equal(await evaluate('globalThis.__checkCodeView.state.doc.lineAt(globalThis.__checkCodeView.state.selection.main.head).number'),3);
   assert.equal(await text(),broken);
@@ -225,5 +267,5 @@ export function createSpell(context) {
   await wait(async()=>child()?.pid&&child().pid!==oldChild.pid&&await loaded()&&(await readStatus()).frame===180&&(await readStatus()).bullets>0,'restart restores authored scene');
   await wait(async()=>Number(await evaluate('document.getElementById("native-frame").dataset.frame'))>oldFrame,'restarted native pixels');
   await writeFile(path.join(output,'verification.json'),JSON.stringify({passed:true,startupPath:initialDocument?.path??null,preview:await readStatus(),resize:after,
-    verified:['source-only UI without event authoring','six-field rehearsal metadata','CodeMirror syntax and line numbers','JS closures and metadata expressions','automatic native reload','old JS draft preserved without JSON migration','pause','seeded seek','single step','find/replace','undo/redo and code folding','JS save/open roundtrip and mjs import','unsupported/cancelled import preserves code','late save preserves new document ownership','native diagnostics and goto line','syntax error retains scene and draft','automatic preview toggle and single Ctrl+Enter dispatch','focused native input and modified key release','blur releases keys','Space preserves button keyboard behavior','adjustable split and embedded resize','native RGBA pixels','source untouched by preview controls','native process exit and authored scene restart']},null,2));
+    verified:['source-only UI without event authoring','six-field rehearsal metadata','CodeMirror syntax and line numbers','JS closures and metadata expressions','automatic native reload','old JS draft preserved without JSON migration','temporary control loss freezes and resumes the same runner','communication warning leaves source diagnostics intact','pause','seeded seek','single step','find/replace','undo/redo and code folding','JS save/open roundtrip and mjs import','unsupported/cancelled import preserves code','late save preserves new document ownership','native diagnostics and goto line','syntax error retains scene and draft','automatic preview toggle and single Ctrl+Enter dispatch','focused native input and modified key release','blur releases keys','Space preserves button keyboard behavior','adjustable split and embedded resize','native RGBA pixels','source untouched by preview controls','native process exit and authored scene restart']},null,2));
 }
