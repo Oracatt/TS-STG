@@ -1,10 +1,10 @@
-import {generateSpellSource,validateSpellSource} from './source.js';
+import {createSpellSource,validateSpellSource} from './source.js';
 import {createCodeEditor} from './dist/code-editor.bundle.js';
 
 const $=id=>document.getElementById(id),clamp=(value,min,max)=>Math.max(min,Math.min(max,value));
 const bridge=window.spellCardEditor?.desktop?window.spellCardEditor:null;
 const STORAGE='ts-stg.spellcard-editor.source.v2';
-let sourceText=generateSpellSource(),savedSource=null,documentPath=null,editor=null,initializing=true;
+let sourceText=createSpellSource(),savedSource=null,documentPath=null,editor=null,initializing=true;
 let editRevision=0,submittedEdit=-1,documentRevision=0,commandId=0,reloadToken=0,controlToken=0,seekToken=0;
 let frame=0,duration=1800,playing=false,playIntent=false,nativeLoading=false,sourcePending=true;
 let reloadTimer=null,noticeTimer=null,boundsFrame=0,statusBusy=false,updating=0,controlsPending=0;
@@ -125,9 +125,9 @@ async function saveDocument(saveAs=false){
 }
 
 $('dismiss-notice').addEventListener('click',()=>{$('notice').hidden=true;});
-$('new-document').addEventListener('click',()=>{replaceSource(generateSpellSource());editor.focus();});
+$('new-document').addEventListener('click',()=>{replaceSource(createSpellSource());editor.focus();});
 $('import-document').addEventListener('click',openDocument);
-$('import-file').addEventListener('change',async event=>{const file=event.target.files?.[0];event.target.value='';if(!file)return;try{if(file.size>1024*1024)throw Error('源码超过 1 MiB。');replaceSource(await file.text(),{path:file.name,saved:true});}catch(error){notice(`打开失败：${error.message}`);}});
+$('import-file').addEventListener('change',async event=>{const file=event.target.files?.[0];event.target.value='';if(!file)return;try{if(!/\.(?:js|mjs)$/i.test(file.name))throw Error('请选择 .js 或 .mjs 源码文件。');if(file.size>1024*1024)throw Error('源码超过 1 MiB。');replaceSource(await file.text(),{path:file.name,saved:true});}catch(error){notice(`打开失败：${error.message}`);}});
 $('save-source').addEventListener('click',()=>saveDocument(false));$('export-document').addEventListener('click',()=>saveDocument(true));
 for(const id of ['apply-source','native-preview'])$(id).addEventListener('click',reload);
 $('auto-preview').addEventListener('change',()=>{clearTimeout(reloadTimer);reloadTimer=null;if($('auto-preview').checked&&sourcePending)reload();else if(!$('auto-preview').checked)sourceState('自动运行已关闭 · Ctrl+Enter 运行');});

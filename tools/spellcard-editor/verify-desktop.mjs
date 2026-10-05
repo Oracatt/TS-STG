@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {readFile,writeFile,mkdir} from 'node:fs/promises';
+import {readFile,writeFile,mkdir,unlink} from 'node:fs/promises';
 import path from 'node:path';
 
 /** Isolated --self-test window: actual CodeMirror, IPC, files and native engine.
@@ -23,18 +23,33 @@ export async function verifyDesktop({win,root,files,readStatus,dialog,child}){
   assert.ok(await evaluate('document.querySelectorAll(".cm-lineNumbers .cm-gutterElement").length')>1,'code has visible line numbers');
   await wait(loaded,'initial module preview');
   await wait(async()=>JSON.parse(await readFile(path.join(root,files.bounds),'utf8')).visible,'embedded viewport');
-  assert.ok(child()?.pid);assert.equal((await readStatus()).document.events.length,0);
+  assert.ok(child()?.pid);assert.deepEqual(Object.keys((await readStatus()).document).sort(),['boss','duration','hp','id','name','seed']);
   assert.equal(await evaluate('window.spellCardEditor.desktop'),true);
   const initial=await text();
   assert.ok(initial.includes('function fireRing('));
   assert.ok(!initial.includes('@spellcard-editor:'));
 
+  // Only this self-test session's disposable draft directory is touched.
+  // A historical JSON draft is ignored, and old JS is read without migration.
+  const draftDirectory=path.dirname(path.join(root,'userdata',files.status));
+  const draftFile=path.join(draftDirectory,'draft.spell.js'),oldDraft=path.join(draftDirectory,'draft.json');
+  await unlink(draftFile).catch(error=>{if(error.code!=='ENOENT')throw error;});
+  const oldData='{"format":"ts-stg-spellcard","version":1,"events":[]}';
+  await writeFile(oldDraft,oldData);
+  assert.deepEqual(await evaluate('window.spellCardEditor.loadDraft()'),{});
+  assert.equal(await readFile(oldDraft,'utf8'),oldData,'old JSON files are not rewritten or migrated');
+  const oldSource=`// Existing user draft; keep these bytes unchanged.\r\nexport const spellCard = ${oldData};\r\n`;
+  await writeFile(draftFile,oldSource);
+  assert.equal((await evaluate('window.spellCardEditor.loadDraft()')).source,oldSource);
+  assert.equal(await readFile(draftFile,'utf8'),oldSource,'existing JS drafts remain raw source');
+  await unlink(oldDraft);
+
   // Test ordinary JS expressions and closures, with no visual event data.
   const custom=`// Ordinary JavaScript; no managed regions or editor event model.
 const title = 'JS Preview';
 export const spellCard = {
-  format: 'ts-stg-spellcard', version: 1, id: 'desktop-js', name: title,
-  duration: 60 * 30, hp: 3000, seed: 123, boss: {x: 60, y: 96}, events: [],
+  id: 'desktop-js', name: title,
+  duration: 60 * 30, hp: 3000, seed: 123, boss: {x: 60, y: 96},
 };
 
 export function createSpell(context) {
@@ -103,10 +118,16 @@ export function createSpell(context) {
     await click('new-document');await wait(async()=>(await text())!==goodSource,'new code document');
     await click('import-document');await wait(async()=>(await text())===goodSource,'open exact saved source');
     await wait(async()=>await loaded()&&(await readStatus()).document.name==='JS Search','opened source runs');
-    const invalid=path.join(root,path.dirname(files.control),'invalid-legacy.json');await writeFile(invalid,'{"format":"invalid"}');
-    dialog.showOpenDialog=async()=>({canceled:false,filePaths:[invalid]});await click('import-document');
-    await wait(async()=>String(await evaluate('document.getElementById("notice-text").textContent')).includes('打开失败'),'invalid legacy import reports error');
+    const moduleFile=path.join(root,path.dirname(files.control),'roundtrip.spell.mjs');await writeFile(moduleFile,goodSource);
+    dialog.showOpenDialog=async()=>({canceled:false,filePaths:[moduleFile]});await click('import-document');
+    await wait(async()=>await evaluate('document.getElementById("file-name").textContent')==='roundtrip.spell.mjs'&&await loaded(),'open an mjs source module');
     assert.equal(await text(),goodSource);
+    const openedName=await evaluate('document.getElementById("file-name").textContent');
+    const invalid=path.join(root,path.dirname(files.control),'unsupported.json');await writeFile(invalid,'{}');
+    dialog.showOpenDialog=async()=>({canceled:false,filePaths:[invalid]});await click('import-document');
+    await wait(async()=>String(await evaluate('document.getElementById("notice-text").textContent')).includes('只支持 JavaScript'),'unsupported file type is rejected');
+    assert.equal(await text(),goodSource);
+    assert.equal(await evaluate('document.getElementById("file-name").textContent'),openedName,'rejected file cannot change the open path');
     dialog.showOpenDialog=async()=>({canceled:true,filePaths:[]});await click('dismiss-notice');await click('import-document');
     await pause(200);assert.equal(await text(),goodSource);
     // A delayed save belongs to its original document even after New was used.
@@ -183,5 +204,5 @@ export function createSpell(context) {
   await wait(async()=>child()?.pid&&child().pid!==oldChild.pid&&await loaded()&&(await readStatus()).frame===180&&(await readStatus()).bullets>0,'restart restores authored scene');
   await wait(async()=>Number(await evaluate('document.getElementById("native-frame").dataset.frame'))>oldFrame,'restarted native pixels');
   await writeFile(path.join(output,'verification.json'),JSON.stringify({passed:true,preview:await readStatus(),resize:after,
-    verified:['source-only UI without event authoring','CodeMirror syntax and line numbers','JS closures and metadata expressions','automatic native reload','draft preservation','pause','seeded seek','single step','find/replace','undo/redo and code folding','JS save/open roundtrip','invalid/cancelled import preserves code','late save preserves new document ownership','native diagnostics and goto line','syntax error retains scene and draft','automatic preview toggle and single Ctrl+Enter dispatch','focused native input and modified key release','blur releases keys','Space preserves button keyboard behavior','adjustable split and embedded resize','native RGBA pixels','source untouched by preview controls','native process exit and authored scene restart']},null,2));
+    verified:['source-only UI without event authoring','six-field rehearsal metadata','CodeMirror syntax and line numbers','JS closures and metadata expressions','automatic native reload','old JS draft preserved without JSON migration','pause','seeded seek','single step','find/replace','undo/redo and code folding','JS save/open roundtrip and mjs import','unsupported/cancelled import preserves code','late save preserves new document ownership','native diagnostics and goto line','syntax error retains scene and draft','automatic preview toggle and single Ctrl+Enter dispatch','focused native input and modified key release','blur releases keys','Space preserves button keyboard behavior','adjustable split and embedded resize','native RGBA pixels','source untouched by preview controls','native process exit and authored scene restart']},null,2));
 }

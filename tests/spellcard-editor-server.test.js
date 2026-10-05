@@ -12,6 +12,7 @@ async function fixture(t){
     'tools/spellcard-editor/index.html':'<!doctype html><title>Editor</title>',
     'tools/spellcard-editor/editor.js':'export const editor = true;',
     'tools/spellcard-editor/source.js':'export const template = true;',
+    'tools/spellcard-editor/metadata.js':'export const metadata = true;',
     'tools/spellcard-editor/styles.css':'body { margin: 0 }',
     'tools/spellcard-editor/desktop.mjs':'PRIVATE DESKTOP',
     'tools/spellcard-editor/preload.cjs':'PRIVATE PRELOAD',
@@ -38,7 +39,7 @@ async function fixture(t){
 test('desktop renderer serves only exact UI files and its generated code editor bundle',async t=>{
   const f=await fixture(t);
   for(const [url,type,contents]of [['/','text/html','<title>Editor</title>'],['/editor/editor.js','text/javascript','editor = true'],
-    ['/editor/source.js','text/javascript','template = true'],['/editor/styles.css','text/css','margin: 0'],
+    ['/editor/source.js','text/javascript','template = true'],['/editor/metadata.js','text/javascript','metadata = true'],['/editor/styles.css','text/css','margin: 0'],
     ['/editor/dist/code-editor.bundle.js','text/javascript','codeMirror = true']]){
     const response=await f.request(url);assert.equal(response.status,200);assert.ok(response.headers['content-type'].startsWith(type));assert.ok(response.body.includes(contents));
     assert.equal(response.headers['x-content-type-options'],'nosniff');assert.equal(response.headers['cross-origin-resource-policy'],'same-origin');

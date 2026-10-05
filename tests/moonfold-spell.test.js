@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spellCard,createSpell} from '../examples/spellcard/moonfold.spell.js';
-import {validateTouhouSpellCard} from '../packages/thlib/src/touhou/spellcard.js';
+import {validateSpellMetadata} from '../tools/spellcard-editor/metadata.js';
 import {TouhouBossCharge} from '../packages/thlib/src/touhou/boss-presentation.js';
 import {TouhouRNG} from '../packages/thlib/src/touhou/math.js';
 import {touhouStyle} from '../packages/thlib/src/touhou/bullet-patterns.js';
@@ -36,9 +36,9 @@ function rehearsal(playerAt=()=>({x:-80,y:400})){
   };
 }
 
-test('Moonfold is a portable JS spell using public metadata, stock styles and fixed-frame completion',()=>{
-  assert.deepEqual(validateTouhouSpellCard(spellCard),spellCard);
-  assert.equal(spellCard.events.length,0,'the authored JS owns the pattern, not an editor arrangement');
+test('Moonfold is a portable JS spell using plain metadata, stock styles and fixed-frame completion',()=>{
+  assert.deepEqual(validateSpellMetadata(spellCard),spellCard);
+  assert.equal('events' in spellCard,false,'the authored JS owns the pattern');
   const preview=rehearsal().run(spellCard.duration);
   assert.equal(preview.runner.frame,spellCard.duration);assert.equal(preview.runner.alive,false);assert.equal(preview.runner.completed,true);
   const bullets=preview.events.filter(event=>event.kind==='bullet');

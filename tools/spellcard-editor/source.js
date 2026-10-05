@@ -1,3 +1,5 @@
+import {createSpellMetadata} from './metadata.js';
+
 const MAX_SOURCE_BYTES=1024*1024;
 
 /** Only bound the text transport. Incomplete JavaScript can still be saved;
@@ -14,12 +16,9 @@ export function validateSpellSource(source){
   return source;
 }
 
-/** No editor-owned source regions: the returned module belongs to the author.
- * With a document, the caller has already validated a legacy JSON import. */
-export function generateSpellSource(document){
-  if(document!==undefined)return legacySource(document);
-  const metadata={format:'ts-stg-spellcard',version:1,id:'new-spellcard',name:'新符卡',
-    duration:1800,hp:3000,seed:1,boss:{x:0,y:96},events:[]};
+/** Create a new JavaScript example. No document import or source rewriting. */
+export function createSpellSource(){
+  const metadata=createSpellMetadata();
   return validateSpellSource(`// A spell is ordinary JavaScript. Edit this module and apply it to preview.
 export const spellCard = ${JSON.stringify(metadata,null,2)};
 
@@ -50,33 +49,6 @@ export function createSpell(context) {
     },
     stop() { alive = false; },
     snapshot() { return {frame, alive, completed: completed(), documentId: spellCard.id}; },
-  };
-}
-`);
-}
-
-function legacySource(document){
-  if(!document||typeof document!=='object'||Array.isArray(document))throw new TypeError('Expected a validated spell card document');
-  return validateSpellSource(`import {TouhouSpellCardTimeline} from '@ts-stg/thlib/touhou';
-
-// Converted from a legacy JSON document. This entire file is editable.
-export const spellCard = ${JSON.stringify(document,null,2)};
-
-export function createSpell(context) {
-  const timeline = new TouhouSpellCardTimeline(spellCard, context);
-
-  return {
-    get frame() { return timeline.frame; },
-    get alive() { return timeline.alive; },
-    get completed() { return timeline.completed; },
-    update() {
-      if (!timeline.alive) return;
-      const frame = timeline.frame;
-      // Add your own loops, functions and state here if needed.
-      timeline.update();
-    },
-    stop() { timeline.stop(); },
-    snapshot() { return timeline.snapshot(); },
   };
 }
 `);

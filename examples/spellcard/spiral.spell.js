@@ -1,7 +1,5 @@
 // A spell is ordinary JavaScript. Edit this module and apply it to preview.
 export const spellCard = {
-  "format": "ts-stg-spellcard",
-  "version": 1,
   "id": "spiral",
   "name": "环符「回旋」",
   "duration": 1800,
@@ -10,8 +8,7 @@ export const spellCard = {
   "boss": {
     "x": 0,
     "y": 96
-  },
-  "events": []
+  }
 };
 
 export function createSpell(context) {

@@ -2,17 +2,31 @@ import {mkdirSync,writeFileSync,readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import assert from 'node:assert/strict';
-import {createTouhouSpellCard} from '../packages/thlib/src/touhou/spellcard.js';
-import {generateSpellSource} from './spellcard-editor/source.js';
+import {createSpellMetadata} from './spellcard-editor/metadata.js';
+import {createSpellSource} from './spellcard-editor/source.js';
 
 const root=resolve(import.meta.dirname,'..'),folder=resolve(root,'build/spellcard-check');
 mkdirSync(folder,{recursive:true});
+// These fixtures author behavior as plain JavaScript and use the shared field.
+function ringSource(document,{random=false,laser=false}={}){
+  return `export const spellCard=${JSON.stringify(document)};
+export function createSpell(context){
+  return {frame:0,alive:true,
+    update(){
+      if(this.frame%15===0)context.bullets.emit({x:context.boss.x,y:context.boss.y,
+        type:0,color:2,pattern:${random?8:3},count:12,rows:1,speed:1,speedStep:2,
+        angle:0,angleStep:1},{random:context.random});
+      ${laser?"if(this.frame===30)context.lasers.spawnInfinite({x:context.boss.x,y:context.boss.y,type:0,color:4,angle:Math.PI/2,width:10,length:220,delay:30,grow:30,sustain:240,shrink:30});":''}
+      this.frame++;if(this.frame>=spellCard.duration)this.alive=false;
+    },stop(){this.alive=false;},snapshot(){return{frame:this.frame,alive:this.alive};},
+  };
+}
+`;
+}
+writeFileSync(resolve(folder,'parity-spell.js'),ringSource({...createSpellMetadata(),id:'native-parity'},{random:true,laser:true}));
 writeFileSync(resolve(folder,'parity.js'),`import {createSpellCardPreview} from '../../tools/spellcard-editor/native-preview.js';
-import {createTouhouSpellCard} from '@ts-stg/thlib/touhou';
-const doc=createTouhouSpellCard();doc.events[1].pattern=8;doc.events[1].speedStep=2;doc.events[1].angleStep=1;
-doc.events.push({id:'laser',type:'laser',frame:30,duration:1,interval:1,x:0,y:0,origin:'boss',kind:'infinite',color:4,
-angle:Math.PI/2,rotation:0,speed:0,width:10,length:220,delay:30,grow:30,sustain:240,shrink:30});
-globalThis.__tsstg_game=createSpellCardPreview(tsstg,doc,{silent:true});\n`);
+import {spellCard,createSpell} from './parity-spell.js';
+globalThis.__tsstg_game=createSpellCardPreview(tsstg,spellCard,{silent:true,createSpell});\n`);
 const snapshots=[];
 for(const backend of ['quickjs','v8']){
   const output=resolve(folder,`${backend}-parity.json`);
@@ -21,16 +35,16 @@ for(const backend of ['quickjs','v8']){
   assert.equal(result.status,0,result.stderr||result.error?.message);snapshots.push(JSON.parse(readFileSync(output,'utf8')));
 }
 assert.deepEqual(snapshots[0],snapshots[1],'QuickJS/V8 authored rehearsal snapshots');
-assert.equal(snapshots[0].timeline.frame,360);assert.ok(snapshots[0].game.bullets.count>0);
+assert.equal(snapshots[0].runner.frame,360);assert.ok(snapshots[0].game.bullets.count>0);
 console.log('PASS: authored card + actual TouhouGame, 360 frames, exact QuickJS/V8 snapshot parity');
 
 // New files are executable JS, with no event arrangement or browser geometry
 // adapter. Run that exact default template through the real preview controller.
-writeFileSync(resolve(folder,'source-default.js'),generateSpellSource());
+writeFileSync(resolve(folder,'source-default.js'),createSpellSource());
 writeFileSync(resolve(folder,'source-default-check.js'),`import {createControlledPreview} from '../../tools/spellcard-editor/controller.js';
 function check(condition,message){if(!condition)throw Error(message);}
 const paths={control:'build/spellcard-check/virtual-default-source.json',status:'spellcard-check/default-source-status.json'};
-const fallback=${JSON.stringify({...createTouhouSpellCard(),id:'unused-fallback',duration:20,events:[]})};
+const fallback=${JSON.stringify({...createSpellMetadata(),id:'unused-fallback',duration:20})};
 let state={revision:1,documentRevision:1,document:fallback,modulePath:'./source-default.js',
   commands:[{id:1,action:'seek',frame:90}],input:0};
 const host={...tsstg,readText:file=>file===paths.control?JSON.stringify(state):tsstg.readText(file)};
@@ -50,7 +64,7 @@ globalThis.__tsstg_game={
   render:()=>[],snapshot(){const result=controller.snapshot();
     check(result.editor.documentRevision===1&&!result.editor.loading,'Default JS source never became active');
     check(result.editor.document.id!==fallback.id&&result.editor.document.duration>fallback.duration,'Preview used fallback metadata instead of executed module exports');
-    check(result.editor.document.events.length===0,'The new-file template still depends on arranged events');
+    check(!('events' in result.editor.document),'Rehearsal metadata must not contain arranged events');
     check(result.editor.frame===90&&result.editor.bullets>0,'The direct JS template did not emit native bullets during seek');
     check(seekCheck===3,'Repeated source-only seek did not complete');
     return result.preview;
@@ -70,9 +84,11 @@ console.log('PASS: source-only new-file JS, native-evaluated metadata, seeded se
 // Exercise the desktop adapter against the actual native host and shared ANM
 // assets. Spies observe the audio boundary while still decoding/playing through
 // the host; only the editor control file is supplied from memory.
+writeFileSync(resolve(folder,'lifecycle-spell.js'),ringSource({...createSpellMetadata(),id:'native-editor-lifecycle',duration:120}));
 writeFileSync(resolve(folder,'lifecycle.js'),`import {createSpellCardPreview} from '../../tools/spellcard-editor/native-preview.js';
 import {createControlledPreview} from '../../tools/spellcard-editor/controller.js';
-import {createTouhouSpellCard,quantizeTouhouSpellTime,invalidTouhouSpellTime} from '@ts-stg/thlib/touhou';
+import {quantizeTouhouSpellTime,invalidTouhouSpellTime} from '@ts-stg/thlib/touhou';
+import {spellCard as document,createSpell} from './lifecycle-spell.js';
 function check(condition,message){if(!condition)throw Error(message);}
 const manifest=JSON.parse(tsstg.readText('packages/thlib/assets/touhou-common/audio/manifest.json'));
 const openingFile='packages/thlib/assets/touhou-common/'+manifest.files[manifest.definitions.find(item=>item.id===33).fileIndex].path;
@@ -82,9 +98,7 @@ const host={...tsstg,
   playSound(handle,...options){played.push(soundFiles.get(handle));return tsstg.playSound(handle,...options);},
 };
 const openings=()=>played.filter(file=>file===openingFile).length;
-const document=createTouhouSpellCard();document.id='native-editor-lifecycle';document.duration=120;
-document.events=[{...document.events[1],frame:0,duration:120,interval:15,count:12,speed:1}];
-const rehearsal=createSpellCardPreview(host,document,{silent:true});
+const rehearsal=createSpellCardPreview(host,document,{silent:true,createSpell});
 check(openings()===0,'Creating a paused rehearsal must not play the opening sound');
 rehearsal.setSilent(false);rehearsal.update();
 check(openings()===1,'First audible update must play the shared opening sound exactly once');
@@ -98,50 +112,54 @@ check(openings()===1,'Resuming after a silent seek must not replay a deferred op
 rehearsal.destroy();
 
 const paths={control:'build/spellcard-check/virtual-control.json',status:'spellcard-check/lifecycle-status.json'};
-let state={revision:0,documentRevision:1,document,commands:[],input:0},preview;
+let state={revision:0,documentRevision:1,document,modulePath:'./lifecycle-spell.js',commands:[],input:0},preview;
 const controlledHost={...host,readText:file=>file===paths.control?JSON.stringify(state):tsstg.readText(file)};
-const controller=createControlledPreview(controlledHost,paths,{factory:(...args)=>(preview=createSpellCardPreview(...args))});
+const controller=createControlledPreview(controlledHost,paths,{loadModule:path=>import(path),factory:(...args)=>(preview=createSpellCardPreview(...args))});
 check(openings()===1,'Creating the paused controller must remain silent');
+let result=null;
+function exercise(){
 state={...state,revision:1,commands:[{id:1,action:'play'}]};controller.update();
 check(openings()===2,'Controller Play must produce one opening sound');
 let sawBullets=false;
-while(preview.timeline.alive){
+while(preview.runner.alive){
   // Holding Confirm across completion must not continuously restart the card.
-  if(preview.timeline.frame===110)state={...state,revision:state.revision+1,input:256};
+  if(preview.runner.frame===110)state={...state,revision:state.revision+1,input:256};
   controller.update();sawBullets||=preview.game.bullets.bullets.length>0;
   check(!controller.snapshot().editor.error,'Native controller update failed');
 }
 const terminalFrame=preview.game.frame,expectedTime=quantizeTouhouSpellTime(document.duration/60).encoded;
 check(sawBullets,'Lifecycle fixture must contain actual native thlib bullets');
-check(preview.timeline.frame===120&&terminalFrame===120,'The card must end at its authored fixed frame');
+check(preview.runner.frame===120&&terminalFrame===120,'The card must end at its authored fixed frame');
 check(preview.game.spell.result?.timeout===true,'The shared spell owner must settle the timeout');
 check(!invalidTouhouSpellTime(preview.game.spell.encodedTime)&&preview.game.spell.encodedTime===expectedTime,
   'Shared result time must encode the two-second simulation duration');
-check(preview.game.hud.activeNotice,'The shared result notice must be alive when the timeline ends');
-check(controller.snapshot().editor.settling,'The controller must advance presentation after timeline completion');
+check(preview.game.hud.activeNotice,'The shared result notice must be alive when the runner ends');
+check(controller.snapshot().editor.settling,'The controller must advance presentation after runner completion');
 let tailFrames=0;
 while(controller.snapshot().editor.settling&&tailFrames<600){controller.update();tailFrames++;}
 check(tailFrames>0&&tailFrames<600,'Native result presentation must complete within 600 frames');
 check(!preview.game.hud.activeNotice&&!preview.settling,'Shared result/cancel animations must finish rather than freeze');
 check(preview.game.bullets.bullets.length===0&&!preview.game.lasers.lasers.some(laser=>laser.alive),
   'No enemy projectiles may remain after terminal presentation');
-check(preview.game.frame>terminalFrame&&preview.timeline.frame===120,'Only the presentation clock advances during settlement');
+check(preview.game.frame>terminalFrame&&preview.runner.frame===120,'Only the presentation clock advances during settlement');
 check(preview.game.spell.encodedTime===expectedTime,'The presentation tail must not inflate the recorded spell time');
-controller.update();check(preview.timeline.frame===120,'A held Confirm must not restart a completed rehearsal');
+controller.update();check(preview.runner.frame===120,'A held Confirm must not restart a completed rehearsal');
 state={...state,revision:state.revision+1,input:0};controller.update();
 state={...state,revision:state.revision+1,input:256};controller.update();
-check(preview.timeline.alive&&preview.timeline.frame===1&&controller.snapshot().editor.playing,
+check(preview.runner.alive&&preview.runner.frame===1&&controller.snapshot().editor.playing,
   'A fresh Enter press must restart a completed, paused rehearsal');
 check(openings()===3,'Restarting with Enter must play one fresh shared opening sound');
-const result={passed:true,terminalFrame,tailFrames,encodedTime:expectedTime,openingPlays:openings(),retryFrame:preview.timeline.frame};
+result={passed:true,terminalFrame,tailFrames,encodedTime:expectedTime,openingPlays:openings(),retryFrame:preview.runner.frame};
 controller.destroy();
-globalThis.__tsstg_game={update(){},render:()=>[],snapshot:()=>result};
+}
+globalThis.__tsstg_game={update(){if(result)return;controller.update();const status=controller.snapshot().editor;
+  if(status.error)throw Error(status.error);if(status.documentRevision===1)exercise();},render:()=>[],snapshot:()=>result};
 `);
 const lifecycle=[];
 for(const backend of ['quickjs','v8']){
   const output=resolve(folder,`${backend}-lifecycle.json`);
   const result=spawnSync(resolve(root,'build/Release/ts-stg.exe'),['build/spellcard-check/lifecycle.js','--root',root,
-    '--backend',backend,'--headless','--frames','1','--snapshot',output],{cwd:root,encoding:'utf8',windowsHide:true,timeout:60000});
+    '--backend',backend,'--headless','--frames','30','--snapshot',output],{cwd:root,encoding:'utf8',windowsHide:true,timeout:60000});
   assert.equal(result.status,0,result.stderr||result.error?.message);lifecycle.push(JSON.parse(readFileSync(output,'utf8')));
 }
 assert.deepEqual(lifecycle[0],lifecycle[1],'QuickJS/V8 native preview lifecycle parity');
@@ -150,10 +168,9 @@ console.log(`PASS: native opening/seek audio, result/cancel tail (${lifecycle[0]
 
 // Load actual edited ES modules through both embedded runtimes. In particular,
 // handwritten bullets below have no equivalent visual event in the metadata.
-const generatedDocument={...createTouhouSpellCard(),id:'generated-esm',duration:180,hp:99999};
-generatedDocument.events=[{...generatedDocument.events[1],frame:0,duration:180,interval:10,count:8}];
-writeFileSync(resolve(folder,'source-generated.js'),generateSpellSource(generatedDocument));
-const manualDocument={...generatedDocument,id:'handwritten-esm',duration:70,events:[]};
+const generatedDocument=createSpellMetadata();
+writeFileSync(resolve(folder,'source-generated.js'),createSpellSource());
+const manualDocument={...generatedDocument,id:'handwritten-esm',duration:70};
 function manualSource(document,{fail=false,snapshot=true}={}){
   return `export const spellCard=${JSON.stringify(document)};
 export function createSpell(context){
@@ -201,8 +218,8 @@ globalThis.__tsstg_game={
   update(){
     if(done)return;if(++ticks>400)throw Error('Native JS authoring fixture did not finish');
     controller.update();const status=controller.snapshot().editor;
-    if(phase===0&&status.documentRevision===1&&status.frame>=40){
-      check(!status.error&&status.bullets>0&&status.document.id==='generated-esm','Generated ES module must emit actual native bullets');
+    if(phase===0&&status.documentRevision===1&&status.frame>=70){
+      check(!status.error&&status.bullets>0&&status.document.id==='new-spellcard','Generated ES module must emit actual native bullets');
       goodFrame=status.frame;checked('generated-module');load('./source-syntax.js',[{action:'play'}]);
     }else if(phase===1&&status.error){
       check(status.documentRevision===1&&status.requestedDocumentRevision===2&&status.frame===goodFrame,'Syntax failure changed the last good scene');
@@ -213,8 +230,8 @@ globalThis.__tsstg_game={
       check(status.documentRevision===1&&status.frame===goodFrame,'Failed factory destroyed the last good scene');
       checked('factory-transaction');load('./source-handwritten.js',[{action:'seek',frame:12},{action:'play'}]);
     }else if(phase===3&&status.documentRevision===4&&status.frame>=25){
-      check(!status.error&&status.document.events.length===0&&status.bullets>0,'Handwritten JS was not executed');
-      check(controller.snapshot().preview.timeline.emissions===5,'Handwritten custom runner snapshot must be retained');
+      check(!status.error&&!('events' in status.document)&&status.bullets>0,'Handwritten JS was not executed');
+      check(controller.snapshot().preview.runner.emissions===5,'Handwritten custom runner snapshot must be retained');
       results.handwritten=controller.snapshot().preview;
       checked('handwritten-bullets');load('./source-runtime.js',[{action:'play'}]);
     }else if(phase===4&&status.error&&status.documentRevision===5){
@@ -222,7 +239,7 @@ globalThis.__tsstg_game={
       checked('runtime-error');load('./source-fixed.js',[{action:'seek',frame:5},{action:'play'}]);
     }else if(phase===5&&status.documentRevision===6&&status.completed){
       check(!status.error&&status.frame===20,'Editing a runtime error must recover through a fresh module');
-      const snapshot=controller.snapshot().preview.timeline;check(snapshot.frame===20&&snapshot.alive===false,'Optional snapshot fallback is invalid');
+      const snapshot=controller.snapshot().preview.runner;check(snapshot.frame===20&&snapshot.alive===false,'Optional snapshot fallback is invalid');
       checked('edit-recovers-and-completes');load('./source-invalid-runner.js',[{action:'play'}]);
     }else if(phase===6&&status.error&&status.requestedDocumentRevision===7){
       check(status.documentRevision===6&&status.frame===20&&/runner requires/.test(status.error),'Invalid runner was activated');

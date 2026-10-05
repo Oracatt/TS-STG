@@ -31,7 +31,7 @@ CodeMirror 6 随工具在本地构建，提供 JavaScript 语法高亮、行号�
 
 预览提供无敌试玩。击破或时间结束后，继续更新公共消弹、结算提示与动画尾部，再停在结果画面。重新按下 Enter 或点击播放可从头试玩；一直按住 Enter 不会反复重开。暂停和跳转停止当前声音，跳转过程静音。
 
-草稿保存完整源码，可跨次启动恢复；草稿不等于已写入用户选择的文件。无法编译的 JS 仍可以保存和恢复。打开旧 `.spellcard.json` 时进行一次性转换，使用公共 `TouhouSpellCardTimeline` 保留其行为；原 JSON 不会被覆盖。已有 JS 中的旧标记只是普通注释，编辑器不会读取或回写它们。
+草稿保存完整源码，可跨次启动恢复；草稿不等于已写入用户选择的文件。无法编译的 JS 仍可以保存和恢复。文件入口只接受 `.js` 和 `.mjs`，不读取或转换旧的事件 JSON 文档。已有 JS 中的注释由作者保留，编辑器不会读取其中的旧标记或回写代码。
 
 ## 错误与预览状态
 
@@ -45,14 +45,13 @@ CodeMirror 6 随工具在本地构建，提供 JavaScript 语法高亮、行号�
 
 ## 符卡模块
 
-模块导出 `spellCard` 元数据与 `createSpell(context)`。元数据由原生运行时执行后校验，可以使用表达式、变量或函数；编辑器界面只展示求值后的名称和时长，不解析源码中的配置。
+模块导出 `spellCard` 元数据与 `createSpell(context)`。元数据仅包含 `id/name/duration/hp/seed/boss`，由编辑器自己的预览适配器在原生运行时执行后校验，可以使用表达式、变量或函数；编辑器界面只展示求值后的名称和时长，不解析源码中的配置。这是预览工具的接入约定，thlib 不定义编辑器文档格式。
 
 ```js
 export const spellCard = {
-  format: 'ts-stg-spellcard', version: 1,
   id: 'my-spell', name: '螺旋环',
   duration: 60 * 30, hp: 3000, seed: 1,
-  boss: {x: 0, y: 96}, events: [],
+  boss: {x: 0, y: 96},
 };
 
 export function createSpell(context) {
@@ -79,7 +78,7 @@ export function createSpell(context) {
 }
 ```
 
-`events: []` 是现有公共文档格式的一部分；新模板直接用 JS 发弹，不依赖事件列表。需要数据时间轴的使用方仍可主动组合 `TouhouSpellCardTimeline`，见 [公共符卡数据 API](touhou-spellcard.md)。
+`createSpell(context)` 是必需的入口，直接用 JS 发弹、移动、聚能和组织状态。没有事件列表、事件解释器或缺省的攻击逻辑。已有手写 JS 若仍带旧元数据字段，应删除 `format`、`version`、`events`；曾经依赖事件 JSON 的攻击需改写为普通 JS。编辑器不会自动改写用户保存的文件。
 
 运行器必须有 `frame`、`alive`、同步 `update()` 和 `stop()`，`snapshot()` 可选。逻辑帧固定 60 Hz；存活时每次 `update()` 将 `frame` 增加 1，也可以在当前帧停止。禁止异步更新，否则暂停和重新模拟无法可靠定位。世界坐标 x 为 -192..192、y 为 0..448，角度为弧度。
 
@@ -139,7 +138,7 @@ Electron 页面关闭 Node 集成，启用上下文隔离与沙箱。页面和�
 
 当前以单个源码模块和公共 thlib 导入为单位。模块写入临时预览工程后加载，暂不支持相对原文件目录的多文件工程、资源管理和外部 IDE 文件监听，也未提供完整的类型语言服务或断点调试。QuickJS 与 V8 可以执行同一模块；桌面内嵌预览目前仅支持 Windows。
 
-发布范围仍是底层引擎和 thlib。编辑器、CodeMirror、Electron、预览适配器和临时文件不在默认 SDK 内。原有公共符卡数据 API 保留，移除的是工具内的可视化编排与其浏览器轨迹模拟。
+发布范围仍是底层引擎和 thlib。编辑器、CodeMirror、Electron、预览适配器、元数据校验和临时文件不在默认 SDK 内。thlib 提供公共游戏实体与机制；作者用普通 JS 编写攻击，游戏负责调度及阶段收尾。
 
 ## 复现验证
 

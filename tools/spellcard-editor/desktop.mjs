@@ -7,19 +7,19 @@ import {fileURLToPath} from 'node:url';
 import {randomUUID} from 'node:crypto';
 import {FrameStreamDecoder} from './frame-stream.mjs';
 import {createSpellCardEditorServer} from './server.mjs';
-import {createTouhouSpellCard,parseTouhouSpellCard} from '../../packages/thlib/src/touhou/spellcard.js';
-import {generateSpellSource,validateSpellSource} from './source.js';
+import {createSpellMetadata} from './metadata.js';
+import {validateSpellSource} from './source.js';
 
 const directory=path.dirname(fileURLToPath(import.meta.url)),root=path.resolve(directory,'../..');
 const session=`spellcard-editor/${randomUUID()}`,folder=`build/${session}`;
 const files={control:`${folder}/control.json`,bounds:`${folder}/bounds.json`,status:`${session}/status.json`};
-const filters=[{name:'JavaScript Spell Card',extensions:['js','mjs']},{name:'Legacy JSON',extensions:['json']}];
+const filters=[{name:'JavaScript Spell Card',extensions:['js','mjs']}];
 const selfTest=process.argv.includes('--self-test');
 let win,server,child=null,url='',savedPath=null,lastStatus={},nativeError=null,closing=false,commandId=0;
 let frameServer,frameSocket,frameId=0,framePending=0;
 const pipeName=`\\\\.\\pipe\\ts-stg-frames-${randomUUID()}`;
 let bounds={x:0,y:0,width:1,height:1,visible:false};
-const document={...createTouhouSpellCard(),events:[]};
+const document=createSpellMetadata();
 let state={revision:0,documentRevision:0,document,commands:[]},io=Promise.resolve();
 const serialize=task=>{const next=io.then(task);io=next.catch(()=>{});return next;};
 function sourceText(value){
@@ -136,21 +136,21 @@ async function start(){
   const draft=path.join(draftDirectory,'draft.spell.js');
   handle('document:load-draft',async()=>{
     try{return {source:sourceText(await readFile(draft,'utf8'))};}
-    catch(error){if(error.code!=='ENOENT')throw error;}
-    try{return{source:generateSpellSource(parseTouhouSpellCard(await readFile(path.join(draftDirectory,'draft.json'),'utf8')))};}
     catch(error){if(error.code==='ENOENT')return{};throw error;}
   });
   handle('document:save-draft',async source=>{await atomic(draft,sourceText(source));return{saved:true};});
   handle('document:open',async()=>{
     const result=await dialog.showOpenDialog(win,{filters,properties:['openFile']});if(result.canceled)return{cancelled:true};
-    const file=result.filePaths[0];if((await stat(file)).size>1024*1024)throw Error('工程文件不能超过 1 MiB。');
-    const raw=await readFile(file,'utf8'),legacy=path.extname(file).toLowerCase()==='.json';
-    const source=legacy?generateSpellSource(parseTouhouSpellCard(raw)):sourceText(raw);
-    savedPath=legacy?null:file;return{source,path:savedPath};
+    const file=result.filePaths[0];
+    if(!['.js','.mjs'].includes(path.extname(file).toLowerCase()))throw Error('只支持 JavaScript 文件（.js 或 .mjs）。');
+    if((await stat(file)).size>1024*1024)throw Error('工程文件不能超过 1 MiB。');
+    const source=sourceText(await readFile(file,'utf8'));
+    savedPath=file;return{source,path:savedPath};
   });
   handle('document:save',async(source,options={})=>{
     const text=sourceText(source);let file=savedPath;
-    if(!file||options.saveAs){const result=await dialog.showSaveDialog(win,{filters:[filters[0]],defaultPath:file??'new.spell.js'});if(result.canceled)return{cancelled:true};file=result.filePath;}
+    if(!file||options.saveAs){const result=await dialog.showSaveDialog(win,{filters,defaultPath:file??'new.spell.js'});if(result.canceled)return{cancelled:true};file=result.filePath;}
+    if(!['.js','.mjs'].includes(path.extname(file).toLowerCase()))throw Error('请保存为 JavaScript 文件（.js 或 .mjs）。');
     await atomic(file,text);savedPath=file;return{path:file};
   });
   win.once('ready-to-show',()=>{win.show();serialize(updateBounds).catch(()=>{});});

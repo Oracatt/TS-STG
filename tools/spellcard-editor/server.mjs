@@ -10,7 +10,7 @@ const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=u
   '.woff':'font/woff','.woff2':'font/woff2'};
 const publicFiles=new Map([
   ['/','index.html'],['/editor/index.html','index.html'],['/editor/editor.js','editor.js'],
-  ['/editor/styles.css','styles.css'],['/editor/source.js','source.js'],
+  ['/editor/styles.css','styles.css'],['/editor/source.js','source.js'],['/editor/metadata.js','metadata.js'],
 ]);
 const inside=(base,file)=>{const relative=path.relative(base,file);return relative===''||(!relative.startsWith(`..${path.sep}`)&&relative!=='..'&&!path.isAbsolute(relative));};
 const problem=(status,message)=>Object.assign(new Error(message),{status});

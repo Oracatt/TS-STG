@@ -23,15 +23,22 @@ assert.equal(packed.files.filter(file=>file.path.startsWith('assets/audio/')&&fi
 assert.ok(packed.files.some(file=>file.path==='assets/touhou-common/manifest.json'),'Complete shared animation/resources pack is required');
 assert.ok(packed.files.some(file=>file.path==='assets/spell-common/manifest.json'),'Shared spell/charge/aura pack is required');
 assert.ok(!packed.files.some(file=>/(?:^|\/)(?:th20|games|examples|tests)(?:\/|$)/.test(file.path)),'Library tarball contains game-specific files');
+assert.ok(!packed.files.some(file=>/^src\/touhou\/spellcard\.(?:js|d\.ts)$/.test(file.path)),'Removed event-document module returned to the library tarball');
+assert.ok(!packed.files.some(file=>/(?:^|\/)(?:tools|spellcard-editor|node_modules)(?:\/|$)/.test(file.path)),'Editor tooling or dependencies leaked into the library tarball');
 writeFileSync(join(app,'package.json'),JSON.stringify({name:'independent-thlib-consumer',private:true,type:'module'}));
 run(process.execPath,[npmCli,'install','--offline','--ignore-scripts','--no-audit','--no-fund',join(temporary,packed.filename)],app);
 const installed=join(app,'node_modules/@ts-stg/thlib');
 assert.ok(realpathSync(installed).startsWith(realpathSync(app)),'Installed library must be a real packed copy, not a workspace link');
+const installedManifest=JSON.parse(readFileSync(join(installed,'package.json'),'utf8'));
+for(const group of ['dependencies','devDependencies','optionalDependencies','peerDependencies']){
+  assert.ok(!Object.keys(installedManifest[group]??{}).some(name=>/^(?:@codemirror\/|codemirror$|electron$|esbuild$|@ts-stg\/spellcard-editor$)/.test(name)),`Editor dependency leaked into thlib ${group}`);
+}
 function inspect(directory){for(const entry of readdirSync(directory,{withFileTypes:true})){
   const path=join(directory,entry.name);if(entry.isDirectory()){inspect(path);continue;}
   if(!entry.name.endsWith('.js'))continue;
   const code=readFileSync(path,'utf8');
   assert.doesNotMatch(code,/games[\\/]touhou20|@ts-stg\/thlib\/th20|\bTh20\w*|\bTH20_\w*/,'Version-specific implementation leaked into thlib');
+  assert.doesNotMatch(code,/\b(?:TouhouSpellCardTimeline|createTouhouSpellCard|validateTouhouSpellCard|parseTouhouSpellCard|serializeTouhouSpellCard|createSpellMetadata|validateSpellMetadata)\b/,'Editor metadata or removed event-document API leaked into thlib');
   for(const match of code.matchAll(/\b(?:from\s*|import\s*\(\s*)['"]([^'"]+)['"]/g)){
     assert.ok(match[1].startsWith('.'),`Non-portable library import ${match[1]}`);
     assert.ok(relative(installed,resolve(dirname(path),match[1])).split(/[\\/]/)[0]!=='..','Library imports application code');

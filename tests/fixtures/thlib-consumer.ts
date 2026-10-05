@@ -495,24 +495,3 @@ stagePlayer.restoreStageVisibility().resetForStage();
 stagePlayer.drawStageVisibility('draw',view);
 // @ts-expect-error A stage reset preserves the existing player's persistent state.
 stagePlayer.resetForStage({power:400});
-
-// Authored documents share the exact gameplay owners, without ambient editor APIs.
-import {createTouhouSpellCard,parseTouhouSpellCard,serializeTouhouSpellCard,TouhouSpellCardTimeline} from '@ts-stg/thlib/touhou';
-import {TouhouSpellCardTimeline as SpellTimelineRoot} from '@ts-stg/thlib';
-import type {TouhouSpellCardDocument} from '@ts-stg/thlib/touhou/spellcard';
-const authoredCard:TouhouSpellCardDocument=parseTouhouSpellCard(serializeTouhouSpellCard(createTouhouSpellCard()));
-const authoredTimeline=new TouhouSpellCardTimeline(authoredCard,{
-  boss:{x:0,y:96},player:{x:0,y:400},
-  bullets:{emit(parameters,options){const x:number|undefined=parameters.x;const randomValue:number|undefined=options?.random?.unit();}},
-  lasers:{spawnStraight(parameters){},spawnInfinite(parameters){}},
-  presentation:{beginCharge(options){return{stop(){}};}},sound(id,x){},clear(){},
-  onComplete(timeline){const finished:boolean=timeline.completed;},onEvent(event,frame){const kind:string=event.type;},
-});
-const timelineRootExport:typeof TouhouSpellCardTimeline=SpellTimelineRoot;
-authoredTimeline.update();authoredTimeline.stop();
-// @ts-expect-error Document versions are explicit, not arbitrary strings.
-authoredCard.version='1';
-// @ts-expect-error Imported arbitrary object data must pass the parser or validator.
-const malformedCard:TouhouSpellCardDocument={format:'ts-stg-spellcard'};
-// @ts-expect-error Preview transport does not belong in the portable runtime.
-authoredTimeline.seek(100);

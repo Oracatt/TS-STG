@@ -2,10 +2,9 @@
 // Read the blue fold, bait the gold ink, then cross after the last paper wing.
 // All objects, birth animations and hitboxes belong to public thlib.
 export const spellCard = {
-  format: 'ts-stg-spellcard', version: 1,
   id: 'moonfold', name: '月折「借光的纸鹤」',
   duration: 45 * 60, hp: 9000, seed: 0x4d4f4f4e,
-  boss: {x: 0, y: 76}, events: [],
+  boss: {x: 0, y: 76},
 };
 
 const INTRO = 120, PHRASE = 480, PHRASES = 5;

@@ -54,12 +54,12 @@ function step(){
   }
   steps++;
   if([300,495,780,1260,1740,2220].includes(steps))checkpoints.push({frame:steps,player:{x:player.x,y:player.y},
-    bullets:preview.game.bullets.bullets.map(b=>({id:b.id,state:b.state,type:b.type,color:b.color,x:b.x,y:b.y,vx:b.vx,vy:b.vy,radius:b.radius})),spell:preview.timeline.snapshot()});
+    bullets:preview.game.bullets.bullets.map(b=>({id:b.id,state:b.state,type:b.type,color:b.color,x:b.x,y:b.y,vx:b.vx,vy:b.vy,radius:b.radius})),spell:preview.runner.snapshot()});
 }
 globalThis.__tsstg_game={
   update(){for(let i=0;i<${batch}&&steps<${frames};i++)step();},
   render:()=>${batch>1?'preview.render()':'[]'},
-  snapshot:()=>({frames:steps,peak,hits,minClearance,maxStep,collisions,checkpoints,spell:preview.timeline.snapshot()}),
+  snapshot:()=>({frames:steps,peak,hits,minClearance,maxStep,collisions,checkpoints,spell:preview.runner.snapshot()}),
   destroy:()=>preview.destroy(),
 };
 `;
