@@ -57,7 +57,7 @@ export class TouhouBulletField {
     const dx = sub(this.player.x, b.x), dy = sub(this.player.y, b.y);
     return dx === 0 && dy === 0 ? div(PI, 2) : atan2(dy, dx);
   }
-  emit(parameters = {}) {
+  emit(parameters = {}, { random = this.random } = {}) {
     const p = { x: 0, y: 0, type: 0, color: 0, pattern: 1, count: 1, rows: 1, speed: 1, speedStep: 1, angle: 0, angleStep: 0, ...parameters };
     const commands = commandsOf(p.commands);
     const world = resolveTouhouWorld({ world: p.world ?? this.world, bounds: p.bounds }), autoBounds = p.autoBounds ?? this.autoBounds;
@@ -68,7 +68,7 @@ export class TouhouBulletField {
     for (let row = 0; row < p.rows; row++) for (let column = 0; column < p.count; column++) {
       if (!this.free.length) { if ((p.shotSound ?? 21) >= 0) this.context.sound?.(p.shotSound ?? 21, p.x); return emitted; }
       const slot = this.free.pop(), inheritedCancel = this.slots[slot].cancelScript;
-      const trajectory = touhouShotTrajectory(p, p.pattern, column, row, playerAngle, this.random);
+      const trajectory = touhouShotTrajectory(p, p.pattern, column, row, playerAngle, random);
       const angle = wrapAngle(wrapAngle(add(trajectory.angle, 0))), velocity = polar(trajectory.angle, trajectory.speed);
       const b = { ...new TouhouBulletCollision({radius:style.radius}),id: this.nextId++, slot, type: p.type, color: p.color, style, state: 1,
         x: f32(p.x), y: f32(p.y), z: f32(.1), vx: velocity.x, vy: velocity.y, vz: 0,

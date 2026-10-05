@@ -1,0 +1,51 @@
+{
+  "format": "ts-stg-spellcard",
+  "version": 1,
+  "id": "spiral",
+  "name": "环符「回旋」",
+  "duration": 1800,
+  "hp": 3000,
+  "seed": 1,
+  "boss": {
+    "x": 0,
+    "y": 96
+  },
+  "events": [
+    {
+      "id": "charge-1",
+      "type": "charge",
+      "frame": 0,
+      "enabled": true,
+      "x": 0,
+      "y": 0,
+      "origin": "boss",
+      "color": "magenta",
+      "releaseColor": "white",
+      "releaseFrame": 60,
+      "release": true,
+      "sound": 54,
+      "releaseSound": 6
+    },
+    {
+      "id": "bullet-1",
+      "type": "bullet",
+      "frame": 60,
+      "enabled": true,
+      "x": 0,
+      "y": 0,
+      "origin": "boss",
+      "duration": 1740,
+      "interval": 30,
+      "color": 2,
+      "angle": 0,
+      "rotation": 0.12,
+      "bulletType": 0,
+      "pattern": 3,
+      "count": 24,
+      "rows": 1,
+      "speed": 2,
+      "speedStep": 0,
+      "angleStep": 0
+    }
+  ]
+}

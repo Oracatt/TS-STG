@@ -305,6 +305,11 @@ package and never ship in the default SDK. The former `@ts-stg/thlib/th20` subpa
 remains removed; the shared restored entry is `@ts-stg/thlib/touhou`.
 
 Local installation: `npm install ../TS-STG/packages/thlib`.
+Authored spell-card JSON uses `createTouhouSpellCard`, `validateTouhouSpellCard`,
+`parseTouhouSpellCard`, `serializeTouhouSpellCard` and `TouhouSpellCardTimeline`
+from `@ts-stg/thlib/touhou`. The fixed-frame timeline calls the consumer's existing
+bullet/laser/presentation owners; it does not perform spell settlement or choose
+a Boss outcome. The separate desktop SpellCardEditor is not a package dependency.
 The root ESM entry includes TypeScript declarations. Native QuickJS-NG hosts load
 `@ts-stg/thlib` and its public module subpaths from the project or its installed `node_modules` package.
 Windows hosts also support the V8 backend. No publication is performed by local packaging.

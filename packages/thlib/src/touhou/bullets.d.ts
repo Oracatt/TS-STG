@@ -1,6 +1,7 @@
 import type { DrawList } from '../index.js';
 import type { AnmBank, AnmInstance } from './anm.js';
 import type { TouhouWorld,TouhouWorldOptions,TouhouNormalizedWorldBounds } from './world.js';
+import type { TouhouRandom } from './bullet-patterns.js';
 export type TouhouBulletCommand = number[] | { type:number; floats?:number[]; ints?:number[]; concurrent?:boolean };
 export function touhouBulletCommand(type:number, values?:{floats?:number[];ints?:number[];concurrent?:boolean}):number[];
 export const SUPPORTED_TOUHOU_BULLET_COMMANDS:readonly number[];
@@ -12,7 +13,8 @@ export class TouhouBulletField {
   constructor(options:TouhouWorldOptions & {bank:AnmBank;styles:unknown[];random?:{next():number;signedUnit():number;unit():number};visualRandom?:{signedUnit():number};capacity?:number;autoBounds?:boolean});
   world:TouhouWorld;bounds:Readonly<TouhouNormalizedWorldBounds>;autoBounds:boolean;readonly capacity:number;
   readonly count:number;bullets:TouhouBullet[];effects:AnmInstance[];age:number;cancelCounter:number;itemCounter:number;
-  emit(parameters?:TouhouBulletParameters):TouhouBullet[];
+  /** Optional emission-local RNG keeps authored timelines independent of other emitters. */
+  emit(parameters?:TouhouBulletParameters,options?:{random?:Pick<TouhouRandom,'unit'|'signedUnit'>}):TouhouBullet[];
   update(player?:{x:number;y:number;collisionCircle(x:number,y:number,radius:number,context:TouhouBulletContext,preview?:boolean):number;addGraze(context:TouhouBulletContext,position?:{x:number;y:number},color?:number):void}|null,context?:TouhouBulletContext):this;
   cancelCircle(x:number,y:number,radius:number,options?:{dropMode?:number;limit?:number;kind?:number}):number;
   /** ECL615/616 ignore protection, preserving each bullet's cancellation kind. */

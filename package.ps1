@@ -57,7 +57,7 @@ foreach ($bankName in @('pl00','pl01','bullet','effect','enemy','ascii_960','fro
         throw "The shared application resource pack is incomplete: $bankName"
     }
 }
-foreach ($module in @('application','scene-transition','stage-clear','stage-transition','game','gameplay-compositor','render-order','render-queue','menu','title-background','stage-selection','dialogue','pause','game-over','hud','boss-hud','boss-phase-plan','boss-phase-timeline','boss-presentation','boss-entrance','boss-death','boss-defeat','boss-phase-clear','bullet-clear-wave','screen-shake','text-renderer','music','music-caption','music-fade','prefabs','bullet-collision','laser-collision','laser-cancellation')) {
+foreach ($module in @('application','scene-transition','stage-clear','stage-transition','game','gameplay-compositor','render-order','render-queue','menu','title-background','stage-selection','dialogue','pause','game-over','hud','boss-hud','boss-phase-plan','boss-phase-timeline','boss-presentation','boss-entrance','boss-death','boss-defeat','boss-phase-clear','bullet-clear-wave','screen-shake','text-renderer','music','music-caption','music-fade','prefabs','bullet-collision','laser-collision','laser-cancellation','spellcard')) {
     foreach ($extension in @('js','d.ts')) {
         if (-not (Test-Path -LiteralPath (Join-Path $librarySource "src/touhou/$module.$extension"))) { throw "Missing public framework module: $module.$extension" }
     }
@@ -69,7 +69,7 @@ New-Item -ItemType Directory -Path $libraryTarget | Out-Null
 foreach ($directory in @('src','assets')) { Copy-OwnedTree (Join-Path $librarySource $directory) $libraryTarget }
 foreach ($file in @('package.json','README.md','LICENSE')) { Copy-Item -LiteralPath (Join-Path $librarySource $file) -Destination $libraryTarget }
 New-Item -ItemType Directory -Path (Join-Path $staging 'docs') | Out-Null
-foreach ($document in @('native-api.md','thlib-guide.md','touhou-prefabs.md','touhou-scene-transition.md','touhou-stage-flow.md','touhou-dialogue.md','touhou-rendering.md','touhou-end-feedback.md','touhou-boss-death.md','touhou-boss-defeat.md','touhou-boss-entrance.md','touhou-boss-hud.md','touhou-item-drops.md','touhou-projectile-rules.md','touhou-marisa-bomb-release.md','touhou-reimu-bomb-release.md','touhou-music.md','touhou-player-stage-visibility.md')) {
+foreach ($document in @('native-api.md','thlib-guide.md','touhou-prefabs.md','touhou-scene-transition.md','touhou-stage-flow.md','touhou-dialogue.md','touhou-rendering.md','touhou-end-feedback.md','touhou-boss-death.md','touhou-boss-defeat.md','touhou-boss-entrance.md','touhou-boss-hud.md','touhou-item-drops.md','touhou-projectile-rules.md','touhou-marisa-bomb-release.md','touhou-reimu-bomb-release.md','touhou-music.md','touhou-player-stage-visibility.md','touhou-spellcard.md')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot "docs/$document") -Destination (Join-Path $staging 'docs')
 }
 $readmeSource = if ($WithReferenceAssets) { 'docs/private-demo.md' } else { 'docs/engine-sdk.md' }
