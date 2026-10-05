@@ -58,7 +58,7 @@ node tools/import-rushboss-dialogue.mjs D:\c++\TouhouRushBoss-main
 
 运行 `start-spellcard-editor.cmd` 打开独立桌面 JS 符卡工具。在代码区编写普通 `.spell.js`，通过内嵌 TS-STG 引擎实时预览；支持语法高亮、查找替换、错误定位，以及暂停、逐帧和按固定种子跳转。源码是唯一编辑对象，工具不生成或回写事件图。保存的 ES 模块可直接导入游戏。首次启动需要安装编辑器自己的桌面依赖。结构、使用与范围见 [SpellCardEditor](docs/spellcard-editor.md)。
 
-示例 [月折「借光的纸鹤」](examples/spellcard/moonfold.md) 用青蓝纸翼、月牙与一次瞄准的金针，演示五段交替换边的完整 JS 符卡。
+示例 [月折「借光的纸鹤」](examples/spellcard/moonfold.md) 用径向展开的青蓝纸翼、紫色残月与反复锁定的金针，演示一张可直接编辑的 JS 符卡：可留在缺口附近小幅诱导，也可观察弹间空隙主动换位。
 
 ## 依赖 thlib 制作自己的游戏
 
