@@ -9,6 +9,7 @@ import {FrameStreamDecoder} from './frame-stream.mjs';
 import {createSpellCardEditorServer} from './server.mjs';
 import {createSpellMetadata} from './metadata.js';
 import {validateSpellSource} from './source.js';
+import {parseLaunchOptions} from './launch-options.mjs';
 
 const directory=path.dirname(fileURLToPath(import.meta.url)),root=path.resolve(directory,'../..');
 const session=`spellcard-editor/${randomUUID()}`,folder=`build/${session}`;
@@ -16,6 +17,7 @@ const files={control:`${folder}/control.json`,bounds:`${folder}/bounds.json`,sta
 const filters=[{name:'JavaScript Spell Card',extensions:['js','mjs']}];
 const selfTest=process.argv.includes('--self-test');
 let win,server,child=null,url='',savedPath=null,lastStatus={},nativeError=null,closing=false,commandId=0;
+let initialDocument=null;
 let frameServer,frameSocket,frameId=0,framePending=0;
 const pipeName=`\\\\.\\pipe\\ts-stg-frames-${randomUUID()}`;
 let bounds={x:0,y:0,width:1,height:1,visible:false};
@@ -26,6 +28,13 @@ function sourceText(value){
   const source=validateSpellSource(value);
   if(Buffer.byteLength(source,'utf8')>1024*1024)throw Error('JS 源码不能超过 1 MiB。');
   return source;
+}
+async function readDocument(file){
+  if(!['.js','.mjs'].includes(path.extname(file).toLowerCase()))throw Error('只支持 JavaScript 文件（.js 或 .mjs）。');
+  const info=await stat(file);
+  if(!info.isFile())throw Error('请选择 JavaScript 文件。');
+  if(info.size>1024*1024)throw Error('工程文件不能超过 1 MiB。');
+  return{source:sourceText(await readFile(file,'utf8')),path:file};
 }
 async function atomic(file,text){
   const tmp=`${file}.tmp`;await writeFile(tmp,text);
@@ -81,6 +90,10 @@ function handle(channel,callback){ipcMain.handle(channel,(event,...args)=>{
   return serialize(()=>callback(...args));
 });}
 async function start(){
+  const options=parseLaunchOptions(process.argv.slice(app.isPackaged?1:2),{
+    cwd:process.env.TSSTG_EDITOR_CWD??process.env.INIT_CWD??process.cwd(),
+  });
+  if(options.filePath){initialDocument=await readDocument(options.filePath);savedPath=initialDocument.path;}
   await mkdir(path.join(root,folder),{recursive:true});await mkdir(path.join(root,'userdata',session),{recursive:true});
   server=createSpellCardEditorServer({root});
   await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(0,'127.0.0.1',resolve);});
@@ -134,18 +147,17 @@ async function start(){
   });
   const draftDirectory=path.join(root,'userdata/spellcard-editor',selfTest?session.split('/')[1]:'');
   const draft=path.join(draftDirectory,'draft.spell.js');
-  handle('document:load-draft',async()=>{
+  async function loadDraft(){
     try{return {source:sourceText(await readFile(draft,'utf8'))};}
     catch(error){if(error.code==='ENOENT')return{};throw error;}
-  });
+  }
+  handle('document:initial',()=>initialDocument??loadDraft());
+  handle('document:load-draft',loadDraft);
   handle('document:save-draft',async source=>{await atomic(draft,sourceText(source));return{saved:true};});
   handle('document:open',async()=>{
     const result=await dialog.showOpenDialog(win,{filters,properties:['openFile']});if(result.canceled)return{cancelled:true};
-    const file=result.filePaths[0];
-    if(!['.js','.mjs'].includes(path.extname(file).toLowerCase()))throw Error('只支持 JavaScript 文件（.js 或 .mjs）。');
-    if((await stat(file)).size>1024*1024)throw Error('工程文件不能超过 1 MiB。');
-    const source=sourceText(await readFile(file,'utf8'));
-    savedPath=file;return{source,path:savedPath};
+    const opened=await readDocument(result.filePaths[0]);
+    savedPath=opened.path;return opened;
   });
   handle('document:save',async(source,options={})=>{
     const text=sourceText(source);let file=savedPath;
@@ -164,7 +176,7 @@ async function start(){
   await win.loadURL(url);
   if(selfTest){
     const {verifyDesktop}=await import('./verify-desktop.mjs');
-    await verifyDesktop({win,root,files,readStatus,dialog,child:()=>child});
+    await verifyDesktop({win,root,files,readStatus,dialog,child:()=>child,initialDocument});
     cleanup();app.exit(0);
   }
 }

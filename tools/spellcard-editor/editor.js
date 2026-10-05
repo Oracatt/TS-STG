@@ -176,9 +176,13 @@ if(bridge){
   $('preview-state').textContent='浏览器编辑模式';
 }
 async function initialize(){
-  try{const source=bridge?(await bridge.loadDraft()).source:localStorage.getItem(STORAGE);if(typeof source==='string')sourceText=source;}
+  try{
+    const initial=bridge?await bridge.loadInitialDocument():{source:localStorage.getItem(STORAGE)};
+    if(typeof initial.source==='string')sourceText=initial.source;
+    if(initial.path){documentPath=initial.path;savedSource=sourceText;}
+  }
   catch(error){notice(`草稿无法恢复，原文件已保留：${error.message}`);}
   editor=createCodeEditor({parent:$('source-code'),source:sourceText,onChange:changed,onUpdate:updateEditorStatus,onRun:reload,onSave:saveDocument});
-  initializing=false;renderFile();renderTransport();queueBounds();$('save-status').textContent='本地草稿';await reload();
+  initializing=false;renderFile();renderTransport();queueBounds();$('save-status').textContent=documentPath?'文件已载入':'本地草稿';await reload();
 }
 initialize().catch(error=>{setError(error);notice(`编辑器启动失败：${error.message}`);});

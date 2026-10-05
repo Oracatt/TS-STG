@@ -14,6 +14,20 @@ npm --prefix tools/spellcard-editor run setup
 npm --prefix tools/spellcard-editor start
 ```
 
+启动时也可以直接传入一个 `.js` 或 `.mjs` 路径。例如，在仓库根目录的命令提示符中打开纸鹤符卡：
+
+```bat
+start-spellcard-editor.cmd "examples\spellcard\moonfold.spell.js"
+```
+
+PowerShell 中将启动脚本写成 `.\start-spellcard-editor.cmd`。也可通过 npm 明确指定文件：
+
+```powershell
+npm --prefix tools/spellcard-editor start -- --file "D:\AIWorkspace\TS-STG\examples\spellcard\moonfold.spell.js"
+```
+
+位置参数与 `--file <路径>` 都只接受一个文件；包含空格或中文的路径应加引号。相对路径按发起启动的目录解析，不按编辑器内部目录解析。路径以短横线开头时，可在它前面放置 `--`，例如 `npm --prefix tools/spellcard-editor start -- -- "-my-spell.js"`。省略路径时恢复现有 JS 草稿；指定文件与界面“打开”使用同样的文件校验。
+
 CodeMirror 6 随工具在本地构建，提供 JavaScript 语法高亮、行号、折叠、括号匹配、缩进、撤销/重做和查找替换。运行时不依赖在线编辑器或 CDN。左右面板之间的分隔条可以拖动。
 
 | 操作 | 用途 |

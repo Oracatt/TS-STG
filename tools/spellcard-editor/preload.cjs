@@ -3,6 +3,7 @@ const {contextBridge,ipcRenderer}=require('electron');
 // The renderer never chooses a shell command, executable, file path or IPC name.
 contextBridge.exposeInMainWorld('spellCardEditor',{
   desktop:true,
+  loadInitialDocument:()=>ipcRenderer.invoke('document:initial'),
   loadDraft:()=>ipcRenderer.invoke('document:load-draft'),
   saveDraft:source=>ipcRenderer.invoke('document:save-draft',source),
   openDocument:()=>ipcRenderer.invoke('document:open'),

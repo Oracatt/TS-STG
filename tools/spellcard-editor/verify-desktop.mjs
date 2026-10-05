@@ -4,7 +4,7 @@ import path from 'node:path';
 
 /** Isolated --self-test window: actual CodeMirror, IPC, files and native engine.
  * Only the OS file picker is replaced, to choose a disposable test file. */
-export async function verifyDesktop({win,root,files,readStatus,dialog,child}){
+export async function verifyDesktop({win,root,files,readStatus,dialog,child,initialDocument}){
   const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   const evaluate=async code=>{try{return await win.webContents.executeJavaScript(code);}catch(error){throw new Error(`Renderer check failed: ${code.slice(0,180)}`,{cause:error});}};
   const wait=async(predicate,label)=>{const start=Date.now();while(Date.now()-start<20000){if(await predicate())return;await pause(100);}throw Error(`Timed out: ${label}; status ${JSON.stringify(await readStatus())}`);};
@@ -26,7 +26,13 @@ export async function verifyDesktop({win,root,files,readStatus,dialog,child}){
   assert.ok(child()?.pid);assert.deepEqual(Object.keys((await readStatus()).document).sort(),['boss','duration','hp','id','name','seed']);
   assert.equal(await evaluate('window.spellCardEditor.desktop'),true);
   const initial=await text();
-  assert.ok(initial.includes('function fireRing('));
+  if(initialDocument){
+    assert.equal(initial,initialDocument.source,'startup file source is loaded verbatim');
+    assert.equal(await evaluate('document.getElementById("file-name").textContent'),path.basename(initialDocument.path));
+    assert.equal(await evaluate('document.getElementById("file-dirty").hidden'),true,'startup file starts saved');
+    assert.equal(await readFile(initialDocument.path,'utf8'),initial,'opening never writes the input file');
+    assert.deepEqual(await evaluate('window.spellCardEditor.loadDraft()'),{},'startup file does not replace the isolated draft');
+  }else assert.ok(initial.includes('function fireRing('));
   assert.ok(!initial.includes('@spellcard-editor:'));
 
   // Only this self-test session's disposable draft directory is touched.
@@ -112,7 +118,7 @@ export function createSpell(context) {
     let savePrompts=0;
     dialog.showSaveDialog=async()=>{savePrompts++;return{canceled:false,filePath:saved};};
     dialog.showOpenDialog=async()=>({canceled:false,filePaths:[saved]});
-    await shortcut('s','KeyS');
+    if(initialDocument)await click('export-document');else await shortcut('s','KeyS');
     await wait(async()=>{try{return await readFile(saved,'utf8')===goodSource;}catch{return false;}},'save exact JS while editing');
     assert.equal(savePrompts,1);
     await click('new-document');await wait(async()=>(await text())!==goodSource,'new code document');
@@ -203,6 +209,6 @@ export function createSpell(context) {
   await click('native-preview');
   await wait(async()=>child()?.pid&&child().pid!==oldChild.pid&&await loaded()&&(await readStatus()).frame===180&&(await readStatus()).bullets>0,'restart restores authored scene');
   await wait(async()=>Number(await evaluate('document.getElementById("native-frame").dataset.frame'))>oldFrame,'restarted native pixels');
-  await writeFile(path.join(output,'verification.json'),JSON.stringify({passed:true,preview:await readStatus(),resize:after,
+  await writeFile(path.join(output,'verification.json'),JSON.stringify({passed:true,startupPath:initialDocument?.path??null,preview:await readStatus(),resize:after,
     verified:['source-only UI without event authoring','six-field rehearsal metadata','CodeMirror syntax and line numbers','JS closures and metadata expressions','automatic native reload','old JS draft preserved without JSON migration','pause','seeded seek','single step','find/replace','undo/redo and code folding','JS save/open roundtrip and mjs import','unsupported/cancelled import preserves code','late save preserves new document ownership','native diagnostics and goto line','syntax error retains scene and draft','automatic preview toggle and single Ctrl+Enter dispatch','focused native input and modified key release','blur releases keys','Space preserves button keyboard behavior','adjustable split and embedded resize','native RGBA pixels','source untouched by preview controls','native process exit and authored scene restart']},null,2));
 }
