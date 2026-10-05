@@ -44,6 +44,8 @@ Each load/create allocates a resource owned by the caller. Release it explicitly
 
 `pauseMusic(id)`/`resumeMusic(id)` call the stream's real pause/resume operations. Pausing suspends both stream updates and loop-range seeking, preserving the cursor. These operations do not approximate pause by stopping and replaying.
 
+`stopMusic(id)` clears queued PCM and rewinds the decoder even when the stream was already stopped or paused. Stopped streams are not refilled by the display loop. `seekMusic(id,seconds)` discards the old queued PCM, moves to the requested position, and preserves playing, paused or stopped state and gain. This allows a cached handle to restart with `stopMusic`, `seekMusic(id,0)`, then `playMusic`; unloading/reopening the file is unnecessary. These operations work around the pinned raylib 5.5 buffer reset behavior through its public API.
+
 `setMusicVolume(id,volume)` changes stream gain without starting, resuming, stopping or seeking playback. Both arguments are required; `volume` must be a finite number in `[0,1]`, including silent `0`. Paused and stopped streams accept gain changes without changing their transport state. Headless/no-audio operation still validates the loaded music handle and arguments, then omits the device call. Fades and their timing belong to JS; the host supplies only immediate gain control.
 
 `loadFont(path,size=32)` loads a font; the atlas grows as text encounters additional Unicode codepoints. `unloadFont(id)` releases its atlas. Font resources remain owned by their caller.

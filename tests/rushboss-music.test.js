@@ -91,6 +91,14 @@ test('real portrait retry and exit/re-entry restart cached BGM while pause/setti
     assert.equal(app.graphics.currentMusic,track);assert.equal(stream.time,0);assert.equal(stream.paused,false);
     assert.deepEqual(calls,[['stop',track],['seek',track,0],['play',track]]);
     stream.time=25;app.application.game.onExit();assert.equal(app.graphics.musicKey,'title');
+    const title=streams.get(app.graphics.currentMusic),menu=app.application.menu;
+    for(const page of [4,7,8]){
+      title.time=42;menu.openUtilityPage(page);menu.external.finish();
+      assert.equal(menu.state,'main');assert.equal(title.time,0,'Returning from a title subpage restarts its cached title music');
+    }
+    menu.openDifficulty();for(let i=0;i<9;i++)app.update();title.time=31;
+    app.update(Keys.CANCEL);for(let i=0;i<8;i++)app.update();
+    assert.equal(menu.state,'main');assert.equal(title.time,0,'Cancelling selection back to the main list restarts its music');
     app.start({mode:'normal',bossIndex:0,phaseIndex:0});assert.equal(app.graphics.currentMusic,track);assert.equal(stream.time,0);
     const fade=app.graphics.fadeMusic();for(let i=0;i<12;i++)app.update();assert.equal(fade.frame,12);
     app.application.game.openPause(0);for(let i=0;i<20;i++)app.update();assert.equal(fade.frame,12);

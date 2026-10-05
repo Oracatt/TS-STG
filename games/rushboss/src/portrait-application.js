@@ -83,6 +83,11 @@ class RushPortraitMenu extends TouhouTitleMenu {
       this.external=null;this.returnMain();this.selection=index;
     }});
   }
+  returnMain(){
+    const returning=this.state!=='main';
+    super.returnMain();
+    if(returning)this.owner.graphics.playMusic?.('title',{restart:true});
+  }
   chooseContent(selected){
     this.selected=selected;
     if(selected.mode==='normal'){this.launch({...selected,bossIndex:0,phaseIndex:0});return;}

@@ -1,6 +1,7 @@
 #include "tsstg/host.hpp"
 #include "tsstg/profile.hpp"
 #include "tsstg/text.hpp"
+#include "tsstg/music_stream.hpp"
 #include "raylib.h"
 #include "rlgl.h"
 #include "external/glad.h"
@@ -182,6 +183,7 @@ public:
             music.looping = true;
         }
         music_[id] = music;
+        musicVolumes_[id] = 1.f;
         return id;
     }
     std::uint32_t loadFont(const std::string& name, int size) override {
@@ -253,6 +255,7 @@ public:
         auto found = music_.find(id);
         if (found == music_.end()) throw std::runtime_error("Unknown music id: " + std::to_string(id));
         if (audioReady_) { SetMusicVolume(found->second, volume); PlayMusicStream(found->second); }
+        musicVolumes_[id]=volume;
         musicPlaying_[id]=true;pausedMusic_.erase(id);
     }
     void setMusicVolume(std::uint32_t id, float volume) override {
@@ -262,11 +265,12 @@ public:
         // Volume is independent of transport: changing gain must not start,
         // resume, stop or seek a stream, including a paused/stopped stream.
         if(audioReady_)SetMusicVolume(found->second,volume);
+        musicVolumes_[id]=volume;
     }
     void stopMusic(std::uint32_t id) override {
         auto found = music_.find(id);
         if (found == music_.end()) throw std::runtime_error("Unknown music id: " + std::to_string(id));
-        if (audioReady_) StopMusicStream(found->second);
+        if (audioReady_) resetMusicStream(found->second,musicVolumes_.at(id));
         musicPlaying_[id]=false;pausedMusic_.erase(id);
     }
     void pauseMusic(std::uint32_t id) override {
@@ -288,7 +292,7 @@ public:
         auto found=music_.find(id);
         if(found==music_.end()) throw std::runtime_error("Unknown music id: "+std::to_string(id));
         if(!std::isfinite(seconds)||seconds<0||(audioReady_&&seconds>GetMusicTimeLength(found->second))) throw std::runtime_error("Music seek outside stream duration");
-        if(audioReady_) SeekMusicStream(found->second,seconds);
+        if(audioReady_) seekMusicStream(found->second,seconds,musicVolumes_.at(id),musicPlaying_[id],pausedMusic_.count(id)!=0);
     }
     float getMusicTime(std::uint32_t id) const override {
         auto found=music_.find(id);
@@ -347,7 +351,7 @@ public:
     }
     void unloadMusic(std::uint32_t id) override {
         auto found=music_.find(id);if(found==music_.end())throw std::runtime_error("Unknown music id: "+std::to_string(id));
-        if(audioReady_){StopMusicStream(found->second);UnloadMusicStream(found->second);}music_.erase(found);musicLoops_.erase(id);musicPlaying_.erase(id);pausedMusic_.erase(id);
+        if(audioReady_){StopMusicStream(found->second);UnloadMusicStream(found->second);}music_.erase(found);musicLoops_.erase(id);musicPlaying_.erase(id);musicVolumes_.erase(id);pausedMusic_.erase(id);
     }
     void unloadFont(std::uint32_t id) override {
         auto found=fonts_.find(id);if(found==fonts_.end())throw std::runtime_error("Unknown font id: "+std::to_string(id));
@@ -591,15 +595,14 @@ public:
         const auto waitMs=elapsedMs(waitStart);const auto audioStart=ProfileClock::now();
         if(audioReady_)for(auto id:loopingSounds_)if(!pausedSounds_.count(id)&&!IsSoundPlaying(sounds_.at(id)))::PlaySound(sounds_.at(id));
         if (audioReady_) for (auto& entry : music_) {
-            if(pausedMusic_.count(entry.first))continue;
+            if(!musicPlaying_[entry.first]||pausedMusic_.count(entry.first))continue;
             UpdateMusicStream(entry.second);
             const auto loop=musicLoops_.find(entry.first);
             if(loop!=musicLoops_.end()&&musicPlaying_[entry.first]) {
                 const auto elapsed=GetMusicTimePlayed(entry.second);
                 if(elapsed>=loop->second[1]||!IsMusicStreamPlaying(entry.second)) {
                     // Generic streamed loop regions are serviced once per display frame.
-                    SeekMusicStream(entry.second,loop->second[0]+std::fmod(std::max(0.f,elapsed-loop->second[1]),loop->second[1]-loop->second[0]));
-                    PlayMusicStream(entry.second);
+                    seekMusic(entry.first,loop->second[0]+std::fmod(std::max(0.f,elapsed-loop->second[1]),loop->second[1]-loop->second[0]));
                 }
             }
         }
@@ -672,6 +675,7 @@ private:
     std::map<std::uint32_t, Music> music_;
     std::map<std::uint32_t, std::array<float,2>> musicLoops_;
     std::map<std::uint32_t, bool> musicPlaying_;
+    std::map<std::uint32_t, float> musicVolumes_;
     std::map<std::uint32_t, FontResource> fonts_;
     std::unique_ptr<PlatformText> textEngine_;
 };
