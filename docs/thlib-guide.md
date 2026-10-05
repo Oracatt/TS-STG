@@ -110,7 +110,7 @@ if (phaseClock.patternReady) updateAuthoredPattern();
 
 `TouhouBossDefeat` 提供不依赖渲染资源的最终击破流程：Boss 以随机方向缓慢漂移，固定中心的 `TouhouBulletClearWave` 从半径 16 开始，每帧增加 6；第 60 帧全场补清，再结算符卡、掉落并启动 `TouhouBossDeath` 反色与爆炸视觉。原作等待期间仍更新玩家、已有弹幕和符卡，不能提前锁定收卡奖励。
 
-公共 `TouhouGame` 会对登记的 Boss 自动使用该流程，也可显式调用 `game.beginBossDefeat(boss)`。使用独立模拟框架时，接入 `cancelCircle`、`clearAll`、`onMove` 和 `onBurst` 回调；`TouhouBulletField.cancelNearbyCircle` 提供原作清弹圆波所需的特殊消弹规则。离开场景调用 `destroy()`，不会触发清弹或击破；需要业务主动提前完成时可调用 `finish()`。
+公共 `TouhouGame` 在登记 Boss 的 HP 归零时保留身体，通过 `enterBoss(boss,{onDefeated})` 或全局 `onBossDefeated` 交给关卡决定后续；没有处理器时发送 `bossdefeated` 事件。需要完整爆炸预设时显式调用 `game.beginBossDefeat(boss)`。也可以先结算再接对话、用 `resumeBoss()` 继续下一阶段，或调用 `beginBossEscape()` 飞走、`removeBoss()` 无特效移除。`TouhouBossEscape` 本身只提供可配置的固定帧移动，不绑定奖励或消弹。使用独立模拟框架的爆炸预设时，接入 `cancelCircle`、`clearAll`、`onMove` 和 `onBurst` 回调；`TouhouBulletField.cancelNearbyCircle` 提供原作清弹圆波所需的特殊消弹规则。离开场景调用 `destroy()`，不会触发清弹或击破；需要业务主动提前完成时可调用 `finish()`。
 
 战后对话由舞台编排控制，应在 `bossburst` 事件后按业务时间启动，不要等待爆炸粒子全部消失。一、三、四、六面的源脚本在 Boss 退场后固定等待 60 帧；对话和死亡特效可以同时存在。API、完整接入示例和源码位置见 [Boss 击破与渐进消弹](touhou-boss-defeat.md)。
 

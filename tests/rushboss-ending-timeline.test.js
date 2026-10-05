@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { createTouhouResources, SaveStore } from '@ts-stg/thlib';
+import { createTouhouResources, SaveStore, TouhouBossEscape } from '@ts-stg/thlib';
 import { RushBattle } from '../games/rushboss/src/runtime.js';
 import { BOSSES } from '../games/rushboss/src/catalog.js';
 import { RushPortraitApplication } from '../games/rushboss/src/portrait-application.js';
@@ -182,13 +182,13 @@ test('practice timeout settles once then flies away for60 frames without a death
     try{
       const bullet=battle.spawn('XiaoYu',{x:800,y:100},{x:30,y:0},1,{delay:0,cleanOnOutOfRange:false});
       battle.phaseFrame=Math.round(phase.time*60)-1;spell.age.set(battle.phaseFrame);spell.frames=battle.phaseFrame;
-      battle.update();assert.equal(battle.escaping.clock.frame,0);assert.equal(battle.finished,false);
+      battle.update();assert.ok(battle.escaping instanceof TouhouBossEscape);assert.equal(battle.escaping.age,0);assert.equal(battle.finished,false);
       assert.equal(spell.active,false);assert.equal(battle.results.length,1);assert.equal(battle.results[0].captured,!!phase.survival);
       assert.equal(battle.phaseIndex,index);assert.equal(battle.boss.hp,100000);assert.equal(bullet.alive,true);
       assert.equal(battle.defeatSequence??null,null);assert.equal(clears,0);assert.equal(bursts,0);
       const bulletX=bullet.x,frames=battle.phaseFrame;
       battle.endPhase('timeout');tick(battle,59);
-      assert.equal(battle.escaping.clock.frame,59);assert.equal(battle.finished,false);assert.equal(battle.results.length,1);
+      assert.equal(battle.escaping.age,59);assert.equal(battle.finished,false);assert.equal(battle.results.length,1);
       assert.equal(battle.phaseFrame,frames);assert.equal(bullet.alive,true);assert.equal(bullet.x,bulletX+29.5);
       battle.update();assert.equal(battle.escaping,null);assert.equal(battle.finished,true);assert.equal(battle.boss.alive,false);
       assert.deepEqual([battle.boss.x,battle.boss.y],[-224,battle.playerYOffset+80]);

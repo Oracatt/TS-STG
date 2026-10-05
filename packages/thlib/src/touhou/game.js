@@ -18,6 +18,7 @@ import { TouhouRenderQueue } from './render-queue.js';
 import { TouhouBossHud } from './boss-hud.js';
 import { TouhouBossPresentation } from './boss-presentation.js';
 import { TouhouBossDefeat, TOUHOU_BOSS_DEFEAT_PRESET } from './boss-defeat.js';
+import { TouhouBossEscape } from './boss-escape.js';
 import { TouhouGameplayCompositor } from './gameplay-compositor.js';
 
 export const TOUHOU_GAME_VIEW=Object.freeze({x:336,y:24,scale:1.5,screenScale:1});
@@ -29,7 +30,9 @@ export class TouhouGame {
   constructor({banks,font,sht,styles,character=0,difficulty=1,power=100,stage=null,
     renderTarget=null,compositeTarget=null,renderBackground,onSound,onStopSound,onEvent,onExit,onRestart,onReplay,onOptions,onManual,pauseBackground,pauseCapture,itemsFactory,
     seed=1,rng=new TouhouRNG(seed),visualRng=new TouhouRNG(seed),spellOptions={},spellContext={},session={},gameOverOptions={},
-    view=TOUHOU_GAME_VIEW,viewport=TOUHOU_VIEWPORT,disposeBanks=false,onDestroy,bossPresentationOptions={}}={}) {
+    view=TOUHOU_GAME_VIEW,viewport=TOUHOU_VIEWPORT,disposeBanks=false,onDestroy,bossPresentationOptions={},onBossDefeated=null}={}) {
+    if(onBossDefeated!==null&&typeof onBossDefeated!=='function')throw new TypeError('onBossDefeated must be a function or null');
+    this.onBossDefeated=onBossDefeated;this.bossDefeatHandlers=new WeakMap();this.bossHolds=new Map();this.bossEscapes=[];
     Object.assign(this,{banks,font,difficulty,stage,renderTarget,renderBackground,onSound,onStopSound,onEvent,onExit,onRestart,onReplay,onOptions,onManual,pauseBackground,pauseCapture});
     this.rng=rng;this.visualRng=visualRng;this.view=view;this.viewport=viewport;this.disposeBanks=disposeBanks;this.onDestroy=onDestroy;this.destroyed=false;
     this.session={difficulty,stage:1,mode:0,continues:0,...session};this.gameOverOptions=gameOverOptions;this.pendingGameOver=false;
@@ -60,7 +63,8 @@ export class TouhouGame {
         (options.lasers===false?0:this.lasers.cancelRectangle(x,y,width,height,angle,options)),
       finishLasers:()=>{for(const laser of this.lasers.lasers)this.lasers.erase(laser);},
       damageEnemy:(enemy,amount,source)=>enemy===this.context.boss&&this.bossPresentation&&(!this.bossPresentation.entranceReady||!this.bossPresentation.combatActive)?0:this.damage.add(enemy,amount,source),
-      deferEnemyDefeat:(enemy,source)=>enemy===this.context.boss?!!this.beginBossDefeat(enemy,{source}):false,
+      deferEnemyDefeat:(enemy,source)=>this.notifyBossDefeated(enemy,source),
+      isEnemyHeld:enemy=>this.destroyed||this.bossHolds.has(enemy),
       presentEnemyDeath:enemy=>(enemy===this.context.boss||this.bossDefeats.some(entry=>entry.enemy===enemy))&&!!this.bossPresentation,
       enqueueGraze:effect=>this.grazeEffects.enqueue(effect),
       setStageVisible:visible=>{this.stageVisible=visible;},
@@ -80,8 +84,10 @@ export class TouhouGame {
     this.lasers.player=this.player;this.lasers.context=this.context;
   }
   spawnEnemy(options){const enemy=new TouhouEnemy({id:this.nextEnemyId++,bank:this.banks.enemy,...options});this.enemies.push(enemy);return enemy;}
-  enterBoss(boss,{entrance,...options}={}){
+  enterBoss(boss,{entrance,onDefeated,...options}={}){
     if(!this.bossPresentation)throw new Error('Original Boss presentation requires the common ascii_960 ANM bank');
+    if(onDefeated!==undefined&&onDefeated!==null&&typeof onDefeated!=='function')throw new TypeError('Boss onDefeated must be a function or null');
+    if(onDefeated!==undefined)this.bossDefeatHandlers.set(boss,onDefeated);
     if(this.context.boss!==boss)this.bossHudState={};
     this.context.boss=boss;this.bossPresentation.enter(boss,options);
     if(entrance)this.bossPresentation.beginEntrance(entrance);
@@ -93,13 +99,88 @@ export class TouhouGame {
   setBossHud(state={}){Object.assign(this.bossHudState,state);return this;}
   startBossCombat(){this.bossPresentation?.startCombat();return this;}
   stopBossCombat(){this.bossPresentation?.stopCombat();return this;}
+  /** HP exhaustion is a stage event, not a death effect. Keep the body until
+   * the stage explicitly resumes it, removes it or starts an exit preset. */
+  notifyBossDefeated(enemy,source=null){
+    if(enemy!==this.context.boss&&!this.bossHolds.has(enemy))return false;
+    if(this.destroyed||!enemy?.alive)return true;
+    if(this.bossDefeats.some(entry=>entry.enemy===enemy)||this.bossEscapes.some(entry=>entry.enemy===enemy))return true;
+    this.holdBoss(enemy);
+    const hold=this.bossHolds.get(enemy);
+    if(hold.notified)return true;
+    hold.notified=true;
+    const event={game:this,boss:enemy,source};
+    const handler=this.bossDefeatHandlers.has(enemy)?this.bossDefeatHandlers.get(enemy):this.onBossDefeated;
+    if(handler)handler(event);else this.context.onEvent?.('bossdefeated',event);
+    return true;
+  }
+  /** Suspend actor attacks/motion/contact without settling the card, changing
+   * presentation, clearing projectiles or consuming gameplay RNG. */
+  holdBoss(enemy=this.context.boss){
+    if(this.destroyed||!enemy?.alive)return false;
+    if(!this.bossHolds.has(enemy))this.bossHolds.set(enemy,{invulnerable:enemy.invulnerable,primaryFlags:enemy.primaryFlags,notified:false});
+    enemy.invulnerable=true;enemy.primaryFlags|=0x13;
+    enemy.hitThisFrame=false;enemy.animation.flashColor=null;return true;
+  }
+  isBossHeld(enemy=this.context.boss){return this.bossHolds.has(enemy);}
+  pruneBossSequences(){
+    this.bossDefeats=this.bossDefeats.filter(entry=>entry.sequence?.alive!==false);
+    this.bossEscapes=this.bossEscapes.filter(entry=>entry.sequence.alive);
+  }
+  /** The stage supplies the next phase's health and behavior before resuming. */
+  resumeBoss(enemy=this.context.boss){
+    const hold=this.bossHolds.get(enemy);
+    if(!hold||this.destroyed||!enemy?.alive)return false;
+    this.pruneBossSequences();
+    if(this.bossDefeats.some(entry=>entry.enemy===enemy&&entry.sequence?.alive)||this.bossEscapes.some(entry=>entry.enemy===enemy&&entry.sequence.alive))return false;
+    enemy.invulnerable=hold.invulnerable;
+    enemy.primaryFlags=(enemy.primaryFlags&~0x13)|(hold.primaryFlags&0x13);
+    this.bossHolds.delete(enemy);return true;
+  }
+  /** ECL entity retirement: no automatic rewards, ordinary death or inversion. */
+  removeBoss(enemy=this.context.boss){
+    if(this.destroyed||!enemy)return false;
+    for(const entry of [...this.bossDefeats,...this.bossEscapes])if(entry.enemy===enemy)entry.sequence?.destroy();
+    this.bossDefeats=this.bossDefeats.filter(entry=>entry.enemy!==enemy);
+    this.bossEscapes=this.bossEscapes.filter(entry=>entry.enemy!==enemy);
+    this.bossHolds.delete(enemy);this.bossDefeatHandlers.delete(enemy);
+    enemy.alive=false;enemy.animation.destroy();
+    if(this.context.boss===enemy)this.setBoss(null);
+    return true;
+  }
+  /** Basic silent fly-away preset. Settlement, rewards, cancellation, dialogue
+   * and any delay before starting it are deliberately separate stage actions. */
+  beginBossEscape(enemy=this.context.boss,{source=null,...options}={}){
+    if(this.destroyed||!enemy?.alive)return null;
+    this.pruneBossSequences();
+    const existing=this.bossEscapes.find(entry=>entry.enemy===enemy);
+    if(existing)return existing.sequence;
+    if(this.bossDefeats.some(entry=>entry.enemy===enemy))return null;
+    const sequence=new TouhouBossEscape({...options,x:enemy.x,y:enemy.y,z:enemy.z??0,
+      onMove:position=>{
+        enemy.previous={x:enemy.x,y:enemy.y,z:enemy.z??0};
+        enemy.x=position.x;enemy.y=position.y;enemy.z=position.z;
+        if(enemy.motion?.position)Object.assign(enemy.motion.position,position);
+        Object.assign(enemy.animation,position);
+      },
+      onEscape:owner=>{
+        this.removeBoss(enemy);
+        if(!this.destroyed)this.context.onEvent?.('bossescape',{enemy,source,sequence:owner});
+      }});
+    // Construction only validates; no user callback can observe a half owner.
+    this.holdBoss(enemy);this.bossEscapes.push({enemy,source,sequence});
+    if(this.context.boss===enemy)this.setBoss(null);
+    return sequence;
+  }
   /** Final defeat keeps the body and card alive through the source clearing
    * wave. A stage can start dialogue synchronously from the bossburst event.
    * Ordinary phase handoffs remain the stage's responsibility. */
   beginBossDefeat(enemy=this.context.boss,{source=null,...options}={}){
     if(this.destroyed||!enemy?.alive)return null;
+    this.pruneBossSequences();
     const existing=this.bossDefeats.find(entry=>entry.enemy===enemy);
     if(existing)return existing.sequence;
+    if(this.bossEscapes.some(entry=>entry.enemy===enemy))return null;
     // Validate this facade's public parameters before retiring enemies or
     // locking the Boss. The sequence constructor validates too, but creates
     // its first clearing event synchronously, after scene ownership is set.
@@ -111,11 +192,10 @@ export class TouhouGame {
       throw new RangeError('Boss defeat requires nonnegative speed and integer delayFrames');
     const entry={enemy,source,sequence:null,spell:this.spell.active?this.spell:null,spellIndex:this.spell.spellIndex};
     this.bossDefeats.push(entry);
-    enemy.invulnerable=true;enemy.primaryFlags|=0x13;
-    enemy.hitThisFrame=false;enemy.animation.flashColor=null;
+    this.holdBoss(enemy);
     // ECL525 removes ordinary enemies without invoking their death rewards.
     for(const other of this.enemies)if(other!==enemy&&other.alive&&!this.bossDefeats.some(record=>record.enemy===other)){
-      other.alive=false;other.animation.destroy();
+      this.removeBoss(other);
     }
     for(const charge of this.bossPresentation?.charges??[])charge.stop();
     entry.sequence=new TouhouBossDefeat({...options,x:enemy.x,y:enemy.y,z:enemy.z??0,rng:this.rng,
@@ -137,6 +217,7 @@ export class TouhouGame {
         if(entry.spell?.active&&entry.spell.spellIndex===entry.spellIndex)entry.spell.capture(this.context);
         if(this.destroyed)return;
         enemy.defeat(source,{...this.context,deferEnemyDefeat:undefined});
+        this.bossHolds.delete(enemy);this.bossDefeatHandlers.delete(enemy);
         if(this.destroyed)return;
         this.bossPresentation?.beginDeath({...sequence.position,follow:null,delayFrames:0});
         if(this.destroyed)return;
@@ -167,20 +248,24 @@ export class TouhouGame {
     if(this.paused){this.pauseVisual.update(mask);if(this.pauseVisual instanceof TouhouGameOver)this.pauseCapture?.update();if(!this.pauseVisual.active)this.paused=false;return;}
     // Existing source helper actors run before projectile movement. A defeat
     // created by this frame's damage pass starts advancing on the next frame.
-    const defeats=this.bossDefeats.slice();
+    const defeats=this.bossDefeats.slice(),escapes=this.bossEscapes.slice();
     this.stage?.(this,this.frame);
     if(this.destroyed)return;
     for(const entry of defeats){entry.sequence?.update();if(this.destroyed)return;}
-    this.bossDefeats=this.bossDefeats.filter(entry=>entry.sequence?.alive);
+    for(const entry of escapes){entry.sequence.update();if(this.destroyed)return;}
+    this.pruneBossSequences();
     for(const enemy of this.enemies){
-      if(this.bossDefeats.some(entry=>entry.enemy===enemy)){
+      if(this.bossHolds.has(enemy)){
         for(const effect of enemy.effects)effect.update();enemy.effects=enemy.effects.filter(effect=>effect.alive);
-        enemy.animation.x=enemy.x;enemy.animation.y=enemy.y;enemy.animation.update();
+        if(this.bossEscapes.some(entry=>entry.enemy===enemy))enemy.updateAnimation(this.context);
+        else{enemy.animation.x=enemy.x;enemy.animation.y=enemy.y;enemy.animation.update();}
       }else enemy.update(this.context);
+      if(this.destroyed)return;
     }
     this.player.update(mask,this.context);for(const enemy of this.enemies)if(enemy!==this.context.boss||!this.bossPresentation||this.bossPresentation.entranceReady&&this.bossPresentation.combatActive)enemy.collidePlayer?.(this.player,this.context);
     this.bullets.update(this.player,this.context);this.lasers.update(this.player,this.context);
-    this.damage.flush(this.context);for(const enemy of this.enemies)if(!this.bossDefeats.some(entry=>entry.enemy===enemy))enemy.finishDamageFeedback?.(this.context);this.items?.update(this.context);
+    this.damage.flush(this.context);if(this.destroyed)return;
+    for(const enemy of this.enemies)if(!this.bossHolds.has(enemy))enemy.finishDamageFeedback?.(this.context);this.items?.update(this.context);
     this.spell.update(this.context);if(this.spell.active&&this.spell.remaining<=0&&!this.bossDefeats.length)this.spell.timeout(this.context);this.grazeEffects.update(this.context);
     this.enemies=this.enemies.filter(enemy=>enemy.alive||enemy.effects.length);this.context.enemies=this.enemies;
     this.bossPresentation?.update({boss:this.context.boss??null,clockScale:this.context.clockScale});
@@ -221,6 +306,6 @@ export class TouhouGame {
     if(this.paused)this.pauseVisual.draw(draw);
     return draw.commands;
   }
-  snapshot(){return {frame:this.frame,paused:this.paused,pause:this.paused?this.pauseVisual?.snapshot():null,session:{...this.session},player:this.player.snapshot(),enemies:this.enemies.map(enemy=>enemy.snapshot()),bossDefeats:this.bossDefeats.map(entry=>({enemyId:entry.enemy.id,...entry.sequence.snapshot()})),bullets:this.bullets.snapshot(),lasers:this.lasers.snapshot(),items:this.items?.snapshot?.()??null,spell:this.spell.snapshot(),rng:this.rng.state,visualRng:this.visualRng.state};}
-  destroy(){if(this.destroyed)return;this.destroyed=true;for(const entry of this.bossDefeats)entry.sequence?.destroy();this.bossDefeats.length=0;this.damage.clear();this.pauseVisual?.destroy();this.pauseCapture?.destroy();this.bossPresentation?.destroy();this.spell.destroy();this.grazeEffects.clear();this.bossHud?.destroy();this.hud.destroy();for(const bank of new Set(Object.values(this.banks))){for(const vm of bank.instances)vm.destroy();if(this.disposeBanks)bank.dispose();}this.onDestroy?.(this);}
+  snapshot(){return {frame:this.frame,paused:this.paused,pause:this.paused?this.pauseVisual?.snapshot():null,session:{...this.session},player:this.player.snapshot(),enemies:this.enemies.map(enemy=>enemy.snapshot()),bossHolds:[...this.bossHolds].map(([enemy,hold])=>({enemyId:enemy.id,notified:hold.notified})),bossEscapes:this.bossEscapes.map(entry=>({enemyId:entry.enemy.id,...entry.sequence.snapshot()})),bossDefeats:this.bossDefeats.map(entry=>({enemyId:entry.enemy.id,...entry.sequence.snapshot()})),bullets:this.bullets.snapshot(),lasers:this.lasers.snapshot(),items:this.items?.snapshot?.()??null,spell:this.spell.snapshot(),rng:this.rng.state,visualRng:this.visualRng.state};}
+  destroy(){if(this.destroyed)return;this.destroyed=true;for(const entry of [...this.bossDefeats,...this.bossEscapes])entry.sequence?.destroy();this.bossDefeats.length=0;this.bossEscapes.length=0;this.bossHolds.clear();this.bossDefeatHandlers=new WeakMap();this.damage.clear();this.pauseVisual?.destroy();this.pauseCapture?.destroy();this.bossPresentation?.destroy();this.spell.destroy();this.grazeEffects.clear();this.bossHud?.destroy();this.hud.destroy();for(const bank of new Set(Object.values(this.banks))){for(const vm of bank.instances)vm.destroy();if(this.disposeBanks)bank.dispose();}this.onDestroy?.(this);}
 }

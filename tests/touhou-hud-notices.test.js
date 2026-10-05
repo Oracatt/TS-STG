@@ -124,7 +124,8 @@ test('public Game composes spell and item notices without business-specific adap
 test('public Game Boss defeat replaces the minor-enemy death while ordinary enemies keep their own sound and ANM',()=>{
   const root=new URL('../',import.meta.url),resources=createTouhouResources({readText:file=>fs.readFileSync(new URL(file,root),'utf8'),loadTexture:()=>11});
   const sounds=[],game=new TouhouGame({banks:resources.banks,font:resources.font,sht:resources.shots[0],styles:resources.styles,onSound:id=>sounds.push(id)});
-  const boss=game.spawnEnemy({x:0,y:128,hp:5000,script:0,deathSound:3,drop:[{type:5}]});game.enterBoss(boss);
+  const boss=game.spawnEnemy({x:0,y:128,hp:5000,script:0,deathSound:3,drop:[{type:5}]});
+  game.enterBoss(boss,{onDefeated:({game,boss,source})=>game.beginBossDefeat(boss,{source})});
   boss.defeat(null,game.context);
   assert.equal(boss.alive,true);assert.equal(game.bossPresentation.snapshot().deaths.length,0);
   assert.equal(game.items.items.length,0);assert.equal(game.bossDefeats.length,1);

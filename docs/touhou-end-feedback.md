@@ -9,7 +9,7 @@
 - 25是自机死亡 `effect:21` 使用的同一反色动画：原 ANM 的0、5、25帧生成时序、缩放和淡出保留，layer21 对应绘制优先级50。混合因子是 `oneMinusDstColor / oneMinusSrcColor`，不是覆盖一张白色闪光图。
 - 57保留原120个散射粒子。动画根最长存活192帧，不跟着 Boss 对象销毁。
 - 音效5是 `se_enep01.wav`。`TouhouScreenShake` 保留原 mode1 的独立双轴随机方向、30帧线性12→0幅度；合成器接收 `cameraOffset`，右侧固定 HUD 不震动。
-- 普通敌人仍使用自己的死亡脚本和音效。`TouhouGame` 仅对 `enterBoss()` 明确指定的对象接管死亡，不按血量、外观或“符卡结束”推断 Boss 死亡。
+- 普通敌人仍使用自己的死亡脚本和音效。`TouhouGame` 对 `enterBoss()` 登记的 Boss 只派发一次击破事件并保留身体，由 `onDefeated` / `onBossDefeated` 回调选择后续。只有显式调用爆炸预设才生成反色；也可撤退、接对话、继续阶段或执行自定义编排，见 [Boss 击破事件](touhou-boss-defeat.md)。
 
 ```js
 // 默认包含60帧等待；业务在爆发时移除自己的 Boss。

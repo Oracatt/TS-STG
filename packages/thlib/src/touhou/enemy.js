@@ -157,15 +157,9 @@ export class TouhouEnemy {
     this.frameAge=this.age;
     this.onUpdate?.(this,context);this.previous=vec({x:this.x,y:this.y});
     if(!this.alive)return;
+    if(context.isEnemyHeld?.(this)){this.animation.update();return;}
     this.motion.update(context.clockScale??1);this.x=this.motion.position.x;this.y=this.motion.position.y;
-    const dx=sub(this.x,this.previous.x),next=dx<f32(-.03)?-1:dx>f32(.03)?1:0;
-    if(this.directional&&next!==this.direction) {
-      const transition=this.direction===-1?(next===0?3:2):this.direction===0?(next===-1?1:2):(next===0?4:1);
-      this.animation.destroy();this.animation=this.bank.create(this.script+transition,{x:this.x,y:this.y});this.direction=next;
-    }
-    this.animation.x=this.x;this.animation.y=this.y;
-    if(!context.deferEnemyDamageFeedback)this.finishDamageFeedback(context);
-    this.animation.update();
+    this.updateAnimation(context);
     // Original deliberately uses animation height for x extent and width for y.
     const halfX=div(Math.abs(mul(this.animation.height,this.animation.scaleY)),2),halfY=div(Math.abs(mul(this.animation.width,this.animation.scaleX)),2);
     const outside=-192>add(this.x,halfX)||sub(this.x,halfX)>192||0>add(this.y,halfY)||sub(this.y,halfY)>448;
@@ -175,6 +169,19 @@ export class TouhouEnemy {
     if(this.damageInvulnerability.current>0)this.damageInvulnerability.add(-1,context.timerRate??1);
     if(this.contactInvulnerability.current>0)this.contactInvulnerability.add(-1,context.timerRate??1);
     this.age++;
+  }
+  /** Animate a body moved by an external sequence without ticking its attack
+   * or applying automatic offscreen retirement before that sequence ends. */
+  updateAnimation(context={}) {
+    const dx=sub(this.x,this.previous.x),next=dx<f32(-.03)?-1:dx>f32(.03)?1:0;
+    if(this.directional&&next!==this.direction) {
+      const transition=this.direction===-1?(next===0?3:2):this.direction===0?(next===-1?1:2):(next===0?4:1);
+      this.animation.destroy();this.animation=this.bank.create(this.script+transition,{x:this.x,y:this.y});this.direction=next;
+    }
+    this.animation.x=this.x;this.animation.y=this.y;
+    if(this.z!==undefined)this.animation.z=this.z;
+    if(!context.deferEnemyDamageFeedback)this.finishDamageFeedback(context);
+    this.animation.update();
   }
   draw(draw,view){if(this.alive)this.animation.draw(draw,view);for(const effect of this.effects)effect.draw(draw,view);return draw;}
   snapshot(){return {id:this.id,x:this.x,y:this.y,hp:this.hp,scaledHp:this.health.scaledHp,healthFlags:this.health.flags,damageTotal:this.damageTotal,alive:this.alive,age:this.age,direction:this.direction};}

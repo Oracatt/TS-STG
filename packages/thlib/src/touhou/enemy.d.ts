@@ -13,6 +13,8 @@ export function touhouEnemyDeathScript(script:number,animationFile?:number):numb
 export interface TouhouEnemyContext extends TouhouPlayerContext {player?:TouhouPlayer;effectBank?:AnmBank|null;deferEnemyContact?:boolean;deferEnemyDamageFeedback?:boolean;enemyContactBlocked?:boolean;
   /** Return true to postpone body removal, ordinary death effects, drops and callbacks. The owner must finish defeat with this hook disabled. */
   deferEnemyDefeat?:(enemy:TouhouEnemy,source:unknown)=>boolean;
+  /** Recheck after onUpdate so a newly held actor does not move once more in that frame. */
+  isEnemyHeld?:(enemy:TouhouEnemy)=>boolean;
   /** Return true to replace only the ordinary enemy death sound/ANM; drops and defeat callbacks still run. */
   presentEnemyDeath?:(enemy:TouhouEnemy,source:unknown)=>boolean;
   onEnemyDefeat?:(enemy:TouhouEnemy,source:unknown)=>void;[key:string]:unknown;}
@@ -24,5 +26,8 @@ export class TouhouEnemy {
  prepareSpellHealth(hp?:number,threshold?:number):this;prepareNormalHealth(hp?:number):this;collidePlayer(player:TouhouPlayer,context?:TouhouEnemyContext):number;
  hitSound:number;hitCooldown:number;hitThisFrame:boolean;frameAge:number;finishDamageFeedback(context?:TouhouEnemyContext):void;
  damage(amount:number,source?:unknown,context?:TouhouEnemyContext):number;defeat(source?:unknown,context?:TouhouEnemyContext):void;update(context?:TouhouEnemyContext):void;
+ /** Update directional/body animation only, after an external owner changes position and previous. */
+ updateAnimation(context?:TouhouEnemyContext):void;previous:TouhouVector;z?:number;
+ onUpdate?:TouhouEnemyOptions['onUpdate'];onDefeat?:TouhouEnemyOptions['onDefeat'];
  draw(draw:DrawList,view?:{x:number;y:number;scale:number;screenScale?:number}):DrawList;snapshot():{id:number;x:number;y:number;hp:number;scaledHp:number;healthFlags:number;damageTotal:number;alive:boolean;age:number;direction:number};
 }

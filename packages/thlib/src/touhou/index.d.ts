@@ -42,6 +42,7 @@ export * from './boss-phase-timeline.js';
 export * from './boss-presentation.js';
 export * from './boss-death.js';
 export * from './boss-defeat.js';
+export * from './boss-escape.js';
 export * from './boss-phase-clear.js';
 export * from './bullet-clear-wave.js';
 export * from './boss-entrance.js';

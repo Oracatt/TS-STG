@@ -5,7 +5,8 @@ import { TouhouGame, TouhouEnemy, createTouhouResources } from '@ts-stg/thlib/to
 
 function fixture(options={}) {
   const resources=createTouhouResources({readText:file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8'),loadTexture:()=>11});
-  const game=new TouhouGame({banks:resources.banks,font:resources.font,sht:resources.shots[0],styles:resources.styles,...options});
+  const game=new TouhouGame({banks:resources.banks,font:resources.font,sht:resources.shots[0],styles:resources.styles,
+    onBossDefeated:({game,boss,source})=>game.beginBossDefeat(boss,{source}),...options});
   return {game,resources,dispose(){game.destroy();resources.dispose();}};
 }
 

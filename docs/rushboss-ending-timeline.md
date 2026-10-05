@@ -26,7 +26,7 @@
 
 `TouhouBossDefeat` 管理漂移、消弹和爆炸时点，`TouhouBulletClearWave` 管理扩大圆波，`TouhouBossDeath` 管理可独立存活的反色和粒子；`TouhouGame.beginBossDefeat()` 也组合这套流程。舞台决定何时开启对话。详见 [公共击破接口](touhou-boss-defeat.md) 和 [公共对话](touhou-dialogue.md)。
 
-单卡练习成功走同一套60帧击破流程。超时按 `BossEscapeSpell` 立即失败结算，然后用60帧飞离；不播放击破反色，也不凭空执行全场击破消弹。结果页会暂停世界，因此会等待尚在播放的结果反馈结束后再进入。
+单卡练习成功走同一套60帧击破流程。超时按 `BossEscapeSpell` 立即失败结算，然后使用公共 `TouhouBossEscape` 60帧飞离；不播放击破反色，也不凭空执行全场击破消弹。撤退选择与结算留在 Demo 的关卡编排，公共移动预设不认识练习模式。结果页会暂停世界，因此会等待尚在播放的结果反馈结束后再进入。该次公共坐标插值迁移使用 replay revision13，拒绝旧版回放。
 
 ## 核对与验证
 

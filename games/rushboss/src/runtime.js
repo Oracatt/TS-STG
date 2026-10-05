@@ -2,7 +2,7 @@
 // Business adapter for TouhouRushBoss trajectories and attack content.
 // World, entity lifecycle, drawing and geometry are provided by public thlib.
 import { World, Entity } from '@ts-stg/thlib';
-import {TouhouTimer,TouhouBossPhaseTimeline,TouhouBossDefeat,TouhouRNG,AnmInterpolation,applyTouhouEnemyDamage,clearTouhouBossPhase} from '@ts-stg/thlib/touhou';
+import {TouhouTimer,TouhouBossPhaseTimeline,TouhouBossDefeat,TouhouBossEscape,TouhouRNG,AnmInterpolation,applyTouhouEnemyDamage,clearTouhouBossPhase} from '@ts-stg/thlib/touhou';
 import { RushRandom } from './random.js';
 import { BULLET_STYLES } from './bullet-styles.js';
 import { RushPlayerAdapter } from './player-adapter.js';
@@ -330,8 +330,9 @@ export class RushBattle {
     // default.ecl BossEscapeSpell: settle immediately, remove attack owners,
     // withdraw the Boss slot/aura and move to(-224,-80) over60 frames (mode4).
     // There is no ECL613 clear or Boss death inversion on this route.
-    this.escaping={clock:new TouhouBossPhaseTimeline({attackStartFrame:60}),
-      move:new AnmInterpolation([this.boss.x,this.boss.y],[-224,this.playerYOffset+80],60,4)};
+    this.escaping=new TouhouBossEscape({x:this.boss.x,y:this.playerYOffset-this.boss.y,
+      onMove:position=>{this.boss.x=position.x;this.boss.y=f(this.playerYOffset-position.y);},
+      onEscape:()=>{this.escaping=null;this.escaped=true;this.finished=true;this.boss.alive=false;this.boss.visible=false;}});
     this.settlePhase(reason,{quiet:true});this.world.clear(e=>e.group==='actor');
     // These content charge events belong to the terminated attack script.
     // Their detached ANM tails may finish, but no late release or sound should
@@ -388,10 +389,7 @@ export class RushBattle {
     const deathAtFrameStart=this.portrait?this.dying:null;
     const escapeAtFrameStart=this.escaping;
     if(deathAtFrameStart&&!this.dialogue){this.phaseFrame++;deathAtFrameStart.update();}
-    if(escapeAtFrameStart&&!this.dialogue){
-      escapeAtFrameStart.clock.update();[this.boss.x,this.boss.y]=escapeAtFrameStart.move.sample();
-      if(escapeAtFrameStart.clock.attackStarted){this.escaping=null;this.escaped=true;this.finished=true;this.boss.alive=false;this.boss.visible=false;}
-    }
+    if(escapeAtFrameStart&&!this.dialogue)escapeAtFrameStart.update();
     if(entryAtFrameStart&&!this.dialogue){
       entryAtFrameStart.clock.update();
       [this.boss.x,this.boss.y]=entryAtFrameStart.move.sample();
@@ -430,13 +428,13 @@ export class RushBattle {
     this.statistics.peak=Math.max(this.statistics.peak,this.world.entities.length);
   }
   dispose(){
-    if(this.disposed)return;this.disposed=true;this.defeatSequence?.destroy();this.world.clear();
+    if(this.disposed)return;this.disposed=true;this.defeatSequence?.destroy();this.escaping?.destroy();this.world.clear();
     this.projectiles.dispose();this.presentation.dispose();this.bulletVisuals.dispose();this.playerAdapter.dispose();
   }
   snapshot() {
     return{...(this.portrait?{profile:this.profile,combatStarted:this.combatStarted,dialogue:this.dialogue,bounds:{...this.bounds},damageProtection:this.boss.damageInvulnerability.current,
       phaseTimeline:this.phaseTimeline?.snapshot()??null,phaseEntry:this.phaseEntry?.clock.snapshot()??null,
-      defeat:this.defeatSequence?.snapshot()??null,escape:this.escaping?.clock.snapshot()??null,escaped:!!this.escaped}:{}),
+      defeat:this.defeatSequence?.snapshot()??null,escape:this.escaping?.snapshot()??null,escaped:!!this.escaped}:{}),
       frame:this.frame,boss:this.bossKey,difficulty:this.difficulty,character:this.character,phase:this.phase?.key,
       phaseIndex:this.phaseIndex,phaseFrame:this.phaseFrame,hp:this.boss.hp,position:{x:this.boss.x,y:this.boss.y},
       player:{...this.player},score:this.score,graze:this.graze,finished:this.finished,gameOver:this.gameOver,

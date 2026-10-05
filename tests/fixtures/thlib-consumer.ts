@@ -307,6 +307,31 @@ configuredGame.beginBossDefeat();
 const trackedDefeat:TouhouBossDefeat|undefined=configuredGame.bossDefeats[0]?.sequence;
 if(gameDefeat){const frame:number=gameDefeat.snapshot().age;}
 
+import {TouhouBossEscape,TOUHOU_BOSS_ESCAPE_PRESET} from '@ts-stg/thlib/touhou';
+import {TouhouBossEscape as EscapeSubpath} from '@ts-stg/thlib/touhou/boss-escape';
+import type {TouhouBossDefeatedHandler} from '@ts-stg/thlib/touhou';
+const outcomeHandler:TouhouBossDefeatedHandler=({game,boss,source})=>{
+ game.spell.capture(game.context);game.stopBossCombat();
+ const held:boolean=game.isBossHeld(boss);
+ game.beginBossEscape(boss,{target:{x:192,y:-32},duration:60,easing:4,source});
+};
+configuredGame.onBossDefeated=outcomeHandler;
+configuredGame.enterBoss(defeatEnemy,{onDefeated:outcomeHandler});
+configuredGame.enterBoss(defeatEnemy,{onDefeated:null});
+configuredGame.holdBoss(defeatEnemy);configuredGame.resumeBoss(defeatEnemy);configuredGame.removeBoss(defeatEnemy);
+const gameEscape:TouhouBossEscape|null=configuredGame.beginBossEscape(defeatEnemy);
+const rawEscape=new EscapeSubpath({x:0,y:128,target:{x:192,y:-32},onMove(position,sequence){
+ const x:number=position.x;const age:number=sequence.age;
+},onEscape(sequence){const completed:boolean=sequence.escaped;}});
+const escapeDuration:60=TOUHOU_BOSS_ESCAPE_PRESET.duration;
+const escapeX:number=rawEscape.update().snapshot().position.x;rawEscape.finish().destroy();
+// @ts-expect-error Outcome hooks receive a structured event, not a numeric HP.
+configuredGame.enterBoss(defeatEnemy,{onDefeated:(hp:number)=>{}});
+// @ts-expect-error A retirement target uses numeric coordinates.
+configuredGame.beginBossEscape(defeatEnemy,{target:{x:'left',y:-32}});
+// @ts-expect-error Game owns its retirement callback; events are delivered through onEvent.
+configuredGame.beginBossEscape(defeatEnemy,{onEscape(){}});
+
 // @ts-expect-error A cancellation owner needs an actual callback.
 new TouhouBulletClearWave({x:0,y:128});
 // @ts-expect-error The fixed origin is immutable after construction.
