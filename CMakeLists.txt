@@ -62,6 +62,7 @@ endforeach()
 add_executable(ts-stg
   native/src/main.cpp
   native/src/host.cpp
+  native/src/frame_stream.cpp
   native/src/geometry.cpp
   native/src/text_win32.cpp
   native/src/text_gdi.cpp
@@ -93,6 +94,29 @@ else()
 endif()
 
 if(BUILD_TESTING)
+  add_executable(tsstg-frame-stream native/tests/frame_stream.cpp native/src/frame_stream.cpp)
+  target_include_directories(tsstg-frame-stream PRIVATE native/include)
+  if(MSVC)
+    target_compile_options(tsstg-frame-stream PRIVATE /W4 /utf-8 /EHsc)
+  endif()
+  add_test(NAME native.frame-stream-protocol COMMAND tsstg-frame-stream)
+  foreach(stream_failure missing-value relative remote empty-name nested headless)
+    if(stream_failure STREQUAL "missing-value")
+      set(stream_arguments --frame-stream)
+    elseif(stream_failure STREQUAL "relative")
+      set(stream_arguments --frame-stream preview)
+    elseif(stream_failure STREQUAL "remote")
+      set(stream_arguments --frame-stream "\\\\server\\pipe\\preview")
+    elseif(stream_failure STREQUAL "empty-name")
+      set(stream_arguments --frame-stream "\\\\.\\pipe\\")
+    elseif(stream_failure STREQUAL "nested")
+      set(stream_arguments --frame-stream "\\\\.\\pipe\\nested\\preview")
+    else()
+      set(stream_arguments --headless --frame-stream "\\\\.\\pipe\\preview")
+    endif()
+    add_test(NAME native.reject-frame-stream-${stream_failure} COMMAND ts-stg --root ${CMAKE_CURRENT_SOURCE_DIR} ${stream_arguments})
+    set_tests_properties(native.reject-frame-stream-${stream_failure} PROPERTIES WILL_FAIL TRUE TIMEOUT 10)
+  endforeach()
   # The original native tests explicitly exercise QuickJS; the same fixtures
   # also run on V8, including failures and command validation, when available.
   function(add_script_test)
@@ -150,6 +174,14 @@ if(BUILD_TESTING)
   find_program(TSSTG_NODE node)
   if(TSSTG_NODE)
     if(WIN32)
+      add_test(NAME native.frame-stream-pixels COMMAND ${TSSTG_NODE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/tests/frame-stream.mjs $<TARGET_FILE:ts-stg> quickjs)
+      set_tests_properties(native.frame-stream-pixels PROPERTIES TIMEOUT 40 RUN_SERIAL TRUE)
+      if(TSSTG_ENABLE_V8)
+        add_test(NAME native.frame-stream-pixels.v8 COMMAND ${TSSTG_NODE}
+          ${CMAKE_CURRENT_SOURCE_DIR}/native/tests/frame-stream.mjs $<TARGET_FILE:ts-stg> v8)
+        set_tests_properties(native.frame-stream-pixels.v8 PROPERTIES TIMEOUT 40 RUN_SERIAL TRUE)
+      endif()
       add_test(NAME native.rush-presentation-differential COMMAND ${TSSTG_NODE}
         ${CMAKE_CURRENT_SOURCE_DIR}/tools/verify-rushboss-presentation.mjs --oracle $<TARGET_FILE:tsstg-rush-presentation-oracle>
         --host $<TARGET_FILE:ts-stg> --out ${CMAKE_CURRENT_BINARY_DIR}/presentation-numerics)

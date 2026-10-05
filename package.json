@@ -5,6 +5,7 @@
   "type": "module",
   "workspaces": ["packages/thlib", "games/touhou20", "games/rushboss"],
   "scripts": {
+    "editor": "npm --prefix tools/spellcard-editor start",
     "test": "node --test tests/*.test.js",
     "test:integration": "node tools/verify-integration.mjs",
     "test:backends": "node tools/verify-backends.mjs",

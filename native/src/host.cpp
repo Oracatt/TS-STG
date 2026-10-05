@@ -2,6 +2,7 @@
 #include "tsstg/profile.hpp"
 #include "tsstg/text.hpp"
 #include "tsstg/music_stream.hpp"
+#include "tsstg/frame_stream.hpp"
 #include "raylib.h"
 #include "rlgl.h"
 #include "external/glad.h"
@@ -73,8 +74,13 @@ class Host final : public HostServices {
 public:
     explicit Host(const Options& options) : root_(fs::canonical(options.root)), headless_(options.headless), profiling_(options.profile.has_value()) {
         SetTraceLogLevel(LOG_WARNING);
+        if (options.frameStream) {
+            if (headless_) throw std::runtime_error("--frame-stream requires graphical mode");
+            frameStream_ = std::make_unique<FrameStream>(*options.frameStream);
+        }
         if (!headless_) {
-            SetConfigFlags(FLAG_WINDOW_RESIZABLE | (options.benchmark?0:FLAG_VSYNC_HINT) | FLAG_MSAA_4X_HINT);
+            SetConfigFlags(FLAG_WINDOW_RESIZABLE | (options.benchmark || frameStream_ ? 0 : FLAG_VSYNC_HINT) | FLAG_MSAA_4X_HINT |
+                (frameStream_ ? FLAG_WINDOW_HIDDEN | FLAG_WINDOW_ALWAYS_RUN : 0));
             InitWindow(canvasWidth, canvasHeight, "TS-STG");
             if (!IsWindowReady()) throw std::runtime_error("Cannot initialize graphics window");
             SetWindowMinSize(480, 360);
@@ -611,6 +617,14 @@ public:
         return {submitMs,waitMs,audioMs,elapsedMs(profilerStart)};
     }
     const std::vector<double>& gpuTimings(){if(!headless_)collectGpu(true);return gpuMs_;}
+    bool streamFrame() {
+        if (!frameStream_ || ++streamFrames_ % 2 != 0) return true;
+        auto image = readTexturePixels(0);
+        // The finished canvas is presented opaquely, as in screenshot(). Its
+        // offscreen alpha must not trigger a second compositing operation.
+        for (std::size_t i = 3; i < image.pixels.size(); i += 4) image.pixels[i] = 255;
+        return frameStream_->writeFrame(image.width, image.height, image.pixels.data(), image.pixels.size());
+    }
     std::string gpuDevice()const{return headless_?"":reinterpret_cast<const char*>(glGetString(GL_RENDERER));}
     void screenshot(const fs::path& path) {
         if (!path.parent_path().empty()) fs::create_directories(path.parent_path());
@@ -656,6 +670,8 @@ private:
         return path.u8string();
     }
     fs::path root_;
+    std::unique_ptr<FrameStream> frameStream_;
+    std::uint64_t streamFrames_ = 0;
     mutable std::optional<fs::path> libraryRoot_;
     bool headless_, profiling_=false,audioReady_ = false, quit_ = false;
     std::vector<unsigned> queries_;
@@ -729,7 +745,7 @@ int runHost(const Options& options) {
             previous = now;
             if(options.benchmark)accumulator=timestep;
             while (accumulator >= timestep && (!options.frames || frame < *options.frames) && !host.quit()) {
-                backend->update(options.input.value_or(keyboardInput()));
+                backend->update(options.input.value_or(options.frameStream ? 0 : keyboardInput()));
                 ++frame;
                 ++sample.updates;
                 accumulator -= timestep;
@@ -739,6 +755,7 @@ int runHost(const Options& options) {
             sample.render=timings[0];sample.decode=timings[1];sample.commands=commands.size();
             const auto presentation=host.present(commands);sample.submit=presentation[0];sample.wait=presentation[1];sample.audio=presentation[2];sample.profiler=presentation[3];sample.total=elapsedMs(start);
             if(options.profile)profile.push_back(sample);
+            if (!host.streamFrame()) break;
         } while ((!options.frames || frame < *options.frames) && !host.quit());
         if (options.screenshot) host.screenshot(*options.screenshot);
     }

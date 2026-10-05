@@ -1,0 +1,9 @@
+{
+  "name": "@ts-stg/spellcard-editor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "desktop.mjs",
+  "scripts": { "setup": "install-electron", "start": "electron ." },
+  "devDependencies": { "electron": "44.5.1" }
+}

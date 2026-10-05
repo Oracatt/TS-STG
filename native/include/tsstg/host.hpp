@@ -15,6 +15,7 @@ struct Options {
     std::optional<std::uint32_t> input;
     std::optional<std::filesystem::path> snapshot;
     std::optional<std::filesystem::path> screenshot;
+    std::optional<std::string> frameStream;
 };
 int runHost(const Options& options);
 }

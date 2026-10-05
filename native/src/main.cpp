@@ -1,4 +1,5 @@
 #include "tsstg/host.hpp"
+#include "tsstg/frame_stream.hpp"
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -28,6 +29,7 @@ int main(int argc, char** argv) {
                     "       [--backend auto|quickjs|v8]\n"
                     "       [--input mask] [--snapshot path.json] [--screenshot path.png]\n"
                     "       [--profile path.json] [--profile-warmup N] [--benchmark]\n"
+                    "       [--frame-stream local-pipe] (Windows hidden RGBA presentation)\n"
                     "Arrows: move  Z: shoot/confirm  X: bomb/cancel  Shift: focus  Esc: pause\n"
                     "Headless defaults to one update. Explicit --input overrides keyboard.\n";
 #ifdef TSSTG_HAS_V8
@@ -44,6 +46,7 @@ int main(int argc, char** argv) {
                     throw std::runtime_error("--backend requires auto, quickjs or v8");
             }
             else if (arg == "--headless") options.headless = true;
+            else if (arg == "--frame-stream") { options.frameStream = value(); tsstg::validateFrameStreamName(*options.frameStream); }
             else if (arg == "--benchmark") options.benchmark = true;
             else if (arg == "--profile") options.profile = std::filesystem::u8path(value());
             else if (arg == "--profile-warmup") options.profileWarmup = parseUnsigned(value(),arg);
@@ -60,6 +63,7 @@ int main(int argc, char** argv) {
             else { options.entry = arg; hasEntry = true; }
         }
         if (options.headless && options.screenshot) throw std::runtime_error("--screenshot requires graphical mode");
+        if (options.headless && options.frameStream) throw std::runtime_error("--frame-stream cannot be combined with --headless");
         if (options.benchmark && (!options.frames || !*options.frames)) throw std::runtime_error("--benchmark requires --frames greater than zero");
         if (options.headless && !options.frames) options.frames = 1;
         return tsstg::runHost(options);

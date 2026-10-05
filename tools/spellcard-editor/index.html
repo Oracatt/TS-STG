@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-s4RBjgXFRXx2WkykFzIwCrKSS8zjxZCk5/OGpf+vcZ0='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>TS-STG · 符卡编辑器</title>
+  <link rel="stylesheet" href="/editor/styles.css">
+</head>
+<body>
+  <header class="toolbar">
+    <div class="brand"><span class="brand-mark">✦</span><div><strong>TS-STG</strong><span>符卡编辑器</span></div></div>
+    <div class="document-title"><label for="card-name">符卡名称</label><input id="card-name" maxlength="120" autocomplete="off" spellcheck="false"><span id="save-status" class="save-status">正在载入</span></div>
+    <nav class="file-actions" aria-label="文件操作">
+      <button id="new-document" title="新建符卡">新建</button><button id="import-document">导入</button><button id="export-document">导出 JSON</button>
+      <button id="native-preview" class="primary" disabled>原生试玩 <span aria-hidden="true">↗</span></button>
+    </nav>
+    <input id="import-file" type="file" accept=".json,.spellcard.json,application/json" hidden>
+  </header>
+  <div id="notice" class="notice" role="status" hidden><span id="notice-text"></span><button id="dismiss-notice" aria-label="关闭提示">×</button></div>
+  <main class="workspace">
+    <aside class="panel event-panel">
+      <div class="panel-heading"><h1>事件编排</h1><span id="event-count" class="badge">0</span></div>
+      <div class="event-actions"><select id="add-type" aria-label="新增事件类型"><option value="bullet">弹幕发射</option><option value="laser">激光发射</option><option value="move">Boss 移动</option><option value="charge">聚能 / 释放</option><option value="sound">音效</option><option value="clear">消弹</option></select><button id="add-event" class="accent" title="在当前帧添加事件">＋ 添加</button></div>
+      <div class="list-caption"><span>事件</span><span>开始帧</span></div>
+      <div id="event-list" class="event-list" role="list" aria-label="符卡事件"></div>
+      <div class="event-footer"><button id="duplicate-event" disabled>复制事件</button><button id="delete-event" class="danger-text" disabled>删除</button></div>
+      <p class="panel-note">按时间安排弹幕、移动与特效。点击时间轴跳转，拖动事件调整开始帧。</p>
+    </aside>
+    <section class="preview-panel" aria-label="轨迹预览">
+      <div class="preview-heading"><div><span class="live-dot"></span><strong>轨迹预览</strong><span class="preview-disclaimer">完整效果请原生试玩</span></div><div class="history"><button id="preview-mode" class="mode-button" hidden>坐标编排</button><button id="undo" title="撤销 Ctrl+Z" disabled>↶</button><button id="redo" title="重做 Ctrl+Y" disabled>↷</button></div></div>
+      <div class="canvas-stage"><div class="canvas-shell" id="native-preview-host"><canvas id="native-frame" width="960" height="720" tabindex="0" aria-label="原生引擎预览，点击后用方向键移动，Z 射击，X 使用 Bomb，Shift 低速"></canvas><canvas id="preview" width="768" height="896" aria-label="符卡轨迹预览，可拖动 Boss、发射点和自机瞄准目标"></canvas><div id="preview-busy" class="preview-busy" hidden>正在模拟…</div><div class="canvas-corner top-left">PLAY FIELD</div><div class="canvas-corner bottom-right" id="object-count">0 弹 · 0 激光</div></div></div>
+      <div class="preview-options"><label><input id="show-collision" type="checkbox">判定圆</label><label><input id="show-direction" type="checkbox">运动方向</label><span>拖动 <i class="key-dot boss"></i> Boss · <i class="key-dot emitter"></i> 发射点 · <i class="key-dot player"></i> 瞄准目标</span></div>
+      <div class="transport"><div class="play-buttons"><button id="reset" title="回到第 0 帧">↤</button><button id="play" class="play-button" title="播放 / 暂停（空格）">▶ 播放</button><button id="step" title="前进一帧">▸│</button></div><div class="frame-readout"><strong id="current-frame">00000</strong><span>/ <span id="total-frames">00000</span> 帧</span></div><span id="time-readout">0.00 s</span></div>
+      <div class="scrubber"><input id="seek" type="range" min="0" max="1800" value="0" step="1" aria-label="当前模拟帧"></div>
+      <div class="timeline-header"><span>时间轴</span><span id="timeline-range">60 帧 / 秒</span></div>
+      <div id="timeline" class="timeline" tabindex="0" aria-label="事件时间轴"><div id="timeline-ticks" class="timeline-ticks"></div><div id="timeline-events" class="timeline-events"></div><div id="playhead" class="playhead"><span></span></div></div>
+      <footer class="preview-footer"><span id="preview-state">准备就绪</span><span>空格 播放 / 暂停 · Ctrl Z 撤销</span></footer>
+    </section>
+    <aside class="panel inspector-panel"><div class="panel-heading"><h2 id="inspector-title">符卡设置</h2><button id="select-document" title="编辑符卡基本设置">设置</button></div><div id="inspector" class="inspector"></div><div class="inspector-footer" id="inspector-hint">所有时间以帧为单位，60 帧 = 1 秒。</div></aside>
+  </main>
+  <script type="importmap">{"imports":{"@ts-stg/thlib/touhou":"/thlib/touhou/index.js","@ts-stg/thlib":"/thlib/index.js"}}</script>
+  <script type="module" src="/editor/editor.js"></script>
+</body>
+</html>

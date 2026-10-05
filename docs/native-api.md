@@ -10,7 +10,7 @@ The entry sets `globalThis.__tsstg_game` with synchronous `update(inputMask)` an
 
 `readText(path)` reads UTF-8 under the project root. `writeText(path,text)` writes under that project's `userdata/` directory. Resource paths also resolve under the project root; canonical paths cannot escape it. The supported bare import is `@ts-stg/thlib`, using `packages/thlib/src` or `node_modules/@ts-stg/thlib/src`. Application modules use relative imports. A linked installed library can reside outside the project; only that selected library's module reads and internal relative imports receive access to its canonical source directory. Common asset files must be placed inside the consumer project and loaded through an explicitly supplied resource path.
 
-CLI options are `--root path`, `--backend auto|quickjs|v8`, `--headless`, `--frames N`, `--input mask`, `--snapshot path` and `--screenshot path`. The input override applies in graphical mode too. `--screenshot` saves the last rendered frame; headless mode cannot create a screenshot. Runtime failures exit nonzero with diagnostics, including stacks when available.
+CLI options are `--root path`, `--backend auto|quickjs|v8`, `--headless`, `--frames N`, `--input mask`, `--snapshot path`, `--screenshot path` and Windows `--frame-stream local-pipe`. The input override applies in graphical mode too. `--screenshot` saves the last rendered frame; headless mode cannot create a screenshot. Runtime failures exit nonzero with diagnostics, including stacks when available.
 
 `--backend auto` selects V8 when compiled in, otherwise QuickJS-NG. Windows x64 builds include both by default; `build.ps1 -QuickJSOnly` or CMake `-DTSSTG_ENABLE_V8=OFF` builds QuickJS alone. Explicit `--backend v8` on that build fails with a diagnostic. V8 is embedded as a static library with its startup snapshot, without Node.js or browser globals. Both runtimes use the same native services, ESM resolver, drawing ABI and JS thlib. `tsstg.backend` reports `v8` or `quickjs`; the window title and profile include the runtime version. Floating-point transcendental functions can differ at the last binary64 bits across engines, so replay verification should use the same backend as recording.
 
@@ -93,3 +93,23 @@ Shaders own fragment output. Implicit alpha testing must be zero when entering a
 CTest includes media, pixel roundtrip/subview/padding, 64 repeated create/release cycles, stale resource rejection, module roots, script errors and selected source numerical differentials. `native/tests/pixel-capture-graphics.js` additionally checks actual GPU target/canvas orientation; `native/tests/pixels.js` runs both graphically and headlessly. These tests use authored tiny assets and require no original game data.
 
 `native/tests/mesh3d-graphics.js` distinguishes perspective-correct from affine UV sampling using framebuffer pixels and verifies 2D drawing after the projected mesh.
+
+## Windows local frame stream
+
+`--frame-stream '\\.\pipe\name'` presents the actual GPU-rendered logical canvas through a local Windows named pipe while keeping the native graphics window hidden. The receiver must listen before starting the engine. Only the literal `\\.\pipe\` prefix and a single nonempty name are accepted; the complete UTF-8 argument is at most 256 bytes, and the name cannot contain bytes below `0x20`, `/`, `\` or `:`. Remote pipes are rejected. This option requires Windows graphical mode and cannot be combined with `--headless`.
+
+Every two completed renders, the host sends a 16-byte header followed immediately by tightly packed pixels:
+
+| Offset | Type | Value |
+| --- | --- | --- |
+| 0 | 4 ASCII bytes | `TSFR` |
+| 4 | uint32 little-endian | Width, currently 960 |
+| 8 | uint32 little-endian | Height, currently 720 |
+| 12 | uint32 little-endian | Payload length, exactly width × height × 4 |
+| 16 | RGBA bytes | Rows from top to bottom, pixels from left to right |
+
+Pipe reads may split or combine headers and payloads; the receiver must buffer and parse the byte stream. Output alpha is 255, matching window presentation and `--screenshot`. This does not change stored render-target alpha or the `readTexturePixels` API.
+
+Simulation retains its fixed 60 Hz clock; the normal display stream is approximately 30 Hz, not a separate simulation clock. GPU readback and pipe writes are synchronous, so the receiver must keep draining the pipe. Consumers can drop complete display frames when their UI is busy. These transport costs are additional to ordinary native play and should not be used to infer standalone game performance. A disconnected pipe ends the run normally; connection and other write errors report a failure.
+
+The hidden window does not read desktop keyboard input. Its default input mask is zero, with the existing `--input` override still available. Interactive consumers supply their own input and control adapter; SpellCardEditor forwards focused-preview keys and ordered playback commands through its editor-only control file. The frame stream is an output platform service and introduces no editor protocol, game rules or Electron dependency into the native host or thlib.

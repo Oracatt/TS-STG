@@ -9,6 +9,7 @@
 | `games/touhou20/` | 锦上京参考应用：专属标题美术、背景、BGM 和关卡组合；旧通用模块仅转发 thlib |
 | `games/rushboss/` | 竖屏 TouhouRushBoss Demo：三个 Boss、29 阶段、16 符卡、完整对白，以及私有三关背景、Boss 精灵与立绘；采用公共应用框架、自机和演出 |
 | `examples/danmaku/` | 不依赖原作资源的独立示例游戏 |
+| `tools/spellcard-editor/` | 独立桌面符卡编辑器，内嵌真实 TS-STG 引擎预览；开发工具，不进入默认 SDK |
 
 依赖方向为游戏业务层 → thlib → 平台适配器。thlib 不导入游戏模块，宿主不认识游戏名称。锦上京具体 Boss 和魔石不在参考应用实现范围内；通用 Boss、符卡和背景扭曲能力仍然保留。
 
@@ -52,6 +53,10 @@ node tools/import-rushboss-dialogue.mjs D:\c++\TouhouRushBoss-main
 默认入口使用原作布局的竖屏应用：三 Boss 顺序衔接、四难度、两自机、整关/16 张符卡练习、原始 74 句对白、暂停/续关/结算、音量设置与保存/播放回放。灵梦、魔理沙、武器、Bomb、弹幕判定及 Boss 入场双圈、17×17 背景扭曲、倒计时、蓄力和 SpellCardAttack 都来自 thlib。RushBoss 业务层提供原弹幕、阶段、对白，以及三关透视背景、符卡背景、实际 Boss 精灵动画和对白／开卡立绘；这些私有内容均不进入 SDK，音乐仍沿用现有注入。旧宽屏菜单/演出保留作历史对照。尚未完成原 EXE 的逐帧、逐像素等价验收。运行方式、验证和具体边界见 [RushBoss 说明](games/rushboss/README.md)。
 
 两个 Demo 共用 thlib 的 `TouhouGameplayCompositor`：根据原作回调顺序交替合成背景与前景，符卡开场双圈参与背景扭曲，敌弹主体在背景之后绘制，符卡名在最终界面合成之后绘制。接入与裁剪规则见 [公共图层合成](docs/touhou-rendering.md)，源码依据见 [图层审计](docs/TOUHOU_RENDER_SOURCE_AUDIT.md)。
+
+## 可视化编辑符卡
+
+运行 `start-spellcard-editor.cmd` 打开独立桌面编辑器。可编排弹幕、激光、Boss 移动、聚能、音效与消弹事件，拖动时间轴，保存 JSON 并在 thlib 中播放。中心使用真实引擎预览，支持暂停、逐帧和跳转。首次启动需要安装编辑器自己的桌面依赖。结构、使用与首版范围见 [SpellCardEditor](docs/spellcard-editor.md)。
 
 ## 依赖 thlib 制作自己的游戏
 
