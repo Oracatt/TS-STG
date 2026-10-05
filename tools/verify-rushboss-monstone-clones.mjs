@@ -50,7 +50,7 @@ globalThis.__tsstg_game={update(){
     fs.writeFileSync(prefix+'.log',(result.stdout??'')+(result.stderr??''));if(result.error)throw result.error;
     assert.equal(result.status,0,`${backend}/${scene.name}: ${result.stderr}`);
     const state=JSON.parse(fs.readFileSync(prefix+'.json','utf8'));
-    assert.equal(state.revision,13);assert.equal(state.trace[0].clones,4);
+    assert.equal(state.revision,14);assert.equal(state.trace[0].clones,4);
     if(scene.name!=='before-timeout'){
       assert.equal(state.results.length,1);assert.equal(state.results[0].key,'Monstone_SC_8');
       assert.equal(state.results[0].reason,'timeout');assert.equal(state.results[0].captured,true);

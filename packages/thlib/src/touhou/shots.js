@@ -2,6 +2,13 @@ import { f32, PI, add, sub, mul, div, polar, snap, wrapAngle, angleDifference, r
 
 const active = enemy => enemy.alive !== false && !enemy.excluded && !enemy.invulnerable;
 
+function releaseLaserGroup(shot) {
+  // The original releases the group when retirement starts. Its ANM tail can
+  // outlive a replacement beam, so later cleanup must only release this owner.
+  const groups = shot.player.laserGroups;
+  if (groups.get(shot.row.group) === shot) groups.delete(shot.row.group);
+}
+
 /** Original base-character SHT shooter (profiles 0..14); unsupported callbacks are explicit errors. */
 export class TouhouShot {
   constructor(player, row, pattern, index, context) {
@@ -77,7 +84,7 @@ export class TouhouShot {
     if (row.fields3c[0] > 0 && this.timer.current >= row.fields3c[0]) keep = false;
     const selected = player.sht.patterns[(player.focused ? 10 : 5) + player.powerLevel];
     if (this.option && !selected.some(record => (record.source & 15) === this.option.index + 1 && record.type === 2)) keep = false;
-    if (!keep) { this.state = 2; this.animation?.interrupt(1); player.laserGroups.delete(row.group); context.stopSound?.(20); }
+    if (!keep) { this.state = 2; this.animation?.interrupt(1); releaseLaserGroup(this); context.stopSound?.(20); }
     this.contact = false;
   }
   collisions(context) {
@@ -129,7 +136,7 @@ export class TouhouShot {
     this.z = f32(.1); this.speed = div(this.speed, 8); this.state = 2; this.animation?.interrupt(1);
     return this.damage;
   }
-  destroy() { this.alive = false; this.animation?.destroy(); if (this.row.type === 2) this.player.laserGroups.delete(this.row.group); }
+  destroy() { this.alive = false; this.animation?.destroy(); if (this.row.type === 2) releaseLaserGroup(this); }
   draw(draw, view) { this.animation?.draw(draw, view); }
 }
 

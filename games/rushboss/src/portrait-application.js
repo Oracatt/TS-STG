@@ -12,9 +12,9 @@ import {RushBossPortraits} from './boss-portraits.js';
 import {RushPortraitGraphics} from './graphics-portrait.js';
 
 export const RUSH_PORTRAIT_VIEW=Object.freeze({x:336,y:24,scale:1.5,screenScale:1});
-// Complete curve birth history and source phase clearing change collision,
-// cancellation and later emissions. Reject older deterministic recordings.
-export const RUSH_PORTRAIT_REPLAY_REVISION=13;
+// Restored simulation fixes, including laser ownership during power upgrades,
+// change damage and later emissions. Reject older deterministic recordings.
+export const RUSH_PORTRAIT_REPLAY_REVISION=14;
 export const RUSH_PORTRAIT_SPELLS=Object.freeze(BOSSES.flatMap((boss,bossIndex)=>boss.phases.flatMap((phase,phaseIndex)=>
   phase.spell?[Object.freeze({bossIndex,phaseIndex,boss:boss.key,name:phase.name,cardId:phase.cardId,key:phase.key})]:[])));
 const carriedFields=['lives','bombs','power','lifeFragments','bombFragments','graze','deaths','score','continues','highScore','pointValue','pointItems','extendCount','x','y'];
