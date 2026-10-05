@@ -139,7 +139,9 @@ public:
     const char* name() const override { return "V8 " V8_VERSION_STRING; }
     void load(const std::filesystem::path& entry) override {
         Scope scope(*this);
-        auto module=compileModule(entry.generic_u8string());
+        v8::Local<v8::Module> module;
+        try { module=compileModule(entry.generic_u8string()); }
+        catch(const ScriptFailure&) { throwException(); }
         if(!module->InstantiateModule(current(context_),resolveModule).FromMaybe(false)) throwException();
         JSValue result; if(!module->Evaluate(current(context_)).ToLocal(&result)) throwException();
         drainJobs();
@@ -473,6 +475,38 @@ private:
         }
         return message;
     }
+    JSValue locatedException(v8::TryCatch& caught) {
+        auto reason=caught.Exception();
+        auto message=caught.Message();
+        if(reason.IsEmpty()||!reason->IsNativeError()||message.IsEmpty()) return reason;
+        // V8 syntax errors produced by CompileModule often contain only the
+        // importing call in Error.stack. Keep the original exception instance
+        // and supplement it with the failed module's own source location.
+        v8::TryCatch diagnostics(isolate_);
+        try {
+            const auto resource=message->GetScriptResourceName();
+            if(resource.IsEmpty()||!resource->IsString()) return reason;
+            const auto filename=string(resource);
+            const int line=message->GetLineNumber(current(context_)).FromMaybe(0);
+            const int column=message->GetStartColumn(current(context_)).FromMaybe(-1)+1;
+            if(filename.empty()||line<=0||column<=0) return reason;
+            auto object=reason.As<v8::Object>();
+            const auto property=[&](const char* name,JSValue value) {
+                return object->DefineOwnProperty(current(context_),utf8(context_,name),value,v8::DontEnum).FromMaybe(false);
+            };
+            if(!property("fileName",resource)||!property("lineNumber",JS_NewInt32(context_,line))||
+                !property("columnNumber",JS_NewInt32(context_,column))) return reason;
+            JSValue stack;
+            if(!object->Get(current(context_),utf8(context_,"stack")).ToLocal(&stack)||!stack->IsString()) return reason;
+            auto text=string(stack);
+            const auto location=filename+":"+std::to_string(line)+":"+std::to_string(column);
+            if(text.find(location)==std::string::npos) {
+                text+="\n    at "+location;
+                property("stack",utf8(context_,text.data(),text.size()));
+            }
+        } catch(const std::exception&) { /* Diagnostics must not replace the script exception. */ }
+        return reason;
+    }
     [[noreturn]] void throwException() {
         if(isolate_->IsExecutionTerminating()) {
             isolate_->CancelTerminateExecution();
@@ -544,7 +578,7 @@ private:
         auto source=services_.readModule(std::filesystem::u8path(filename));
         v8::ScriptOrigin origin(utf8(context_,filename.data(),filename.size()),0,0,false,-1,JSValue(),false,false,true);
         v8::ScriptCompiler::Source script(utf8(context_,source.data(),source.size()),origin);
-        v8::Local<v8::Module> module; if(!v8::ScriptCompiler::CompileModule(isolate_,&script).ToLocal(&module)) throwException();
+        v8::Local<v8::Module> module; if(!v8::ScriptCompiler::CompileModule(isolate_,&script).ToLocal(&module)) throw ScriptFailure{};
         modules_.emplace(filename,v8::Global<v8::Module>(isolate_,module)); return module;
     }
     std::string moduleName(v8::Local<v8::Module> module) {
@@ -576,9 +610,9 @@ private:
                 self.rejections_.erase(std::remove_if(self.rejections_.begin(),self.rejections_.end(),[&](const auto& row){return row.promise.Get(self.isolate_)==promise;}),self.rejections_.end());
                 self.imports_.push_back({v8::Global<v8::Promise>(self.isolate_,promise),v8::Global<v8::Promise::Resolver>(self.isolate_,resolver),v8::Global<v8::Module>(self.isolate_,module)});
             } else { if(resolver->Resolve(context,module->GetModuleNamespace()).IsNothing()) return {}; }
-        } catch(const ScriptFailure&) { if(resolver->Reject(context,catcher.Exception()).IsNothing()) return {}; }
+        } catch(const ScriptFailure&) { if(resolver->Reject(context,self.locatedException(catcher)).IsNothing()) return {}; }
           catch(const std::exception& error) {
-            auto reason=catcher.HasCaught()?catcher.Exception():v8::Exception::Error(utf8(self.context_,error.what()));
+            auto reason=catcher.HasCaught()?self.locatedException(catcher):v8::Exception::Error(utf8(self.context_,error.what()));
             if(resolver->Reject(context,reason).IsNothing()) return {};
         }
         return handles.Escape(resolver->GetPromise());

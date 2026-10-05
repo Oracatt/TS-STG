@@ -295,6 +295,8 @@ if(BUILD_TESTING)
   endforeach()
   add_script_test(NAME native.backend-esm-contract COMMAND ts-stg native/tests/backend.js
     --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 8 --input 16)
+  add_script_test(NAME native.backend-import-errors COMMAND ts-stg native/tests/backend-import-errors.js
+    --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 2)
   foreach(backend_failure unresolved-await missing-render)
     add_script_test(NAME native.reject-backend-${backend_failure} COMMAND ts-stg native/tests/backend-${backend_failure}.js
       --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 1)
