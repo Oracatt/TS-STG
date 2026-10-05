@@ -13,10 +13,10 @@
     <div class="brand"><span class="brand-mark">✦</span><div><strong>TS-STG</strong><span>符卡编辑器</span></div></div>
     <div class="document-title"><label for="card-name">符卡名称</label><input id="card-name" maxlength="120" autocomplete="off" spellcheck="false"><span id="save-status" class="save-status">正在载入</span></div>
     <nav class="file-actions" aria-label="文件操作">
-      <button id="new-document" title="新建符卡">新建</button><button id="import-document">导入</button><button id="export-document">导出 JSON</button>
+      <button id="new-document" title="新建符卡 JavaScript">新建</button><button id="import-document">导入 JS</button><button id="export-document">导出 JS</button>
       <button id="native-preview" class="primary" disabled>原生试玩 <span aria-hidden="true">↗</span></button>
     </nav>
-    <input id="import-file" type="file" accept=".json,.spellcard.json,application/json" hidden>
+    <input id="import-file" type="file" accept=".js,.mjs,.json,text/javascript,application/javascript,application/json" hidden>
   </header>
   <div id="notice" class="notice" role="status" hidden><span id="notice-text"></span><button id="dismiss-notice" aria-label="关闭提示">×</button></div>
   <main class="workspace">
@@ -38,7 +38,17 @@
       <div id="timeline" class="timeline" tabindex="0" aria-label="事件时间轴"><div id="timeline-ticks" class="timeline-ticks"></div><div id="timeline-events" class="timeline-events"></div><div id="playhead" class="playhead"><span></span></div></div>
       <footer class="preview-footer"><span id="preview-state">准备就绪</span><span>空格 播放 / 暂停 · Ctrl Z 撤销</span></footer>
     </section>
-    <aside class="panel inspector-panel"><div class="panel-heading"><h2 id="inspector-title">符卡设置</h2><button id="select-document" title="编辑符卡基本设置">设置</button></div><div id="inspector" class="inspector"></div><div class="inspector-footer" id="inspector-hint">所有时间以帧为单位，60 帧 = 1 秒。</div></aside>
+    <aside class="panel inspector-panel authoring-panel">
+      <div class="authoring-tabs" role="tablist" aria-label="编辑方式"><button id="source-tab" role="tab" aria-selected="true" aria-controls="source-pane">JS 源码</button><button id="visual-tab" role="tab" aria-selected="false" aria-controls="visual-pane">可视化</button><span id="source-sync-state">可视化已同步</span></div>
+      <section id="source-pane" class="source-pane" role="tabpanel" aria-labelledby="source-tab">
+        <div class="source-toolbar"><label><input id="auto-preview" type="checkbox" checked>自动预览</label><button id="apply-source" class="accent" title="应用源码到原生引擎（Ctrl+Enter）">运行 Ctrl ↵</button></div>
+        <div class="code-editor"><label for="source-code" class="sr-only">符卡 JavaScript 源码</label><textarea id="source-code" wrap="off" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" aria-describedby="source-help"></textarea></div>
+        <div class="source-status"><span id="source-position">Ln 1, Col 1</span><span id="source-preview-status">等待预览</span><button id="save-source" title="保存 JS 文件（Ctrl+S）">保存 JS</button></div>
+        <p id="source-help" class="source-help">直接编辑 createSpell。停止输入 450 ms 后在原生引擎中运行；Ctrl+Enter 立即运行，Ctrl+S 保存。</p>
+      </section>
+      <section id="visual-pane" class="visual-pane" role="tabpanel" aria-labelledby="visual-tab" hidden><div class="panel-heading"><h2 id="inspector-title">符卡设置</h2><button id="select-document" title="编辑符卡基本设置">设置</button></div><p id="visual-readonly" class="visual-readonly" hidden>当前源码没有可安全回写的数据块。源码仍可编辑、运行和保存。</p><div id="inspector" class="inspector"></div><div class="inspector-footer" id="inspector-hint">所有时间以帧为单位，60 帧 = 1 秒。</div></section>
+      <section id="source-errors" class="source-errors" role="alert" hidden><div><strong>预览错误</strong><button id="error-goto" hidden>跳到源码</button></div><pre id="source-error"></pre></section>
+    </aside>
   </main>
   <script type="importmap">{"imports":{"@ts-stg/thlib/touhou":"/thlib/touhou/index.js","@ts-stg/thlib":"/thlib/index.js"}}</script>
   <script type="module" src="/editor/editor.js"></script>

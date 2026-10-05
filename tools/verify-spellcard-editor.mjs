@@ -2,6 +2,8 @@ import {mkdirSync,writeFileSync,readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import assert from 'node:assert/strict';
+import {createTouhouSpellCard} from '../packages/thlib/src/touhou/spellcard.js';
+import {generateSpellSource} from './spellcard-editor/source.js';
 
 const root=resolve(import.meta.dirname,'..'),folder=resolve(root,'build/spellcard-check');
 mkdirSync(folder,{recursive:true});
@@ -102,3 +104,107 @@ for(const backend of ['quickjs','v8']){
 assert.deepEqual(lifecycle[0],lifecycle[1],'QuickJS/V8 native preview lifecycle parity');
 assert.equal(lifecycle[0].passed,true);
 console.log(`PASS: native opening/seek audio, result/cancel tail (${lifecycle[0].tailFrames} frames), elapsed time and Enter retry on QuickJS/V8`);
+
+// Load actual edited ES modules through both embedded runtimes. In particular,
+// handwritten bullets below have no equivalent visual event in the metadata.
+const generatedDocument={...createTouhouSpellCard(),id:'generated-esm',duration:180,hp:99999};
+generatedDocument.events=[{...generatedDocument.events[1],frame:0,duration:180,interval:10,count:8}];
+writeFileSync(resolve(folder,'source-generated.js'),generateSpellSource(generatedDocument));
+const manualDocument={...generatedDocument,id:'handwritten-esm',duration:70,events:[]};
+function manualSource(document,{fail=false,snapshot=true}={}){
+  return `export const spellCard=${JSON.stringify(document)};
+export function createSpell(context){
+  if(!context.game||!context.player||typeof context.random.unit!=='function')throw Error('Missing native script context');
+  return {frame:0,alive:true,emissions:0,
+    update(){
+      ${fail?"if(this.frame===3)throw Error('Authored update failed');":''}
+      if(this.frame%5===0){
+        context.bullets.emit({x:context.boss.x,y:context.boss.y,type:0,color:6,pattern:3,count:7,rows:1,speed:1,
+          angle:context.random.unit()*Math.PI*2},{random:context.random});
+        context.boss.x+=2;this.emissions++;
+      }
+      this.frame++;if(this.frame>=spellCard.duration)this.alive=false;
+    },stop(){this.alive=false;},
+    ${snapshot?'snapshot(){return{frame:this.frame,alive:this.alive,emissions:this.emissions};}':''}
+  };
+}\n`;
+}
+writeFileSync(resolve(folder,'source-handwritten.js'),manualSource(manualDocument));
+writeFileSync(resolve(folder,'source-syntax.js'),'export const spellCard = ;\n');
+writeFileSync(resolve(folder,'source-factory.js'),`export const spellCard=${JSON.stringify(manualDocument)};
+export function createSpell(){throw Error('Authored factory failed');}\n`);
+writeFileSync(resolve(folder,'source-runtime.js'),manualSource({...manualDocument,id:'runtime-failure'},{fail:true}));
+writeFileSync(resolve(folder,'source-fixed.js'),manualSource({...manualDocument,id:'fixed-esm',duration:20},{snapshot:false}));
+writeFileSync(resolve(folder,'source-invalid-runner.js'),`export const spellCard=${JSON.stringify(manualDocument)};
+export function createSpell(){return{frame:NaN,alive:true,update(){},stop(){}};}\n`);
+writeFileSync(resolve(folder,'source-async-runner.js'),`export const spellCard=${JSON.stringify(manualDocument)};
+export function createSpell(){return{frame:0,alive:true,async update(){this.frame++;},stop(){this.alive=false;}};}\n`);
+writeFileSync(resolve(folder,'source-stuck-runner.js'),`export const spellCard=${JSON.stringify(manualDocument)};
+export function createSpell(){return{frame:0,alive:true,update(){},stop(){this.alive=false;}};}\n`);
+writeFileSync(resolve(folder,'source-stop-runner.js'),`export const spellCard=${JSON.stringify(manualDocument)};
+export function createSpell(){return{frame:0,alive:true,update(){this.stop();},stop(){this.alive=false;}};}\n`);
+writeFileSync(resolve(folder,'source-live-check.js'),`import {createControlledPreview} from '../../tools/spellcard-editor/controller.js';
+function check(condition,message){if(!condition)throw Error(message);}
+const paths={control:'build/spellcard-check/virtual-source.json',status:'spellcard-check/source-status.json'};
+let state={revision:1,documentRevision:1,document:${JSON.stringify(generatedDocument)},modulePath:'./source-generated.js',
+  commands:[{id:1,action:'seek',frame:37},{id:2,action:'play'}],input:0};
+const host={...tsstg,readText:file=>file===paths.control?JSON.stringify(state):tsstg.readText(file)};
+const controller=createControlledPreview(host,paths,{loadModule:path=>import(path)});
+let phase=0,id=2,goodFrame=0,ticks=0,done=false;const results={passed:false,checks:[]};
+function load(path,commands=[]){state={...state,revision:state.revision+1,documentRevision:state.documentRevision+1,modulePath:path,
+  commands:commands.map(command=>({...command,id:++id}))};}
+function checked(name){results.checks.push(name);phase++;}
+globalThis.__tsstg_game={
+  update(){
+    if(done)return;if(++ticks>400)throw Error('Native JS authoring fixture did not finish');
+    controller.update();const status=controller.snapshot().editor;
+    if(phase===0&&status.documentRevision===1&&status.frame>=40){
+      check(!status.error&&status.bullets>0&&status.document.id==='generated-esm','Generated ES module must emit actual native bullets');
+      goodFrame=status.frame;checked('generated-module');load('./source-syntax.js',[{action:'play'}]);
+    }else if(phase===1&&status.error){
+      check(status.documentRevision===1&&status.requestedDocumentRevision===2&&status.frame===goodFrame,'Syntax failure changed the last good scene');
+      check(/source-syntax\\.js:1(?::|\\b)/.test(status.error),'Syntax error must identify the edited source file and line');
+      checked('syntax-retains-scene');load('./source-factory.js',[{action:'play'}]);
+    }else if(phase===2&&status.error&&status.requestedDocumentRevision===3){
+      check(/Authored factory failed/.test(status.error)&&/source-factory.js/.test(status.error),'Factory error stack is missing');
+      check(status.documentRevision===1&&status.frame===goodFrame,'Failed factory destroyed the last good scene');
+      checked('factory-transaction');load('./source-handwritten.js',[{action:'seek',frame:12},{action:'play'}]);
+    }else if(phase===3&&status.documentRevision===4&&status.frame>=25){
+      check(!status.error&&status.document.events.length===0&&status.bullets>0,'Handwritten JS was not executed');
+      check(controller.snapshot().preview.timeline.emissions===5,'Handwritten custom runner snapshot must be retained');
+      results.handwritten=controller.snapshot().preview;
+      checked('handwritten-bullets');load('./source-runtime.js',[{action:'play'}]);
+    }else if(phase===4&&status.error&&status.documentRevision===5){
+      check(status.frame===3&&!status.playing&&/Authored update failed/.test(status.error)&&/source-runtime.js/.test(status.error),'Runtime error did not pause at the authored source');
+      checked('runtime-error');load('./source-fixed.js',[{action:'seek',frame:5},{action:'play'}]);
+    }else if(phase===5&&status.documentRevision===6&&status.completed){
+      check(!status.error&&status.frame===20,'Editing a runtime error must recover through a fresh module');
+      const snapshot=controller.snapshot().preview.timeline;check(snapshot.frame===20&&snapshot.alive===false,'Optional snapshot fallback is invalid');
+      checked('edit-recovers-and-completes');load('./source-invalid-runner.js',[{action:'play'}]);
+    }else if(phase===6&&status.error&&status.requestedDocumentRevision===7){
+      check(status.documentRevision===6&&status.frame===20&&/runner requires/.test(status.error),'Invalid runner was activated');
+      checked('invalid-runner-retains-scene');load('./source-async-runner.js',[{action:'play'}]);
+    }else if(phase===7&&status.error&&status.documentRevision===8){
+      check(/update must be synchronous/.test(status.error)&&!status.playing,'Async runner was allowed to escape the frame clock');
+      checked('synchronous-update-contract');load('./source-stuck-runner.js',[{action:'seek',frame:10}]);
+    }else if(phase===8&&status.error&&status.documentRevision===9){
+      check(/advance frame by exactly one/.test(status.error)&&!status.seeking,'Stuck frame counter left seek running forever');
+      checked('fixed-frame-contract');load('./source-stop-runner.js',[{action:'play'}]);
+    }else if(phase===9&&status.documentRevision===10&&status.completed){
+      check(!status.error&&status.frame===0,'A runner may stop without advancing its frame');
+      checked('stop-without-advance');results.passed=true;done=true;controller.destroy();
+    }
+  },render:()=>[],snapshot:()=>results,
+};
+`);
+const liveResults=[];
+for(const backend of ['quickjs','v8']){
+  const output=resolve(folder,`${backend}-source-live.json`);
+  const result=spawnSync(resolve(root,'build/Release/ts-stg.exe'),['build/spellcard-check/source-live-check.js','--root',root,
+    '--backend',backend,'--headless','--frames','400','--snapshot',output],{cwd:root,encoding:'utf8',windowsHide:true,timeout:60000});
+  assert.equal(result.status,0,result.stderr||result.error?.message);liveResults.push(JSON.parse(readFileSync(output,'utf8')));
+}
+assert.deepEqual(liveResults[0],liveResults[1],'QuickJS/V8 native edited-module lifecycle parity');
+assert.equal(liveResults[0].passed,true);
+assert.equal(liveResults[0].checks.length,10);
+console.log('PASS: native generated/handwritten ES modules, transactional reload, syntax/runtime recovery, completion on QuickJS/V8');

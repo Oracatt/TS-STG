@@ -3,20 +3,22 @@ import assert from 'node:assert/strict';
 import {createControlledPreview} from '../tools/spellcard-editor/controller.js';
 import {createTouhouSpellCard} from '../packages/thlib/src/touhou/spellcard.js';
 
-function fixture({duration=600}={}){
+function fixture({duration=600,loadModule,modulePath}={}){
   const paths={control:'build/spellcard-editor/test/control.json',status:'spellcard-editor/test/status.json'};
-  let document={...createTouhouSpellCard(),duration,events:[]},state={revision:0,documentRevision:0,document,commands:[]};
+  let document={...createTouhouSpellCard(),duration,events:[]},state={revision:0,documentRevision:0,document,commands:[],modulePath};
   let id=0,reads=0,failAt=-1,finishAt=-1,tail=0,timeline={frame:0,alive:true,completed:false};
   const calls=[],files=new Map();
   const preview={game:{bullets:{bullets:[]},lasers:{lasers:[]}},silent:true,
     get timeline(){return timeline;},
     get settling(){return tail>0;},
-    reset(source){document=source;timeline={frame:0,alive:true,completed:false};calls.push(['reset',source.id]);},
+    reset(source,{createSpell}={}){const candidate=createSpell?createSpell({boss:{x:0,y:96},sound:id=>calls.push(['sound',id])}):{frame:0,alive:true,completed:false};
+      document=source;timeline=candidate;calls.push(['reset',source.id]);},
     setSilent(value){this.silent=value;calls.push(['silent',value]);},
     update(mask){
       calls.push(['update',timeline.frame,mask,this.silent]);
       if(timeline.frame===failAt)throw new Error('fixture update failure');
       if(!timeline.alive){tail=Math.max(0,tail-1);return;}
+      if(timeline.update){timeline.update();return;}
       timeline.frame++;
       if(timeline.frame===finishAt)timeline.alive=false;
       else if(timeline.frame>=document.duration){timeline.alive=false;timeline.completed=true;}
@@ -25,13 +27,14 @@ function fixture({duration=600}={}){
   };
   const host={readText(path){assert.equal(path,paths.control);reads++;return JSON.stringify(state);},
     writeText(path,text){assert.equal(path,paths.status);assert.ok(!path.startsWith('userdata/'),'writeText already targets userdata');files.set(`userdata/${path}`,JSON.parse(text));}};
-  const controller=createControlledPreview(host,paths,{factory:(receivedHost,source,options)=>{
+  const controller=createControlledPreview(host,paths,{loadModule,factory:(receivedHost,source,options)=>{
     assert.equal(receivedHost,host);assert.deepEqual(source,state.document);assert.deepEqual(options,{silent:true});return preview;
   }});
   function readNext(){const before=reads;for(let i=0;i<7&&reads===before;i++)controller.update(123);assert.ok(reads>before);}
   return{controller,preview,calls,files,paths,readNext,
     commands(...commands){state={...state,revision:state.revision+1,commands:[...state.commands,...commands.map(command=>({...command,id:++id}))]};},
     replace(source){state={...state,revision:state.revision+1,documentRevision:state.documentRevision+1,document:source,commands:[]};},
+    module(path,source=state.document){state={...state,revision:state.revision+1,documentRevision:state.documentRevision+1,document:source,modulePath:path,commands:[]};},
     revise(){state={...state,revision:state.revision+1};},
     failAt(frame){failAt=frame;},finishAt(frame){finishAt=frame;},tail(frames){tail=frames;},
   };
@@ -48,6 +51,63 @@ test('native controller reads control from the project and writes status through
   const updates=f.calls.filter(row=>row[0]==='update').length;f.revise();f.readNext();
   assert.equal(f.calls.filter(row=>row[0]==='update').length,updates,'acknowledged ordered command IDs never run twice');
   assert.equal(f.controller.snapshot().editor.commandId,2);
+});
+
+const flushImports=()=>new Promise(resolve=>setImmediate(resolve));
+const moduleDocument=(id,duration=600)=>({...createTouhouSpellCard(),id,duration,events:[]});
+function exportedSpell(id,duration=600){return{spellCard:moduleDocument(id,duration),createSpell(context){return{
+  frame:0,alive:true,update(){context.sound(this.frame);this.frame++;if(this.frame>=duration)this.alive=false;},stop(){this.alive=false;},
+};}};}
+
+test('JS imports wait before applying queued transport and use executed module metadata',async()=>{
+  let resolveModule;const f=fixture({modulePath:'./spell-0.js',loadModule:path=>{
+    assert.equal(path,'./spell-0.js');return new Promise(resolve=>{resolveModule=resolve;});
+  }});
+  f.commands({action:'seek',frame:2},{action:'play'});f.controller.update();await flushImports();
+  assert.equal(f.controller.snapshot().editor.loading,true);assert.equal(f.controller.snapshot().editor.documentRevision,-1);
+  assert.equal(f.controller.snapshot().editor.commandId,0);assert.equal(f.preview.timeline.frame,0);
+  resolveModule(exportedSpell('module-controls-name',12));await flushImports();f.controller.update();
+  const status=f.controller.snapshot().editor;
+  assert.equal(status.loading,false);assert.equal(status.document.id,'module-controls-name');assert.equal(status.document.duration,12);
+  assert.equal(status.documentRevision,0);assert.equal(status.commandId,2);assert.equal(status.playing,true);
+  assert.equal(status.frame,2,'seek then play preserves the requested frame while a module is loading');
+  assert.deepEqual(f.calls.filter(call=>call[0]==='sound'),[['sound',0],['sound',1]],'handwritten runner executes its own JS');
+});
+
+test('newer JS source wins even if an older module finishes loading afterwards',async()=>{
+  const requests=new Map(),f=fixture({loadModule:path=>new Promise(resolve=>requests.set(path,resolve))});
+  f.module('./old.js');f.controller.update();await flushImports();
+  f.module('./latest.js');f.controller.update();await flushImports();
+  requests.get('./latest.js')(exportedSpell('latest'));await flushImports();f.controller.update();
+  requests.get('./old.js')(exportedSpell('old'));await flushImports();f.controller.update();
+  assert.equal(f.controller.snapshot().editor.document.id,'latest');assert.equal(f.controller.snapshot().editor.documentRevision,2);
+  assert.equal(f.calls.filter(call=>call[0]==='reset'&&call[1]==='old').length,0);
+});
+
+test('syntax, export and factory failures preserve the last good scene and retain error stacks',async()=>{
+  const modules=new Map([
+    ['./syntax.js',()=>{throw new SyntaxError('Unexpected token at spell-2.js:8');}],
+    ['./exports.js',()=>({spellCard:moduleDocument('invalid')})],
+    ['./factory.js',()=>({spellCard:moduleDocument('invalid'),createSpell(){throw new Error('factory initialization failed');}})],
+    ['./fixed.js',()=>exportedSpell('fixed')],
+  ]),f=fixture({loadModule:path=>modules.get(path)()});
+  f.commands({action:'play'});f.controller.update();f.controller.update();const before=f.preview.timeline.frame;
+  for(const [path,message] of [['./syntax.js',/SyntaxError.*Unexpected token/],['./exports.js',/must export createSpell/],['./factory.js',/factory initialization failed/]]){
+    f.module(path);f.commands({action:'play'});f.controller.update();await flushImports();f.controller.update();
+    const status=f.controller.snapshot().editor;
+    assert.match(status.error,message);assert.equal(status.loading,false);assert.equal(status.playing,false);
+    assert.equal(status.documentRevision,0);assert.equal(f.preview.timeline.frame,before);
+    f.revise();f.controller.update();assert.match(f.controller.snapshot().editor.error,message,'input/status changes do not clear compilation errors');
+  }
+  f.module('./fixed.js');f.commands({action:'play'});f.controller.update();await flushImports();f.controller.update();
+  assert.equal(f.controller.snapshot().editor.document.id,'fixed');assert.equal(f.controller.snapshot().editor.error,null);
+  assert.equal(f.preview.timeline.frame,1);assert.equal(f.controller.snapshot().editor.playing,true);
+});
+
+test('disposing a preview ignores an outstanding module import',async()=>{
+  let resolveModule;const f=fixture({modulePath:'./pending.js',loadModule:()=>new Promise(resolve=>{resolveModule=resolve;})});
+  f.controller.update();await flushImports();f.controller.destroy();resolveModule(exportedSpell('too-late'));await flushImports();
+  assert.equal(f.calls.filter(call=>call[0]==='reset').length,0);assert.equal(f.calls.at(-1)[0],'destroy');
 });
 
 test('controller play/pause/restart and document replacement reset only their intended session',()=>{

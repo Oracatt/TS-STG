@@ -1,14 +1,14 @@
 const {contextBridge,ipcRenderer}=require('electron');
-// The renderer can edit data and operate its preview, never choose a command,
-// executable, arbitrary filesystem path or IPC channel.
+// Authored JS is transported as text and runs only in the native script host.
+// The renderer never chooses a shell command, executable, file path or IPC name.
 contextBridge.exposeInMainWorld('spellCardEditor',{
   desktop:true,
   loadDraft:()=>ipcRenderer.invoke('document:load-draft'),
-  saveDraft:document=>ipcRenderer.invoke('document:save-draft',document),
+  saveDraft:source=>ipcRenderer.invoke('document:save-draft',source),
   openDocument:()=>ipcRenderer.invoke('document:open'),
-  saveDocument:(document,options={})=>ipcRenderer.invoke('document:save',document,options),
+  saveDocument:(source,options={})=>ipcRenderer.invoke('document:save',source,options),
   preview:{
-    update:document=>ipcRenderer.invoke('preview:update',document),
+    update:revision=>ipcRenderer.invoke('preview:update',revision),
     bounds:bounds=>ipcRenderer.invoke('preview:bounds',bounds),
     control:command=>ipcRenderer.invoke('preview:control',command),
     status:()=>ipcRenderer.invoke('preview:status'),

@@ -56,7 +56,7 @@ node tools/import-rushboss-dialogue.mjs D:\c++\TouhouRushBoss-main
 
 ## 可视化编辑符卡
 
-运行 `start-spellcard-editor.cmd` 打开独立桌面编辑器。可编排弹幕、激光、Boss 移动、聚能、音效与消弹事件，拖动时间轴，保存 JSON 并在 thlib 中播放。中心使用真实引擎预览，支持暂停、逐帧和跳转。首次启动需要安装编辑器自己的桌面依赖。结构、使用与首版范围见 [SpellCardEditor](docs/spellcard-editor.md)。
+运行 `start-spellcard-editor.cmd` 打开独立桌面编辑器。可视化编排弹幕、激光、Boss 移动、聚能、音效与消弹并生成 `.spell.js`，也可直接修改 JS 函数、循环和 thlib 调用。源码修改后自动加载到真实引擎预览，支持暂停、逐帧和跳转；保存的 ES 模块可直接导入游戏。首次启动需要安装编辑器自己的桌面依赖。结构、使用与范围见 [SpellCardEditor](docs/spellcard-editor.md)。
 
 ## 依赖 thlib 制作自己的游戏
 

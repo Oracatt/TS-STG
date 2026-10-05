@@ -7,12 +7,13 @@ import {fileURLToPath} from 'node:url';
 import {randomUUID} from 'node:crypto';
 import {FrameStreamDecoder} from './frame-stream.mjs';
 import {createSpellCardEditorServer} from './server.mjs';
-import {createTouhouSpellCard,validateTouhouSpellCard,parseTouhouSpellCard,serializeTouhouSpellCard} from '../../packages/thlib/src/touhou/spellcard.js';
+import {createTouhouSpellCard,validateTouhouSpellCard,parseTouhouSpellCard} from '../../packages/thlib/src/touhou/spellcard.js';
+import {generateSpellSource,readVisualDocument,validateSpellSource} from './source.js';
 
 const directory=path.dirname(fileURLToPath(import.meta.url)),root=path.resolve(directory,'../..');
 const session=`spellcard-editor/${randomUUID()}`,folder=`build/${session}`;
 const files={control:`${folder}/control.json`,bounds:`${folder}/bounds.json`,status:`${session}/status.json`};
-const filters=[{name:'Spell Card',extensions:['json']}];
+const filters=[{name:'JavaScript Spell Card',extensions:['js','mjs']},{name:'Legacy JSON',extensions:['json']}];
 const selfTest=process.argv.includes('--self-test');
 let win,server,child=null,url='',savedPath=null,lastStatus={},nativeError=null,closing=false,commandId=0;
 let frameServer,frameSocket,frameId=0,framePending=0;
@@ -20,6 +21,11 @@ const pipeName=`\\\\.\\pipe\\ts-stg-frames-${randomUUID()}`;
 let bounds={x:0,y:0,width:1,height:1,visible:false},document=createTouhouSpellCard();
 let state={revision:0,documentRevision:0,document,commands:[]},io=Promise.resolve();
 const serialize=task=>{const next=io.then(task);io=next.catch(()=>{});return next;};
+function sourceText(value){
+  const source=validateSpellSource(value);
+  if(Buffer.byteLength(source,'utf8')>1024*1024)throw Error('JS 源码不能超过 1 MiB。');
+  return source;
+}
 async function atomic(file,text){
   const tmp=`${file}.tmp`;await writeFile(tmp,text);
   // A Windows ifstream may briefly hold the destination without delete sharing.
@@ -56,7 +62,7 @@ async function launch(){
   const entry=`${folder}/main.js`;
   await writeFile(path.join(root,entry),
     `import {createControlledPreview} from '../../../tools/spellcard-editor/controller.js';\n`+
-    `globalThis.__tsstg_game=createControlledPreview(tsstg,${JSON.stringify(files)});\n`);
+    `globalThis.__tsstg_game=createControlledPreview(tsstg,${JSON.stringify(files)},{loadModule:path=>import(path)});\n`);
   lastStatus={};await writeFile(path.join(root,'userdata',files.status),'{}');
   frameSocket?.destroy();frameSocket=null;framePending=0;
   const owned=spawn(binary,[entry,'--root',root,'--frame-stream',pipeName],
@@ -99,8 +105,14 @@ async function start(){
   ipcMain.on('preview:frame-ack',(event,id)=>{
     if(event.sender===win.webContents&&event.senderFrame===win.webContents.mainFrame&&id===framePending)framePending=0;
   });
-  handle('preview:update',async source=>{
-    document=validateTouhouSpellCard(source);state={...state,revision:state.revision+1,documentRevision:state.documentRevision+1,document,commands:[]};
+  handle('preview:update',async value=>{
+    const source=sourceText(value?.source),revision=state.documentRevision+1;
+    document=validateTouhouSpellCard(readVisualDocument(source)??value.document??document);
+    // Unique module URLs bypass the native ESM cache without evaluating any
+    // authored JavaScript in Electron. The existing engine imports this file.
+    const modulePath=`./spell-${revision}.js`;
+    await writeFile(path.join(root,folder,modulePath),source,{flag:'wx'});
+    state={...state,revision:state.revision+1,documentRevision:revision,modulePath,document,commands:[],input:0};
     await publish();await launch();return {updated:true,documentRevision:state.documentRevision};
   });
   handle('preview:bounds',async value=>{
@@ -111,7 +123,7 @@ async function start(){
   });
   handle('preview:control',async command=>{
     if(!command||!['pause','play','restart','step','seek'].includes(command.action))throw Error('Invalid preview command');
-    if(command.action==='seek'&&(!Number.isInteger(command.frame)||command.frame<0||command.frame>document.duration))throw Error('Invalid preview frame');
+    if(command.action==='seek'&&(!Number.isInteger(command.frame)||command.frame<0||command.frame>36000))throw Error('Invalid preview frame');
     await launch();await queue({action:command.action,...(command.action==='seek'?{frame:command.frame}:{})});
     return {accepted:true,commandId,documentRevision:state.documentRevision};
   });
@@ -120,27 +132,32 @@ async function start(){
     if(!Number.isInteger(mask)||mask<0||mask>1023)throw Error('Invalid input mask');
     if(state.input!==mask){state.input=mask;state.revision++;await publish();}return{accepted:true};
   });
-  const draft=path.join(root,'userdata/spellcard-editor',selfTest?`${session.split('/')[1]}/draft.json`:'draft.json');
+  const draftDirectory=path.join(root,'userdata/spellcard-editor',selfTest?session.split('/')[1]:'');
+  const draft=path.join(draftDirectory,'draft.spell.js');
   handle('document:load-draft',async()=>{
-    try{return {document:parseTouhouSpellCard(await readFile(draft,'utf8'))};}
+    try{return {source:sourceText(await readFile(draft,'utf8'))};}
+    catch(error){if(error.code!=='ENOENT')throw error;}
+    try{return{source:generateSpellSource(parseTouhouSpellCard(await readFile(path.join(draftDirectory,'draft.json'),'utf8')))};}
     catch(error){if(error.code==='ENOENT')return{};throw error;}
   });
-  handle('document:save-draft',async source=>{await atomic(draft,serializeTouhouSpellCard(source));return{saved:true};});
+  handle('document:save-draft',async source=>{await atomic(draft,sourceText(source));return{saved:true};});
   handle('document:open',async()=>{
     const result=await dialog.showOpenDialog(win,{filters,properties:['openFile']});if(result.canceled)return{cancelled:true};
     const file=result.filePaths[0];if((await stat(file)).size>1024*1024)throw Error('工程文件不能超过 1 MiB。');
-    const opened=parseTouhouSpellCard(await readFile(file,'utf8'));savedPath=file;return{document:opened,path:file};
+    const raw=await readFile(file,'utf8'),legacy=path.extname(file).toLowerCase()==='.json';
+    const source=legacy?generateSpellSource(parseTouhouSpellCard(raw)):sourceText(raw);
+    savedPath=legacy?null:file;return{source,path:savedPath};
   });
   handle('document:save',async(source,options={})=>{
-    const text=serializeTouhouSpellCard(source);let file=savedPath;
-    if(!file||options.saveAs){const result=await dialog.showSaveDialog(win,{filters,defaultPath:file??'new.spellcard.json'});if(result.canceled)return{cancelled:true};file=result.filePath;}
+    const text=sourceText(source);let file=savedPath;
+    if(!file||options.saveAs){const result=await dialog.showSaveDialog(win,{filters:[filters[0]],defaultPath:file??'new.spell.js'});if(result.canceled)return{cancelled:true};file=result.filePath;}
     await atomic(file,text);savedPath=file;return{path:file};
   });
   win.once('ready-to-show',()=>{win.show();serialize(updateBounds).catch(()=>{});});
   for(const event of ['resize','move','restore','minimize','show'])win.on(event,()=>serialize(updateBounds).catch(()=>{}));
   let closeReady=false;
   win.on('close',event=>{
-    if(closeReady)return;event.preventDefault();
+    if(closeReady||closing)return;event.preventDefault();
     io.finally(()=>{closeReady=true;if(!win.isDestroyed())win.close();});
   });
   win.on('closed',()=>{cleanup();app.quit();});

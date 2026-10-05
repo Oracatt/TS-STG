@@ -10,7 +10,7 @@
 | `serializeTouhouSpellCard(value)` | 校验并生成 JSON 文本 |
 | `new TouhouSpellCardTimeline(document, context)` | 固定帧执行器，调用已有游戏 owner |
 
-文档格式为 `ts-stg-spellcard`，版本为 `1`；包含 `id/name/duration/hp/seed/boss/events`。完整类型位于 `src/touhou/spellcard.d.ts`。支持弹幕发射、直线/无限激光、Boss 移动、聚能/释放、音效、消弹六种事件。不包含任意代码或表达式执行。
+文档格式为 `ts-stg-spellcard`，版本为 `1`；包含 `id/name/duration/hp/seed/boss/events`。完整类型位于 `src/touhou/spellcard.d.ts`。支持弹幕发射、直线/无限激光、Boss 移动、聚能/释放、音效、消弹六种事件。这个数据接口不执行任意代码或表达式；用户可以在普通 JavaScript 模块中组合时间轴、编写额外逻辑并直接调用公共游戏接口。
 
 时间为 60 Hz 整数帧，角度为弧度。发射窗口为 `[frame, frame+duration)`，`rotation` 是每次发射增加的角度；`charge.releaseFrame` 是从事件开始计算的释放延迟。`origin:'boss'` 每次取 Boss 当时位置并加偏移，`origin:'world'` 为绝对坐标。同帧按文档数组顺序执行；重叠的启用移动事件会被拒绝。随机源由文档的 uint32 `seed` 独立确定。
 
@@ -40,4 +40,4 @@ timeline.stop();
 
 校验拒绝未知版本/字段/事件、非法数值、重复 ID、越界帧、过量发射。限制为 36,000 帧、256 事件、单次 2,048 发、单帧总计 8,192 发；同时存活上限仍由使用方弹幕池配置决定。
 
-可选的 SpellCardEditor 是独立开发工具，不是 thlib 运行依赖，也不包含在默认 SDK 中。消费编辑器生成的 JSON 不需要 Node、Electron 或编辑器代码。
+可选的 SpellCardEditor 是独立开发工具，生成用户可继续编辑的 `.spell.js` 模块，并在原生引擎内实时预览。模块导出 `spellCard` 元数据与 `createSpell(context)`，默认使用本页的公共时间轴；手写循环、函数和额外发射逻辑与可视化事件可并存。使用方直接导入生成的 JavaScript，不需要 Node、Electron 或编辑器代码。编辑器不包含在默认 SDK 中；旧 JSON 数据入口继续保留。
