@@ -2,8 +2,9 @@ import {createTouhouResources,TouhouGame,TouhouRNG,Keys} from '@ts-stg/thlib';
 import {validateSpellMetadata} from './metadata.js';
 
 /** Editor-only host adapter. The document runtime never depends on this tool. */
-export function createSpellCardPreview(host,source,{silent=false,createSpell}={}){
+export function createSpellCardPreview(host,source,{silent=false,createSpell,invincible=true}={}){
   if(typeof createSpell!=='function')throw new TypeError('createSpell must be a function');
+  if(typeof invincible!=='boolean')throw new TypeError('invincible must be a boolean');
   let document=validateSpellMetadata(source);const resources=createTouhouResources(host);
   const target=host.createRenderTarget(960,720),composite=host.createRenderTarget(960,720);
   let scene,disposed=false;
@@ -40,9 +41,9 @@ export function createSpellCardPreview(host,source,{silent=false,createSpell}={}
     for(const laser of game.lasers.lasers)game.lasers.erase(laser);
     game.stopBossCombat();
   }
-  function buildScene(nextDocument,nextFactory){
+  function buildScene(nextDocument,nextFactory,nextInvincible){
     if(typeof nextFactory!=='function')throw new TypeError('createSpell must be a function');
-    const current={game:null,runner:null,boss:null,ended:null,openingSounds:[],initializing:true};
+    const current={game:null,runner:null,boss:null,ended:null,invincible:nextInvincible,exitRequested:false,restartRequested:false,openingSounds:[],initializing:true};
     const banks={};
     try{
       for(const name of ['front','bullet','effect','enemy','ascii_960','text','pl00'])banks[name]=resources.createBank(name);
@@ -50,9 +51,11 @@ export function createSpellCardPreview(host,source,{silent=false,createSpell}={}
         // The Chinese authoring UI selects the existing public text adapter's
         // Chinese code page; the source-faithful thlib default remains Japanese.
         spellContext:{createNameAnimation:(text,options)=>resources.createNameAnimation(text,{...options,codePage:936},banks.text)},
-        rng:new TouhouRNG(nextDocument.seed),visualRng:new TouhouRNG(nextDocument.seed^0x12345),power:400,
+        rng:new TouhouRNG(nextDocument.seed),visualRng:new TouhouRNG(nextDocument.seed^0x12345),power:400,session:{mode:2},
         renderTarget:target,compositeTarget:composite,onBossDefeated:()=>finish(current,'defeated'),onSpellTimeout:()=>finish(current,'timeout'),
-        onExit:()=>host.quit(),onRestart:()=>reset(),
+        // Menu callbacks finish their own update before the editor replaces or
+        // holds this scene. Exiting a rehearsal never quits the native host.
+        onExit:()=>{current.exitRequested=true;},onRestart:()=>{current.restartRequested=true;},
         onSound:(id,x)=>{if(current.initializing)current.openingSounds.push([id,x]);else if(!silent)resources.audio?.request(id,x);},onStopSound:id=>resources.audio?.stop(id),
         stage:()=>{if(!current.ended)stepRunner(current.runner);},
         renderBackground:draw=>{
@@ -77,35 +80,42 @@ export function createSpellCardPreview(host,source,{silent=false,createSpell}={}
   }
   function reset(source=document,options={}){
     const nextDocument=validateSpellMetadata(source),nextFactory=Object.hasOwn(options,'createSpell')?options.createSpell:createSpell;
+    const nextInvincible=Object.hasOwn(options,'invincible')?options.invincible:invincible;
+    if(typeof nextInvincible!=='boolean')throw new TypeError('invincible must be a boolean');
     // A syntax-valid module may still throw while creating its runner. Keep the
     // last working scene and its banks until construction has fully succeeded.
-    const candidate=buildScene(nextDocument,nextFactory);
+    const candidate=buildScene(nextDocument,nextFactory,nextInvincible);
     stopSounds();
     // User cleanup must not strand a successfully compiled replacement scene.
     try{scene?.runner.stop();}catch{}
     scene?.game.destroy();
-    scene=candidate;document=nextDocument;createSpell=nextFactory;
+    scene=candidate;document=nextDocument;createSpell=nextFactory;invincible=nextInvincible;
   }
   try{reset();}catch(failure){resources.dispose();host.unloadTexture(target);host.unloadTexture(composite);throw failure;}
   return{
     get game(){return scene.game;},get runner(){return scene.runner;},
-    get settling(){const {game,ended}=scene;return !!ended&&(game.hud.activeNotice||game.bullets.bullets.length>0||game.lasers.lasers.some(laser=>laser.alive)||
+    get invincible(){return scene.invincible;},get exited(){return scene.ended==='exited';},
+    get settling(){const {game,ended}=scene;return !!ended&&ended!=='exited'&&(game.hud.activeNotice||game.bullets.bullets.length>0||game.lasers.lasers.some(laser=>laser.alive)||
       !!game.player.bomb?.alive||[...game.spell.info,...game.spell.retiredInfo,...game.spell.visuals].some(vm=>vm?.alive));},
     reset,
     setSilent(value){silent=!!value;if(silent)stopSounds();},
     update(mask=0){
       if(disposed)return;const {game,runner,ended}=scene;if(ended&&(mask&Keys.CONFIRM)){reset();return;}
+      if(ended==='exited')return;
       for(const [id,x] of scene.openingSounds)if(!silent)resources.audio?.request(id,x);scene.openingSounds=[];
-      // Authoring rehearsal is invincible; shots/Bomb and collision code still
-      // use the real player. The user's project decides its own failure policy.
-      game.player.invulnerability.set(9999);game.update(mask);if(scene.game!==game)return;
+      // Observation is an editor option. Real play leaves every hit, Bomb,
+      // death and respawn timer under the common player's ownership.
+      if(scene.invincible)game.player.invulnerability.set(9999);
+      game.update(mask);if(scene.game!==game)return;
+      if(scene.restartRequested){reset();return;}
+      if(scene.exitRequested){scene.ended='exited';runner.stop();stopSounds();return;}
       if(!runner.alive&&!ended)finish(scene,'timeout');
       // Authoring seeks run many fixed steps per host frame. A simulation clock
       // keeps the shared result time independent of pauses and seek speed.
       game.postFrame(game.frame/60);resources.audio?.flush();
     },
     render(){const commands=scene.game.render();commands.push(['text',scene.ended?'Finished - Enter to retry':'SpellCardEditor - Z shoot / X bomb / Shift focus / Esc pause',54,701,14,0xaac4eaff]);return commands;},
-    snapshot(){const {runner,game,ended}=scene;return{documentId:document.id,ended,runner:runner.snapshot?.()??{frame:runner.frame,alive:runner.alive},game:game.snapshot()};},
+    snapshot(){const {runner,game,ended}=scene;return{documentId:document.id,invincible,ended,runner:runner.snapshot?.()??{frame:runner.frame,alive:runner.alive},game:game.snapshot()};},
     destroy(){if(disposed)return;disposed=true;try{scene.runner.stop();}finally{scene.game.destroy();resources.dispose();host.unloadTexture(target);host.unloadTexture(composite);}},
   };
 }

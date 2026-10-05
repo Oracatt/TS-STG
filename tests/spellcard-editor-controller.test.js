@@ -3,22 +3,22 @@ import assert from 'node:assert/strict';
 import {createControlledPreview} from '../tools/spellcard-editor/controller.js';
 import {createSpellMetadata} from '../tools/spellcard-editor/metadata.js';
 
-function fixture({duration=600,loadModule,modulePath='./initial.js'}={}){
+function fixture({duration=600,loadModule,modulePath='./initial.js',invincible=true}={}){
   const paths={control:'build/spellcard-editor/test/control.json',status:'spellcard-editor/test/status.json'};
-  let document={...createSpellMetadata(),duration},state={revision:0,documentRevision:0,document,commands:[],modulePath};
-  let id=0,reads=0,failAt=-1,finishAt=-1,tail=0,runner={frame:0,alive:true,completed:false};
+  let document={...createSpellMetadata(),duration},state={revision:0,documentRevision:0,document,commands:[],modulePath,invincible};
+  let id=0,reads=0,failAt=-1,finishAt=-1,pauseAt=-1,tail=0,runner={frame:0,alive:true,completed:false};
   const calls=[],files=new Map();
-  const preview={game:{bullets:{bullets:[]},lasers:{lasers:[]}},silent:true,
+  const preview={invincible,exited:false,game:{paused:false,bullets:{bullets:[]},lasers:{lasers:[]}},silent:true,
     get runner(){return runner;},
     get settling(){return tail>0;},
-    reset(source,{createSpell}={}){assert.equal(typeof createSpell,'function');const candidate=createSpell({boss:{x:0,y:96},sound:id=>calls.push(['sound',id])});
-      document=source;runner=candidate;calls.push(['reset',source.id]);},
+    reset(source,{createSpell,invincible=this.invincible}={}){assert.equal(typeof createSpell,'function');const candidate=createSpell({boss:{x:0,y:96},sound:id=>calls.push(['sound',id])});
+      this.invincible=invincible;this.exited=false;this.game.paused=false;document=source;runner=candidate;calls.push(['reset',source.id]);},
     setSilent(value){this.silent=value;calls.push(['silent',value]);},
     update(mask){
       calls.push(['update',runner.frame,mask,this.silent]);
       if(runner.frame===failAt)throw new Error('fixture update failure');
       if(!runner.alive){tail=Math.max(0,tail-1);return;}
-      runner.update();
+      if(this.game.paused)return;runner.update();if(runner.frame===pauseAt)this.game.paused=true;
     },
     render:()=>[['clear',0]],snapshot:()=>({frame:runner.frame}),destroy(){calls.push(['destroy']);},
   };
@@ -30,17 +30,17 @@ function fixture({duration=600,loadModule,modulePath='./initial.js'}={}){
   })});
   const controller=createControlledPreview(host,paths,{loadModule:path=>path==='./initial.js'?initialModule():loadModule(path),
     factory:(receivedHost,source,options)=>{
-      assert.equal(receivedHost,host);assert.equal(options.silent,true);assert.equal(typeof options.createSpell,'function');
+      assert.equal(receivedHost,host);assert.equal(options.silent,true);assert.equal(typeof options.createSpell,'function');assert.equal(options.invincible,invincible===true);
       preview.reset(source,options);return preview;
     }});
   function readNext(){const before=reads;for(let i=0;i<7&&reads===before;i++)controller.update(123);assert.ok(reads>before);}
   return{controller,preview,calls,files,paths,readNext,
     async ready(){controller.update();await flushImports();controller.update();},
-    commands(...commands){state={...state,revision:state.revision+1,commands:[...state.commands,...commands.map(command=>({...command,id:++id}))]};},
+    commands(...commands){for(const command of commands)if(command.action==='invincible')state.invincible=command.value;state={...state,revision:state.revision+1,commands:[...state.commands,...commands.map(command=>({...command,id:++id}))]};},
     replace(source){state={...state,revision:state.revision+1,documentRevision:state.documentRevision+1,document:source,commands:[]};},
     module(path,source=state.document){state={...state,revision:state.revision+1,documentRevision:state.documentRevision+1,document:source,modulePath:path,commands:[]};},
     revise(){state={...state,revision:state.revision+1};},
-    failAt(frame){failAt=frame;},finishAt(frame){finishAt=frame;},tail(frames){tail=frames;},
+    pauseAt(frame){pauseAt=frame;},exit(){preview.exited=true;runner.alive=false;},failAt(frame){failAt=frame;},finishAt(frame){finishAt=frame;},tail(frames){tail=frames;},
   };
 }
 
@@ -219,4 +219,42 @@ test('held confirm never replays a completed card, but a new press works even af
   assert.equal(f.preview.runner.alive,false);
   f.controller.update(0);f.controller.update(256);
   assert.equal(f.preview.runner.alive,true);assert.equal(f.preview.runner.frame,1);
+});
+
+test('controller uses real play unless observation is explicitly enabled, and mode switches rebuild at frame zero',async()=>{
+  const f=fixture({invincible:null});await f.ready();
+  assert.equal(f.preview.invincible,false);assert.equal(f.controller.snapshot().editor.invincible,false);
+  f.commands({action:'play'});f.controller.update();f.controller.update();assert.equal(f.preview.runner.frame,2);
+  const first=f.preview.runner;
+  f.commands({action:'invincible',value:true});f.controller.update();
+  assert.equal(f.preview.invincible,true);assert.notEqual(f.preview.runner,first);
+  assert.equal(f.preview.runner.frame,0);assert.equal(f.controller.snapshot().editor.playing,false);
+  f.commands({action:'seek',frame:45});f.controller.update();f.controller.update();assert.equal(f.preview.runner.frame,45);
+  f.commands({action:'invincible',value:false});f.controller.update();
+  assert.equal(f.preview.invincible,false);assert.equal(f.preview.runner.frame,0);assert.equal(f.controller.snapshot().editor.seeking,false);
+});
+
+test('real play rejects nonzero seek and a restart remains available',async()=>{
+  const f=fixture({invincible:false});await f.ready();
+  f.commands({action:'play'});f.controller.update();
+  f.commands({action:'seek',frame:45});f.controller.update();
+  assert.match(f.controller.snapshot().editor.error,/真实试玩不支持跳帧/);assert.equal(f.preview.runner.frame,1);
+  assert.equal(f.controller.snapshot().editor.seeking,false);
+  f.commands({action:'seek',frame:0});f.controller.update();
+  assert.equal(f.controller.snapshot().editor.error,null);assert.equal(f.preview.runner.frame,0);
+});
+
+test('observation seek stops at an in-game pause rather than waiting for a frozen frame forever',async()=>{
+  const f=fixture();await f.ready();f.pauseAt(12);
+  f.commands({action:'seek',frame:45});f.controller.update();
+  const status=f.controller.snapshot().editor;
+  assert.equal(status.frame,12);assert.equal(status.seeking,false);assert.equal(status.gamePaused,true);
+});
+
+test('leaving the native menu keeps the editor session available for retry',async()=>{
+  const f=fixture({invincible:false});await f.ready();
+  f.commands({action:'play'});f.controller.update();f.exit();f.controller.update();
+  assert.equal(f.controller.snapshot().editor.exited,true);assert.equal(f.controller.snapshot().editor.playing,false);
+  f.commands({action:'play'});f.controller.update();
+  assert.equal(f.controller.snapshot().editor.exited,false);assert.equal(f.preview.runner.frame,1);
 });

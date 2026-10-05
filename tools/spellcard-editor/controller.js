@@ -14,7 +14,7 @@ export function createControlledPreview(host,paths,{factory=createSpellCardPrevi
     // V8 stacks normally include it. Keep both without duplicating the header.
     return stack.includes(message)?stack:stack?`${message}\n${stack}`:message;
   };
-  function reset(){preview.setSilent(true);preview.reset(document,{createSpell});target=null;settling=false;}
+  function reset(invincible=preview.invincible){preview.setSilent(true);preview.reset(document,{createSpell,invincible});target=null;settling=false;}
   function requestModule(){
     const id=++requestId,path=state.modulePath,documentId=state.documentRevision;
     loading=true;pending=null;error=null;playing=false;settling=false;target=null;preview?.setSilent(true);
@@ -39,8 +39,9 @@ export function createControlledPreview(host,paths,{factory=createSpellCardPrevi
     const candidate=pending;pending=null;loading=false;
     if(candidate.error){error=candidate.error;return;}
     try{
-      if(preview)preview.reset(candidate.document,{createSpell:candidate.createSpell});
-      else preview=factory(host,candidate.document,{silent:true,createSpell:candidate.createSpell});
+      const options={createSpell:candidate.createSpell,invincible:state.invincible===true};
+      if(preview)preview.reset(candidate.document,options);
+      else preview=factory(host,candidate.document,{silent:true,...options});
       document=candidate.document;createSpell=candidate.createSpell;documentRevision=candidate.documentRevision;error=null;
     }catch(failure){error=errorText(failure);}
   }
@@ -62,13 +63,21 @@ export function createControlledPreview(host,paths,{factory=createSpellCardPrevi
       if(command.action==='pause'){playing=false;settling=false;target=null;preview.setSilent(true);}
       else if(command.action==='play'){if(error||!preview.runner.alive)reset();error=null;playing=true;preview.setSilent(target!==null);}
       else if(command.action==='restart'){playing=false;reset();error=null;}
+      else if(command.action==='invincible'){
+        if(typeof command.value!=='boolean')throw new TypeError('invincible must be a boolean');
+        playing=false;reset(command.value);error=null;
+      }
       else if(command.action==='step'){playing=false;settling=false;target=null;preview.setSilent(false);if(preview.runner.alive||preview.settling)preview.update(0);preview.setSilent(true);}
-      else if(command.action==='seek'){playing=false;reset();error=null;target=Math.min(command.frame,document.duration);}
+      else if(command.action==='seek'){
+        if(command.frame>0&&!preview.invincible)throw new Error('真实试玩不支持跳帧，请开启无敌观察。');
+        playing=false;reset();error=null;target=Math.min(command.frame,document.duration);
+      }
     }
   }
   function status(){return{revision,documentRevision,requestedDocumentRevision,document,loading,commandId,frame:preview?.runner.frame??0,playing,settling,seeking:target!==null,
+    invincible:preview?.invincible??state.invincible===true,exited:preview?.exited??false,gamePaused:preview?.game.paused??false,
     completed:preview?!preview.runner.alive:false,bullets:preview?.game.bullets.bullets.length??0,lasers:preview?.game.lasers.lasers.length??0,
-    player:preview?.game.player?{x:preview.game.player.x,y:preview.game.player.y}:null,error};}
+    player:preview?.game.player?{x:preview.game.player.x,y:preview.game.player.y,lives:preview.game.player.lives,bombs:preview.game.player.bombs,deaths:preview.game.player.deaths,state:preview.game.player.state}:null,error};}
   return{
     update(mask=0){
       if(disposed)return;
@@ -80,8 +89,8 @@ export function createControlledPreview(host,paths,{factory=createSpellCardPrevi
         const active=!!preview&&!loading&&documentRevision===requestedDocumentRevision;
         if(active&&!error&&target===null&&!preview.runner.alive&&retry){reset();playing=true;preview.setSilent(false);}
         if(active&&target!==null){
-          for(let i=0;i<30&&preview.runner.frame<target&&preview.runner.alive;i++)preview.update(0);
-          if(preview.runner.frame>=target||!preview.runner.alive){target=null;if(playing)preview.setSilent(false);}
+          for(let i=0;i<30&&preview.runner.frame<target&&preview.runner.alive&&!preview.game.paused;i++)preview.update(0);
+          if(preview.runner.frame>=target||!preview.runner.alive||preview.game.paused){target=null;if(playing)preview.setSilent(false);}
         }else if(active&&playing){preview.update(input);if(!preview.runner.alive){playing=false;settling=!!preview.settling;}}
         else if(active&&settling){preview.update(0);settling=!!preview.settling;if(!settling)preview.setSilent(true);}
       }catch(failure){error=errorText(failure);playing=false;settling=false;target=null;preview?.setSilent(true);}

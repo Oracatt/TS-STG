@@ -22,7 +22,7 @@ let frameServer,frameSocket,frameId=0,framePending=0;
 const pipeName=`\\\\.\\pipe\\ts-stg-frames-${randomUUID()}`;
 let bounds={x:0,y:0,width:1,height:1,visible:false};
 const document=createSpellMetadata();
-let state={revision:0,documentRevision:0,document,commands:[]},io=Promise.resolve();
+let state={revision:0,documentRevision:0,document,invincible:false,commands:[]},io=Promise.resolve();
 const serialize=task=>{const next=io.then(task);io=next.catch(()=>{});return next;};
 function sourceText(value){
   const source=validateSpellSource(value);
@@ -135,9 +135,14 @@ async function start(){
     await updateBounds();return {updated:true};
   });
   handle('preview:control',async command=>{
-    if(!command||!['pause','play','restart','step','seek'].includes(command.action))throw Error('Invalid preview command');
+    if(!command||!['pause','play','restart','step','seek','invincible'].includes(command.action))throw Error('Invalid preview command');
     if(command.action==='seek'&&(!Number.isInteger(command.frame)||command.frame<0||command.frame>36000))throw Error('Invalid preview frame');
-    await launch();await queue({action:command.action,...(command.action==='seek'?{frame:command.frame}:{})});
+    if(command.action==='seek'&&command.frame>0&&!state.invincible)throw Error('真实试玩不支持跳帧，请开启无敌观察。');
+    if(command.action==='invincible'){
+      if(typeof command.value!=='boolean')throw Error('Invalid observation mode');
+      state.invincible=command.value;state.input=0;
+    }
+    await launch();await queue({action:command.action,...(command.action==='seek'?{frame:command.frame}:command.action==='invincible'?{value:command.value}:{})});
     return {accepted:true,commandId,documentRevision:state.documentRevision};
   });
   handle('preview:status',readStatus);

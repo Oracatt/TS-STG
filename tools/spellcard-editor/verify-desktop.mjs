@@ -24,6 +24,9 @@ export async function verifyDesktop({win,root,files,readStatus,dialog,child,init
   await wait(loaded,'initial module preview');
   await wait(async()=>JSON.parse(await readFile(path.join(root,files.bounds),'utf8')).visible,'embedded viewport');
   assert.ok(child()?.pid);assert.deepEqual(Object.keys((await readStatus()).document).sort(),['boss','duration','hp','id','name','seed']);
+  assert.equal((await readStatus()).invincible,false,'desktop starts in real play');
+  assert.equal(await evaluate('document.getElementById("invincible").checked'),false);
+  assert.equal(await evaluate('document.getElementById("seek").disabled'),true,'real play does not replay zero-input seeks');
   assert.equal(await evaluate('window.spellCardEditor.desktop'),true);
   const initial=await text();
   if(initialDocument){
@@ -89,6 +92,9 @@ export function createSpell(context) {
   await click('play');await wait(async()=>(await readStatus()).frame>=100,'play native frames');
   await click('play');await wait(async()=>!(await readStatus()).playing,'pause native frames');
   const paused=(await readStatus()).frame;await pause(250);assert.equal((await readStatus()).frame,paused);
+  await click('invincible');
+  await wait(async()=>{const s=await readStatus();return s.invincible&&s.frame===0&&!s.playing;},'observation mode rebuilds at frame zero');
+  assert.equal(await evaluate('document.getElementById("seek").disabled'),false);
   await change('#seek','180','input');
   await wait(async()=>{const s=await readStatus();return s.frame===180&&!s.seeking;},'seek to 180');
   assert.ok((await readStatus()).bullets>0,'handwritten JS emitted actual native bullets');
@@ -97,6 +103,15 @@ export function createSpell(context) {
   await wait(async()=>{const s=await readStatus();return s.playing&&!s.seeking&&s.frame>=600;},'play preserves a preceding queued seek');
   await click('play');await wait(async()=>!(await readStatus()).playing,'pause after queued seek and play');
   await change('#seek','181','input');await wait(async()=>{const s=await readStatus();return s.frame===181&&!s.seeking;},'restore code test frame');
+  await click('invincible');
+  await wait(async()=>{const s=await readStatus();return !s.invincible&&s.frame===0&&!s.playing;},'return to real play with fresh player state');
+  assert.equal(await evaluate('document.getElementById("seek").disabled'),true);
+  await click('play');await wait(async()=>(await readStatus()).frame>=15,'real play after mode switch');
+  await click('play');await wait(async()=>!(await readStatus()).playing,'pause real play');
+  revision=(await readStatus()).documentRevision;await click('native-preview');
+  await wait(async()=>await loaded()&&(await readStatus()).documentRevision>revision&&(await readStatus()).frame===0,'real reload starts at zero');
+  await click('invincible');await wait(async()=>{const s=await readStatus();return s.invincible&&s.frame===0;},'observation mode for code inspection');
+  await change('#seek','181','input');await wait(async()=>{const s=await readStatus();return s.frame===181&&!s.seeking;},'restore inspection after mode checks');
 
   // CodeMirror's own find/replace and history, not a stand-in text field.
   await shortcut('h','KeyH');

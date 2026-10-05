@@ -45,7 +45,7 @@ writeFileSync(resolve(folder,'source-default-check.js'),`import {createControlle
 function check(condition,message){if(!condition)throw Error(message);}
 const paths={control:'build/spellcard-check/virtual-default-source.json',status:'spellcard-check/default-source-status.json'};
 const fallback=${JSON.stringify({...createSpellMetadata(),id:'unused-fallback',duration:20})};
-let state={revision:1,documentRevision:1,document:fallback,modulePath:'./source-default.js',
+let state={revision:1,documentRevision:1,document:fallback,invincible:true,modulePath:'./source-default.js',
   commands:[{id:1,action:'seek',frame:90}],input:0};
 const host={...tsstg,readText:file=>file===paths.control?JSON.stringify(state):tsstg.readText(file)};
 const controller=createControlledPreview(host,paths,{loadModule:path=>import(path)});
@@ -112,7 +112,7 @@ check(openings()===1,'Resuming after a silent seek must not replay a deferred op
 rehearsal.destroy();
 
 const paths={control:'build/spellcard-check/virtual-control.json',status:'spellcard-check/lifecycle-status.json'};
-let state={revision:0,documentRevision:1,document,modulePath:'./lifecycle-spell.js',commands:[],input:0},preview;
+let state={revision:0,documentRevision:1,document,invincible:true,modulePath:'./lifecycle-spell.js',commands:[],input:0},preview;
 const controlledHost={...host,readText:file=>file===paths.control?JSON.stringify(state):tsstg.readText(file)};
 const controller=createControlledPreview(controlledHost,paths,{loadModule:path=>import(path),factory:(...args)=>(preview=createSpellCardPreview(...args))});
 check(openings()===1,'Creating the paused controller must remain silent');
@@ -206,7 +206,7 @@ export function createSpell(){return{frame:0,alive:true,update(){this.stop();},s
 writeFileSync(resolve(folder,'source-live-check.js'),`import {createControlledPreview} from '../../tools/spellcard-editor/controller.js';
 function check(condition,message){if(!condition)throw Error(message);}
 const paths={control:'build/spellcard-check/virtual-source.json',status:'spellcard-check/source-status.json'};
-let state={revision:1,documentRevision:1,document:${JSON.stringify(generatedDocument)},modulePath:'./source-generated.js',
+let state={revision:1,documentRevision:1,document:${JSON.stringify(generatedDocument)},invincible:true,modulePath:'./source-generated.js',
   commands:[{id:1,action:'seek',frame:37},{id:2,action:'play'}],input:0};
 const host={...tsstg,readText:file=>file===paths.control?JSON.stringify(state):tsstg.readText(file)};
 const controller=createControlledPreview(host,paths,{loadModule:path=>import(path)});
@@ -268,3 +268,87 @@ assert.deepEqual(liveResults[0],liveResults[1],'QuickJS/V8 native edited-module 
 assert.equal(liveResults[0].passed,true);
 assert.equal(liveResults[0].checks.length,10);
 console.log('PASS: native generated/handwritten ES modules, transactional reload, syntax/runtime recovery, completion on QuickJS/V8');
+
+// Real play exercises the public player's collision/death/respawn/Bomb owners,
+// without replacing hitboxes, timers or resource banks with test doubles.
+writeFileSync(resolve(folder,'real-play.js'),`import {createSpellCardPreview} from '../../tools/spellcard-editor/native-preview.js';
+import {createControlledPreview} from '../../tools/spellcard-editor/controller.js';
+function check(condition,message){if(!condition)throw Error(message);}
+const document=${JSON.stringify({...createSpellMetadata(),id:'real-play',duration:6000,hp:1000000})};
+function factory(attack){return context=>({frame:0,alive:true,
+  update(){
+    if(attack==='once'&&this.frame===10||attack==='repeat'&&context.player.state===1&&context.player.invulnerability.current<=0)
+      context.bullets.emit({x:context.player.x,y:context.player.y,type:0,color:2,pattern:1,count:1,rows:1,speed:0,angle:0,shotSound:-1});
+    this.frame++;
+  },stop(){this.alive=false;},
+});}
+let quits=0;const host={...tsstg,quit(){quits++;}};
+const preview=createSpellCardPreview(host,document,{silent:true,createSpell:factory('once'),invincible:true});
+for(let i=0;i<12;i++)preview.update();
+check(preview.game.player.state===1&&preview.game.player.deaths===0,'Observation must ignore an actual bullet contact');
+const observedPlayer=preview.game.player;
+preview.reset(document,{invincible:false});
+check(preview.game.player!==observedPlayer&&preview.game.player.invulnerability.current===0,'Mode switch must create a fresh public player');
+for(let i=0;i<11;i++)preview.update();
+check(preview.game.player.state===4,'A native bullet must trigger the real deathbomb window');
+let frames=0;while(preview.game.player.state!==0&&frames++<90)preview.update();
+check(preview.game.player.state===0&&preview.game.player.deaths===1&&preview.game.player.lives===1,'Real death must consume stock and begin the shared respawn');
+while(preview.game.player.state===0&&frames++<180)preview.update();
+check(preview.game.player.state===1&&preview.game.player.invulnerability.current>0&&preview.game.player.invulnerability.current<9999,'Real respawn must retain its own protection timer');
+const respawnProtection=preview.game.player.invulnerability.current;
+
+preview.reset(document,{createSpell:factory('once')});
+for(let i=0;i<11;i++)preview.update();preview.update(32);
+check(preview.game.player.state===1&&preview.game.player.deaths===0&&preview.game.player.bombs===1&&preview.game.player.bomb?.alive,
+  'Bomb during the public deathbomb window must save the life');
+preview.reset(document,{createSpell:factory('none')});preview.update(32);
+check(preview.game.player.bombs===1&&preview.game.player.bomb?.alive,'Real play must use the common ordinary Bomb');
+
+preview.reset(document,{createSpell:factory('repeat')});
+frames=0;while(!preview.game.paused&&frames++<1800)preview.update();
+check(preview.game.paused&&preview.game.player.lives===-1&&preview.game.player.deaths===3,'Exhausted stock must reach the public failure menu');
+check(preview.game.session.mode===2&&!preview.game.pauseVisual.allowsContinue(),'Editor play uses spell practice, without stage credits');
+const failedFrame=preview.runner.frame;
+for(let i=0;i<20;i++)preview.update();
+check(preview.runner.frame===failedFrame,'The spell clock must freeze while the failure menu is open');
+preview.game.pauseVisual.select(1);preview.update(256);
+for(let i=0;i<20&&!preview.exited;i++)preview.update();
+check(preview.exited&&!preview.runner.alive&&quits===0,'Menu exit must stop the rehearsal without quitting the editor host');
+check(preview.game.spell.result===null,'Exiting a failed rehearsal must not award a spell capture');
+const exitFrame=preview.runner.frame;preview.update();check(preview.runner.frame===exitFrame,'Exited rehearsal must stay stopped');
+preview.reset();check(!preview.exited&&preview.runner.frame===0&&!preview.invincible,'Retry preserves real-play mode');
+
+// Native restart callbacks replace resources only after the menu update ends.
+preview.game.openGameOver();for(let i=0;i<20;i++)preview.update();
+preview.game.pauseVisual.select(5);preview.update(256);
+for(let i=0;i<20&&preview.game.paused;i++)preview.update();
+check(preview.runner.frame===0&&!preview.game.paused&&quits===0,'The native practice restart must remain in the editor');
+const result={passed:false,failedFrame,respawnProtection,quits,realPlay:!preview.invincible};preview.destroy();
+const paths={control:'build/spellcard-check/virtual-real-menu.json',status:'spellcard-check/real-menu-status.json'};
+let state={revision:0,documentRevision:1,document,modulePath:'./real-module.js',commands:[{id:1,action:'play'}],input:0};
+let controlledPreview,phase=0;
+const controlledHost={...host,readText:file=>file===paths.control?JSON.stringify(state):host.readText(file)};
+const controller=createControlledPreview(controlledHost,paths,{loadModule:()=>({spellCard:document,createSpell:factory('repeat')}),
+  factory:(...args)=>(controlledPreview=createSpellCardPreview(...args))});
+globalThis.__tsstg_game={update(){
+  if(result.passed)return;controller.update();const status=controller.snapshot().editor;
+  check(!status.error,'Controller real play failed: '+status.error);
+  if(phase===0&&status.gamePaused&&controlledPreview.game.pauseVisual.phase===6){
+    check(status.playing&&!status.invincible&&status.documentRevision===1,'Failure menu must keep accepting real native input');
+    controlledPreview.game.pauseVisual.select(5);state={...state,revision:state.revision+1,input:256};phase=1;
+  }else if(phase===1&&!status.gamePaused&&status.frame===0){
+    check(status.playing&&!status.invincible&&status.documentRevision===1&&status.player.lives===2,'Native menu retry must synchronize the existing controller scene');
+    result.controllerRetry={frame:status.frame,playing:status.playing,gamePaused:status.gamePaused,invincible:status.invincible};
+    result.passed=true;controller.destroy();
+  }
+},render:()=>[],snapshot:()=>result};
+`);
+const realPlay=[];
+for(const backend of ['quickjs','v8']){
+  const output=resolve(folder,`${backend}-real-play.json`);
+  const result=spawnSync(resolve(root,'build/Release/ts-stg.exe'),['build/spellcard-check/real-play.js','--root',root,
+    '--backend',backend,'--headless','--frames','1800','--snapshot',output],{cwd:root,encoding:'utf8',windowsHide:true,timeout:60000});
+  assert.equal(result.status,0,result.stderr||result.error?.message);realPlay.push(JSON.parse(readFileSync(output,'utf8')));
+}
+assert.deepEqual(realPlay[0],realPlay[1],'QuickJS/V8 real-play lifecycle parity');assert.equal(realPlay[0].passed,true);
+console.log('PASS: native real hits, deathbomb, Bomb, death/respawn, mode reset, practice menu, editor-safe exit/retry on QuickJS/V8');

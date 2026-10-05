@@ -22,7 +22,7 @@
     <header class="pane-heading preview-heading"><div><span id="engine-dot" class="engine-dot"></span><strong>原生预览</strong><span class="engine-tag">TS-STG</span></div><button id="native-preview" class="quiet" title="重新运行源码，恢复引擎预览">重新加载 ↻</button></header>
     <div class="preview-details"><strong id="card-name">等待运行</strong><span id="runtime-metadata">固定步长 60 FPS · 固定随机种子</span></div>
     <div class="canvas-stage"><div id="native-preview-host" class="native-preview-host"><canvas id="native-frame" width="960" height="720" tabindex="0" aria-label="原生游戏画面：点击后使用方向键移动，Z 射击，X Bomb，Shift 低速"></canvas><div id="preview-placeholder" class="preview-placeholder"><span>TS-STG</span><p id="placeholder-text">正在连接原生引擎…</p></div></div></div>
-    <p class="input-hint">点击画面操作 <span>方向键 移动</span><span>Z 射击</span><span>X Bomb</span><span>Shift 低速</span></p>
+    <p class="input-hint"><label class="auto-preview" title="切换会从头开始。关闭时使用真实死亡、Bomb 和复活规则。"><input id="invincible" type="checkbox">无敌观察</label> <span>方向键 移动</span><span>Z 射击</span><span>X Bomb</span><span>Shift 低速</span></p>
     <div class="transport"><div class="play-buttons"><button id="reset" title="重置到第 0 帧">↤</button><button id="play" class="play-button" title="播放 / 暂停（空格）">▶ 播放</button><button id="step" title="单帧前进">▸│</button></div><div class="frame-readout"><strong id="current-frame">00000</strong><span>/ <span id="total-frames">00000</span> 帧</span></div><span id="time-readout">0.00 s</span></div>
     <div class="scrubber"><input id="seek" type="range" min="0" max="1800" value="0" step="1" aria-label="预览帧"><div><span>00:00</span><span id="duration-time">00:30</span></div></div>
     <div class="preview-status"><span id="preview-state">准备预览</span><span id="object-count">0 弹 · 0 激光</span></div>

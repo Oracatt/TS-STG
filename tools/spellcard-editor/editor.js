@@ -6,11 +6,12 @@ const bridge=window.spellCardEditor?.desktop?window.spellCardEditor:null;
 const STORAGE='ts-stg.spellcard-editor.source.v2';
 let sourceText=createSpellSource(),savedSource=null,documentPath=null,editor=null,initializing=true;
 let editRevision=0,submittedEdit=-1,documentRevision=0,commandId=0,reloadToken=0,controlToken=0,seekToken=0;
-let frame=0,duration=1800,playing=false,playIntent=false,nativeLoading=false,sourcePending=true;
+let frame=0,duration=1800,playing=false,playIntent=false,nativeLoading=false,sourcePending=true,invincible=false;
 let reloadTimer=null,noticeTimer=null,boundsFrame=0,statusBusy=false,updating=0,controlsPending=0;
 let operations=Promise.resolve(),errorLocation=null,errorText='',draftDirty=false,folded=false,lastStatus=null;
 let restartPosition=false;
 let documentEpoch=0;
+let releaseInput=()=>{};
 
 function notice(message,success=false){clearTimeout(noticeTimer);$('notice-text').textContent=message;$('notice').classList.toggle('success',success);$('notice').hidden=false;if(success)noticeTimer=setTimeout(()=>{$('notice').hidden=true;},4000);}
 function enqueue(operation){const next=operations.catch(()=>{}).then(operation);operations=next.catch(()=>{});return next;}
@@ -19,7 +20,7 @@ function setPlaying(value){playing=!!value;$('play').textContent=playing?'Ⅱ �
 function sourceState(text){$('source-preview-status').textContent=text;}
 function renderFile(){const name=documentPath?.split(/[\\/]/).at(-1)??'untitled.spell.js';$('file-name').textContent=name;$('file-name').title=documentPath??name;$('file-dirty').hidden=sourceText===savedSource;}
 function renderTransport(){frame=clamp(frame,0,duration);$('current-frame').textContent=String(frame).padStart(5,'0');$('total-frames').textContent=String(duration).padStart(5,'0');$('time-readout').textContent=`${(frame/60).toFixed(2)} s`;
-  $('seek').max=duration;$('seek').value=frame;const seconds=Math.floor(duration/60);$('duration-time').textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;}
+  $('seek').max=duration;$('seek').value=frame;$('seek').disabled=!bridge||!invincible;$('seek').title=invincible?'按固定种子重新模拟到指定帧':'真实试玩从头进行；开启无敌观察后可跳帧';const seconds=Math.floor(duration/60);$('duration-time').textContent=`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(seconds%60).padStart(2,'0')}`;}
 function setError(value){
   const text=value?String(value.stack??value):'';if(text===errorText)return;errorText=text;
   $('source-error').textContent=text;$('source-errors').hidden=!text;$('engine-dot').classList.toggle('error',!!text);
@@ -53,6 +54,7 @@ function applyStatus(status){
   if(matches&&status.error){setError(status.errorStack??status.error);nativeLoading=false;playIntent=false;setPlaying(false);}
   if((status.documentRevision??0)<documentRevision||(status.commandId??0)<commandId)return;
   nativeLoading=!!status.loading;
+  invincible=status.invincible===true;$('invincible').checked=invincible;
   if(matches&&!nativeLoading&&!status.error){setError(null);sourceState('当前源码已在原生引擎中运行');sourcePending=false;}
   if(status.document&&!nativeLoading&&!status.error&&!restartPosition){const document=status.document;
     if(Number.isInteger(document.duration)&&document.duration>0)duration=document.duration;
@@ -62,14 +64,14 @@ function applyStatus(status){
   if(!restartPosition){setPlaying(!!status.playing&&!status.completed);if(!nativeLoading&&!status.seeking)playIntent=playing;}
   renderTransport();$('object-count').textContent=`${Number(status.bullets??0)} 弹 · ${Number(status.lasers??0)} 激光`;
   $('engine-dot').classList.toggle('ready',!!status.running&&!status.error);
-  if(!status.error)$('preview-state').textContent=nativeLoading?'正在载入源码…':status.seeking?'正在按种子定位…':status.settling?'结算演出':status.completed?'播放完成':playing?'正在播放':'已暂停';
+  if(!status.error)$('preview-state').textContent=nativeLoading?'正在载入源码…':status.exited?'已返回编辑器 · 播放可重试':status.seeking?'正在按种子定位…':status.gamePaused?'游戏菜单':status.settling?'结算演出':status.completed?'播放完成':playing?(invincible?'无敌观察':'真实试玩'):'已暂停';
   if(status.running===false){$('engine-dot').classList.remove('ready');$('preview-state').textContent='引擎已停止 · 重新加载可恢复';}
 }
 async function reload(){
   clearTimeout(reloadTimer);reloadTimer=null;
   if(!bridge){sourceState('请在桌面工作台中运行 JS');return;}
   const source=sourceText,edit=editRevision,token=++reloadToken;
-  const wantedFrame=restartPosition?0:frame,wantedPlaying=restartPosition?false:playIntent||playing;
+  const wantedFrame=restartPosition||!invincible?0:frame,wantedPlaying=restartPosition?false:playIntent||playing;
   restartPosition=false;nativeLoading=true;playIntent=wantedPlaying;sourceState('正在载入源码…');updating++;
   try{
     validateSpellSource(source);
@@ -78,7 +80,7 @@ async function reload(){
       await sendBounds();receipt(await bridge.preview.update({source}));submittedEdit=edit;
       if(token!==reloadToken)return;
       receipt(await bridge.preview.control({action:'pause'}));
-      if(wantedFrame>0)receipt(await bridge.preview.control({action:'seek',frame:wantedFrame}));
+      if(wantedFrame>0&&invincible)receipt(await bridge.preview.control({action:'seek',frame:wantedFrame}));
       if(wantedPlaying)receipt(await bridge.preview.control({action:'play'}));
       if(token!==reloadToken)return;const status=await bridge.preview.status();if(token===reloadToken)applyStatus(status);
     });
@@ -137,6 +139,7 @@ $('fold-source').addEventListener('click',()=>{folded=!folded;if(folded)editor.f
 $('error-goto').addEventListener('click',()=>{if(errorLocation)editor.goto(errorLocation.line,errorLocation.column);});
 $('play').addEventListener('click',async()=>{if(!bridge)return;if(playing||playIntent){await control({action:'pause'});return;}if(frame>=duration)await control({action:'restart'});await control({action:'play'});});
 $('reset').addEventListener('click',()=>{frame=0;renderTransport();control({action:'seek',frame:0});});
+$('invincible').addEventListener('change',event=>{invincible=event.target.checked;frame=0;playIntent=false;releaseInput();setPlaying(false);renderTransport();control({action:'invincible',value:invincible});});
 $('step').addEventListener('click',()=>control({action:'step'}));
 $('seek').addEventListener('input',event=>{frame=clamp(Math.round(Number(event.target.value)),0,duration);renderTransport();control({action:'seek',frame});});
 window.addEventListener('keydown',event=>{
@@ -168,11 +171,11 @@ if(bridge){
     if(type==='keydown'&&(event.ctrlKey||event.metaKey))return;
     if(type==='keyup'&&!keys.has(event.code))return;
     event.preventDefault();event.stopPropagation();if(type==='keydown')keys.add(event.code);else keys.delete(event.code);sendInput();});
-  const releaseInput=()=>{keys.clear();sendInput();};canvas.addEventListener('blur',releaseInput);window.addEventListener('blur',releaseInput);
+  releaseInput=()=>{keys.clear();sendInput();};canvas.addEventListener('blur',releaseInput);window.addEventListener('blur',releaseInput);
   setInterval(pollStatus,120);
 }else{
   $('placeholder-text').textContent='在桌面工作台中打开此 JS，使用原生引擎预览。浏览器可编辑和保存源码。';
-  for(const id of ['play','reset','step','seek'])$(id).disabled=true;
+  for(const id of ['play','reset','step','seek','invincible'])$(id).disabled=true;
   $('preview-state').textContent='浏览器编辑模式';
 }
 async function initialize(){
