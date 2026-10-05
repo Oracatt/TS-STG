@@ -1,23 +1,25 @@
 // Private-media integration fixture. Requires a real audio device and normal
 // paced rendering; headless/benchmark runs cannot verify stream transport.
-import { SaveStore } from '@ts-stg/thlib';
+import { SaveStore, Keys } from '@ts-stg/thlib';
 import { RushMusic } from '../../games/rushboss/src/music.js';
 import { createRushPortraitGame } from '../../games/rushboss/src/portrait-application.js';
 
-export const RUSH_MUSIC_RESTART_FRAMES = Object.freeze({ transport: 450, application: 360 });
+export const RUSH_MUSIC_RESTART_FRAMES = Object.freeze({ transport: 480, application: 360, continuation: 300 });
 
 export function createRushMusicRestartFixture(host, { scene = 'transport' } = {}) {
   const nativeHost=host;
-  host={...nativeHost,playMusic:id=>nativeHost.playMusic(id,0),setMusicVolume:id=>nativeHost.setMusicVolume(id,0),playSound(){}};
+  const clockReads=[];
+  host={...nativeHost,playMusic:id=>nativeHost.playMusic(id,0),setMusicVolume:id=>nativeHost.setMusicVolume(id,0),playSound(){},
+    getMusicTime:id=>{const value=nativeHost.getMusicTime(id);clockReads.push({id,value});return value;}};
   if (!Object.hasOwn(RUSH_MUSIC_RESTART_FRAMES, scene)) throw new RangeError('Unknown music restart scene');
   const trace = [], completedTracks = new Set();
   let frame = 0, checks = 0, pausedTime = null, stoppedTime = null, pausedHandle = null;
-  let app = null, music, titleHandle;
+  let app = null, music, titleHandle, savedTime, savedHandle, scoreHandle;
   const check = (condition, message) => {
     checks++;
     if (!condition) throw new Error(`Rush music ${scene}, frame ${frame}: ${message}`);
   };
-  if (scene === 'application') {
+  if (scene !== 'transport') {
     const store = new SaveStore();
     store.set('profile', { musicVolume: 0, soundVolume: 0 });
     app = createRushPortraitGame(host, { store, invincible: true, skipDialogue: true, seed: 13 });
@@ -96,9 +98,10 @@ export function createRushMusicRestartFixture(host, { scene = 'transport' } = {}
     if (frame === 330) { advanced('same-title-restart-playing'); play('gamestart'); }
     if (frame === 360) { advanced('gamestart-playing'); play('riverside'); }
     if (frame === 390) { advanced('riverside-playing'); play('frozenforest'); }
-    if (frame === 420) { advanced('frozenforest-playing'); play('title'); checkTitleHandle(); }
-    if (frame === 421) beganAtIntro('final-title-first-frame');
-    if (frame === 450) advanced('final-title-playing');
+    if (frame === 420) { advanced('frozenforest-playing'); play('game-over'); }
+    if (frame === 450) { advanced('score-playing'); play('title'); checkTitleHandle(); }
+    if (frame === 451) beganAtIntro('final-title-first-frame');
+    if (frame === 480) advanced('final-title-playing');
   }
 
   function updateApplication() {
@@ -130,12 +133,55 @@ export function createRushMusicRestartFixture(host, { scene = 'transport' } = {}
     app.update(0);
   }
 
+  function updateContinuation() {
+    if(frame===30)advanced('title-playing');
+    if(frame===31)startBattle();
+    if(frame===61)advanced('stage-playing');
+    if(frame===91){
+      savedHandle=music.current;app.application.game.openResult(false);
+      // Capturing the result background can take real time. Compare against
+      // the cursor the public owner saved after that capture, not before it.
+      check(clockReads.at(-1).id===savedHandle,'Interruption did not read the previous stream');
+      savedTime=clockReads.at(-1).value;
+      check(music.key==='game-over','Failure did not select Player\'s Score');scoreHandle=music.current;
+      zero('failure-score-start');
+    }
+    if(frame===92)beganAtIntro('score-first-frame');
+    if(frame===121)advanced('score-playing');
+    app.update(frame===122?Keys.CONFIRM:0);
+    if(frame===134){
+      check(!app.application.game.paused&&music.current===savedHandle,'Continue did not restore the stage stream');
+      const value=sample('continue-restored-position');
+      check(Math.abs(value-savedTime)<.05,`Continue restored ${value}, expected ${savedTime}`);
+    }
+    if(frame===164){
+      check(advanced('continued-stage-playing')>savedTime+.1,'Restored stage did not advance');
+      app.application.game.openResult(false);
+      check(music.current===scoreHandle,'Second failure did not reuse the score stream');zero('cached-score-start');
+    }
+    if(frame===165)beganAtIntro('cached-score-first-frame');
+    if(frame===194)advanced('cached-score-playing');
+    if(frame===195)returnToTitle();
+    if(frame===196)beganAtIntro('failure-exit-first-frame');
+    if(frame===225)advanced('failure-exit-title-playing');
+    if(frame===226)startBattle();
+    if(frame===256){
+      advanced('new-stage-playing');app.application.game.openResult(true);
+      check(music.current===savedHandle&&!music.paused,'Completed result replaced or paused the stage music');
+      savedTime=time();sample('completed-result-start');
+    }
+    if(frame===286){
+      check(advanced('completed-result-playing')>savedTime+.1,'Completed result music did not continue');
+      returnToTitle();
+    }
+  }
+
   return {
-    update() { frame++; if (scene === 'application') updateApplication(); else updateTransport(); },
+    update() { frame++; if (scene === 'application') updateApplication(); else if(scene==='continuation')updateContinuation(); else updateTransport(); },
     render() { return app ? app.render() : [['clear', 0x101820ff], ['text', 'Silent native music restart verification', 40, 40, 22, 0xffffffff]]; },
     snapshot() {
       check(frame === RUSH_MUSIC_RESTART_FRAMES[scene], 'Fixture ended before every transport check');
-      check(completedTracks.size === (scene === 'transport' ? 5 : 2), 'Not every required music stream advanced');
+      check(completedTracks.size === (scene === 'transport' ? 6 : scene==='continuation'?3:2), 'Not every required music stream advanced');
       return { passed: true, scene, frame, checks, realAudioAdvanced: true, completedTracks: [...completedTracks],
         titleHandleReused: music.current === titleHandle, handleCount: music.handles.size, trace };
     },

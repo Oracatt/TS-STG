@@ -15,7 +15,7 @@ for (let index = 0; index < args.length; index++) {
   else if (args[index] === '--prepare') prepare = true;
   else throw new Error('Unknown argument: ' + args[index]);
 }
-const scenes = [{ name: 'transport', frames: 450 }, { name: 'application', frames: 360 }];
+const scenes = [{ name: 'transport', frames: 480 }, { name: 'application', frames: 360 }, { name: 'continuation', frames: 300 }];
 if (selected) assert.ok(scenes.some(scene => scene.name === selected), 'Unknown scene ' + selected);
 const out = path.resolve(root, output), scratch = path.join(root, 'build/rushboss-music-restart');
 const binary = path.resolve(root, executable), fixtures = [], results = [];
@@ -24,6 +24,7 @@ const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'games/rushboss/assets/manifest.json'), 'utf8'));
 const files = ['native/src/host.cpp', 'native/include/tsstg/music_stream.hpp', 'games/rushboss/src/music.js', 'games/rushboss/src/graphics-portrait.js',
   'games/rushboss/src/portrait-application.js', 'packages/thlib/src/touhou/application.js',
+  'packages/thlib/src/touhou/music.js', 'packages/thlib/src/touhou/game-over.js',
   'tests/fixtures/rushboss-music-restart-native.js', 'tools/verify-rushboss-music-restart.mjs'];
 const hashes = () => Object.fromEntries(files.map(file => [file, hash(path.join(root, file))]));
 const sourceHashes = hashes();
@@ -31,7 +32,7 @@ const musicHashes = Object.fromEntries(Object.entries(manifest.music).map(([name
   file: track.file, sha256: hash(path.join(root, 'games/rushboss/assets', track.file)),
   loopBeginSeconds: track.loopBegin / (track.sampleRate * track.channels),
 }]));
-const scope = 'Real RushMusic and five private WAV streams; stopped and paused time, seek, cached cross-track and same-track restarts. Actual Rush portrait application returns from paused and active gameplay through its onExit callback. Silent real audio device, serial V8/QuickJS graphical runs at normal pacing. Each required stream must advance more than 0.1 seconds; no-device/all-zero clocks fail. Tests transport position, not recorded audio waveforms or original-executable equivalence.';
+const scope = 'Public TouhouMusic through RushMusic and six private WAV streams; stopped and paused time, seek, cached cross-track and same-track restarts. Actual Rush portrait application returns from paused/active gameplay, switches to Player\'s Score on failure, restores the saved stage cursor on Continue and preserves music at completed results. Silent real audio device, serial V8/QuickJS graphical runs at normal pacing. Each required stream must advance more than 0.1 seconds; no-device/all-zero clocks fail. Tests transport position, not recorded audio waveforms or original-executable equivalence.';
 try {
   for (const scene of scenes.filter(scene => !selected || selected === scene.name)) {
     const entry = path.join(scratch, scene.name + '.js'), runs = [];
@@ -51,8 +52,9 @@ try {
       assert.equal(state.passed, true); assert.equal(state.realAudioAdvanced, true);
       assert.equal(state.frame, scene.frames); assert.equal(state.scene, scene.name);
       assert.equal(state.titleHandleReused, true);
-      assert.equal(state.completedTracks.length, scene.name === 'transport' ? 5 : 2);
-      assert.equal(state.handleCount, scene.name === 'transport' ? 5 : 2);
+      const expectedTracks=scene.name==='transport'?6:scene.name==='continuation'?3:2;
+      assert.equal(state.completedTracks.length, expectedTracks);
+      assert.equal(state.handleCount, expectedTracks);
       runs.push({ backend, state }); console.log('PASS ' + backend + '/' + scene.name);
     }
     if (!prepare) {

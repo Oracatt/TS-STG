@@ -51,6 +51,7 @@ export * from './screen-shake.js';
 export * from './text-renderer.js';
 export * from './music-caption.js';
 export * from './music-fade.js';
+export * from './music.js';
 export * from './prefabs.js';
 export * from './converging-particles.js';
 export * from './stage-selection.js';

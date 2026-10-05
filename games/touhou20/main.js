@@ -1,6 +1,6 @@
 import { AnmBank,Th20Audio,Th20Motion,Th20RNG,Th20PauseCapture,Th20TitleBackground } from './src/index.js';
 import { createTouhouResources } from '@ts-stg/thlib';
-import { TouhouApplication,TouhouGame } from '@ts-stg/thlib/touhou';
+import { TouhouApplication,TouhouGame,TouhouMusic } from '@ts-stg/thlib/touhou';
 
 // Only this demo's title artwork, music, background and authored arena remain
 // here. The complete application/menu/game/pause/result lifecycle is public thlib.
@@ -29,15 +29,11 @@ const audio=new Th20Audio(audioManifest,{
  stop:id=>host.stopSound?.(id),
 });
 const styles=commonResources.styles;
-const musicHandles=new Map();let currentMusic=null,savedMusic=null;const pausedSounds=[];
-function music(index,position=0){
-  if(currentMusic!==null)host.stopMusic(currentMusic);
-  if(!musicHandles.has(index)){
-    const track=audioManifest.music[index],id=host.loadMusic(track.path);
-    host.setMusicLoop(id,track.loop_start_frame/44100,track.loop_end_frame_exclusive/44100);musicHandles.set(index,id);
-  }
-  currentMusic=musicHandles.get(index);host.seekMusic(currentMusic,position);host.playMusic(currentMusic,options.musicVolume??1);
-}
+const musicPlayer=new TouhouMusic(host,Object.fromEntries(['title','stage','game-over'].map((key,index)=>{
+  const track=audioManifest.music[index];return[key,{file:track.path,
+    loopStart:track.loop_start_frame/44100,loopEnd:track.loop_end_frame_exclusive/44100}];
+})),{volume:options.musicVolume??1});
+const pausedSounds=[];
 const renderTarget=host.createRenderTarget(960,720),compositeTarget=host.createRenderTarget(960,720),titleTarget=host.createRenderTarget(960,720);
 function resetPausedAudio(){for(const id of pausedSounds)host.stopSound(id);pausedSounds.length=0;}
 function pauseSounds(){for(const id of audio.handles.values())if(host.isSoundPlaying(id)){host.pauseSound(id);pausedSounds.push(id);}}
@@ -49,8 +45,7 @@ function gameOptions({character=0,difficulty=1,mode:playMode='normal'}={}){
     sht:commonResources.shots[character],renderTarget,compositeTarget,
     pauseCapture:new Th20PauseCapture({bank:banks.text,pixels:host,rng:visualRng}),
     session:{mode:playMode==='practice'?1:0},
-    gameOverOptions:{onOpen:data=>{pauseSounds();if(data.pauseMusic){savedMusic={index:1,position:host.getMusicTime(currentMusic)};music(2);}},
-      onContinue:()=>{resumeSounds();music(savedMusic?.index??1,savedMusic?.position??0);}},
+    gameOverOptions:{onOpen:()=>pauseSounds(),onContinue:()=>resumeSounds()},
     renderBackground:draw=>background.draw(draw,{x:0,y:0,scale:1,screenScale:1.5}),
     onSound:(id,x)=>audio.request(id,x),onStopSound:id=>audio.stop(id),onDestroy:()=>backgroundBank.dispose(),
     // Engine validation arena authored in JS. It is not an original stage or
@@ -73,7 +68,7 @@ function gameOptions({character=0,difficulty=1,mode:playMode='normal'}={}){
     }
   };
 }
-const application=new TouhouApplication({resources:commonResources,createBank:bank,gameOptions,
+const application=new TouhouApplication({resources:commonResources,createBank:bank,gameOptions,musicPlayer,
   clock:options.clock??(()=>Date.now()/1000),
   initialSelection:options,autostart:!!options.autostart,
   createGame:settings=>{const game=new TouhouGame(settings);game.setDistortion({x:0,y:96},{radius:96});return game;},
@@ -81,8 +76,10 @@ const application=new TouhouApplication({resources:commonResources,createBank:ba
     background:new Th20TitleBackground({textureId:titleTarget,rng:visualRng}),
     // Slots belonging to a particular completed game need application data.
     excluded:[1,3,4,5,6,7,8],sound:id=>audio.request(id)}),
-  onSceneChange:({mode})=>{resetPausedAudio();music(mode==='game'?1:0);},
-  onPauseChange:paused=>{if(paused){pauseSounds();host.pauseMusic(currentMusic);}else{resumeSounds();host.resumeMusic(currentMusic);}},
+  onSceneChange:({mode})=>{resetPausedAudio();musicPlayer.play(mode==='game'?'stage':'title',{restart:true});},
+  onPauseChange:paused=>{if(paused){pauseSounds();musicPlayer.pause();}else{resumeSounds();musicPlayer.resume();}},
   onAfterUpdate:()=>audio.flush(),onQuit:()=>host.quit(),
 });
+const destroyApplication=application.destroy.bind(application);
+application.destroy=()=>{destroyApplication();musicPlayer.dispose();};
 globalThis.__tsstg_game=application;

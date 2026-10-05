@@ -5,6 +5,7 @@ import type {TouhouTitleMenu,TouhouStartSelection} from './menu.js';
 import type {TouhouResources} from './resources.js';
 import type {TouhouPixelServices} from './pause-capture.js';
 import type {TouhouSceneTransition,TouhouSceneTransitionOptions} from './scene-transition.js';
+import type {TouhouMusic} from './music.js';
 export interface TouhouApplicationScene {
  update(mask:number):void;draw?(draw:DrawList):unknown;render?():unknown[][];destroy?():void;
  snapshot?():Record<string,unknown>;postFrame?(seconds:number):number|null;
@@ -13,6 +14,8 @@ export interface TouhouSceneContext {selection:TouhouStartSelection;data:unknown
 export type TouhouSceneFactory=(context:TouhouSceneContext,application:TouhouApplication)=>TouhouApplicationScene;
 export interface TouhouSceneRequest {selection?:Partial<TouhouStartSelection>;transition?:boolean;data?:unknown;}
 export interface TouhouApplicationOptions {
+ /** Caller-owned music transport, automatically used by the built-in game-over flow. */
+ musicPlayer?:Pick<TouhouMusic,'interrupt'>|null;
  resources?:TouhouResources|null;createBank?:(name:string)=>AnmBank;pixels?:TouhouPixelServices|null;
  gameOptions?:Partial<TouhouGameOptions>|((selection:TouhouStartSelection,application:TouhouApplication)=>Partial<TouhouGameOptions>);
  menuOptions?:Partial<ConstructorParameters<typeof TouhouTitleMenu>[0]>|((application:TouhouApplication)=>Partial<ConstructorParameters<typeof TouhouTitleMenu>[0]>);
@@ -31,6 +34,7 @@ export interface TouhouApplicationOptions {
 }
 export class TouhouApplication {
  constructor(options?:TouhouApplicationOptions);resources:TouhouResources|null;
+ musicPlayer:Pick<TouhouMusic,'interrupt'>|null;
  mode:string;scene:TouhouApplicationScene|null;game:TouhouGame|null;menu:TouhouTitleMenu|null;
  scenes:Map<string,TouhouSceneFactory>;registerScene(name:string,factory:TouhouSceneFactory):this;switchScene(name:string,request?:TouhouSceneRequest):this;
  selection:TouhouStartSelection;disposed:boolean;drawList:DrawList;clock:(()=>number)|null;

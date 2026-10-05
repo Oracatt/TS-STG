@@ -87,6 +87,7 @@ for (const match of soundCpp.matchAll(/loader\.AddSoundEffect\((se_\w+),\s*"([^"
   sounds[match[1]] = { file: relative, volume: Number(match[3] ?? 1), interval: Number(match[4] ?? 0) };
 }
 const music = {
+  'game-over': { file: "bgm/Player's Score.wav", loopBegin: 0, loopEnd: 6683972 },
   gamestart: { file: 'bgm/花の映る塚.wav', loopBegin: 0, loopEnd: 13805768 },
   title: { file: 'bgm/魂の花.wav', loopBegin: 549000, loopEnd: 15450000 },
   grassland: { file: 'bgm/いたずらに命をかけて.wav', loopBegin: 159600, loopEnd: 13020000 },

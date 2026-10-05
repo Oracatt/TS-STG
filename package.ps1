@@ -57,7 +57,7 @@ foreach ($bankName in @('pl00','pl01','bullet','effect','enemy','ascii_960','fro
         throw "The shared application resource pack is incomplete: $bankName"
     }
 }
-foreach ($module in @('application','scene-transition','stage-clear','stage-transition','game','gameplay-compositor','render-order','render-queue','menu','title-background','stage-selection','dialogue','pause','game-over','hud','boss-hud','boss-phase-plan','boss-phase-timeline','boss-presentation','boss-entrance','boss-death','boss-defeat','boss-phase-clear','bullet-clear-wave','screen-shake','text-renderer','music-caption','music-fade','prefabs','bullet-collision','laser-collision','laser-cancellation')) {
+foreach ($module in @('application','scene-transition','stage-clear','stage-transition','game','gameplay-compositor','render-order','render-queue','menu','title-background','stage-selection','dialogue','pause','game-over','hud','boss-hud','boss-phase-plan','boss-phase-timeline','boss-presentation','boss-entrance','boss-death','boss-defeat','boss-phase-clear','bullet-clear-wave','screen-shake','text-renderer','music','music-caption','music-fade','prefabs','bullet-collision','laser-collision','laser-cancellation')) {
     foreach ($extension in @('js','d.ts')) {
         if (-not (Test-Path -LiteralPath (Join-Path $librarySource "src/touhou/$module.$extension"))) { throw "Missing public framework module: $module.$extension" }
     }

@@ -2,6 +2,7 @@ import type {DrawList} from '../index.js';
 import type {AnmBank,AnmInstance} from './anm.js';
 import type {TouhouPlayer} from './player.js';
 import type {TouhouBitmapFont} from './font.js';
+import type {TouhouMusic} from './music.js';
 export const TOUHOU_INITIAL_CREDITS:readonly number[];export const TOUHOU_NAME_CHARACTERS:string;
 export interface TouhouContinueSession{difficulty?:number;stage?:number;stageKind?:'normal'|'extra';mode?:number;continues?:number;credits?:number;highScore?:number;}
 export interface TouhouScoreRecord{score:number;name:string;continues?:number;stage?:number;stageKind?:'normal'|'extra';cleared?:boolean;timestamp?:number;slowdown?:number;}
@@ -10,8 +11,10 @@ export function continueTouhouGame(player:TouhouPlayer,session:TouhouContinueSes
 export function insertTouhouHighScore(records:TouhouScoreRecord[],player:TouhouPlayer,session:TouhouContinueSession,options?:{timestamp?:number;actualFrames?:number;targetFrames?:number;completed?:boolean}):number;
 export interface TouhouGameOverPage{done?:boolean;update?(mask:number):void;draw?(draw:DrawList):void;}
 export interface TouhouGameOverOptions{bank:AnmBank;font?:TouhouBitmapFont|null;player:TouhouPlayer;session?:TouhouContinueSession;sound?:(id:number)=>void;
-  /** Semantic cue passed to onOpen; defaults to 'game-over'. The application owns the track. */
+  /** Track key for an unfinished, non-spell-practice run; defaults to 'game-over'. */
   music?:string|null;
+  /** Shared transport owns save/switch/restore. Track files are supplied by the consumer. */
+  musicPlayer?:Pick<TouhouMusic,'interrupt'>|null;
   /** Original stock replenishment by default. Replacement runs before onContinue; no additional reset is applied. Null disables Continue. */
   continuePolicy?:TouhouContinuePolicy|null;
   /** Defaults to normal mode, unfinished run, positive credits and stageKind !== extra. */

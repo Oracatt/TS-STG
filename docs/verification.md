@@ -1,5 +1,16 @@
 # 本机验证记录
 
+## 2026-10-05：Player's Score 与公共续关音乐生命周期
+
+Rush 原资源包已有 `bgm/Player's Score.wav`，此前遗漏曲目映射。现按 `LevelResources.cpp:107–116` 补入第六首，保持原 WAV 哈希及0至6683972的交错采样循环标记。没有把游戏 BGM 放进 thlib。
+
+公共 `TouhouMusic` 管理按需缓存、重播、暂停、音量、淡出及临时曲目的保存/恢复。`TouhouApplication` 将注入的播放器交给 `TouhouGameOver`，后者自动在普通失败时切换 `game-over`，Continue 恢复原曲进度，退出/重试/销毁丢弃保存点。两 Demo 使用同一实现；Rush 仅转换私有循环标记，touhou20 移除独立续关音乐逻辑。按 `pause_system/transitions.cpp`、`environment.cpp`、`resume.cpp` 区分正常失败、符练失败和已完成结果；后两者保留正在播放的曲目。
+
+- 879 项 Node 测试全部通过，包含公共音乐/续关菜单及实际 Rush 共享玩家最后一命死亡、反复续关、退出、重试、完成结果和符练失败路径。
+- V8、QuickJS 各通过480帧六曲 transport、360帧标题/关卡重入及300帧实际应用续关音乐测试。真实设备播放时间推进，首次及缓存 Player's Score 均从0开始，Continue 回到保存进度，已完成结果继续原曲。报告 `reports/rushboss/music-restart/report.json`；音量静音，验证播放状态和时间，不声称听感或原作混音逐采样一致。
+- 两后端各通过7200帧完整模拟及1800次录像驱动验证；未改确定性战斗规则，Rush 录像版本保持16。
+- 严格 TypeScript 消费者、仓库外实际 npm 安装及本地 SDK 独立消费者通过；91项错误用法被拒绝。SDK 已重建，仅含引擎/thlib/公共素材，不含 Demo 或游戏 BGM。未发布，未重启交互 Demo。
+
 ## 2026-10-05：区分下一非符聚能与旧攻击残留
 
 用户确认开卡声音已听到，本轮未改音效。只读对照 `enemy_damage.cpp:21–24`、`enemy_adapter.cpp:42` 和 `st03bs.ecl.txt:227–231`：阶段切换先清旧主/异步攻击脚本；下一非符可同帧创建68，并在90帧后释放79。因此击破瞬间的新聚能本身有原作依据，予以保留。

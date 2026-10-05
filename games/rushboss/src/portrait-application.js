@@ -287,23 +287,23 @@ export class RushPortraitSession {
   }
   openResult(completed,mask=0){
     this.completed=completed;this.state=completed?'result':'gameover';this.paused=true;
-    this.dialogue?.dispose();this.dialogue=null;this.pauseCapture?.capture();this.graphics.pauseMusic?.();
+    this.dialogue?.dispose();this.dialogue=null;this.pauseCapture?.capture();
     this.battle.sharedPlayer.score=Math.floor(this.battle.score/10);
     this.pauseVisual=new TouhouGameOver({bank:this.banks.front,font:this.font,player:this.battle.sharedPlayer,
-      session:this.session,completed,initialMask:mask,sound:id=>this.sound(id),
+      ...this.options.gameOverOptions,session:this.session,completed,initialMask:mask,sound:id=>this.sound(id),
       onExit:this.onExit,onRestart:this.onRestart,drawBackground:this.pauseCapture?(draw=>this.pauseCapture.draw(draw)):undefined,
       onReplay:context=>this.replayPage(context),onOptions:({close})=>new RushPortraitPage(this.owner,'options',{close}),
       onManual:({close})=>new RushPortraitPage(this.owner,'manual',{close}),
       onContinue:()=>{
         this.battle.gameOver=false;this.battle.score=0;this.battle.sharedPlayer.continues=this.session.continues;
-        this.battle.playerAdapter.spell.fail('continue');this.paused=false;this.state='combat';this.pauseCapture?.destroy();this.graphics.resumeMusic?.();
+        this.battle.playerAdapter.spell.fail('continue');this.paused=false;this.state='combat';this.pauseCapture?.destroy();
       }});
     this.owner.highScore=Math.max(this.owner.highScore,Math.floor(this.battle.score/10));
     if(!this.owner.playback){this.owner.profile.highScore=this.owner.highScore;this.owner.saveProfile();}
   }
   update(mask=0){
     if(this.destroyed)return;this.buttons.update(mask);
-    if(this.paused){this.pauseVisual.update(mask);if(this.pauseVisual instanceof TouhouGameOver)this.pauseCapture?.update();return;}
+    if(this.paused){this.pauseVisual.update(mask);if(this.pauseVisual instanceof TouhouGameOver){this.pauseCapture?.update();this.graphics.updateMusic?.();}return;}
     if((this.buttons.pressed&Keys.PAUSE)&&this.frame>0){this.openPause(mask);return;}
     this.inputMask=mask;this.graphics.updateMusic?.();
     // Owners born from a dialogue/update callback start at frame0. A stage
@@ -375,7 +375,7 @@ export class RushPortraitApplication {
       if(first.bossIndex<0||first.bossIndex>=BOSSES.length)throw new RangeError('Unknown Rush Boss');
       first.phaseIndex=options.phaseIndex??0;first.mode=options.mode??(options.practice?'spell':'normal');
     }
-    this.application=new TouhouApplication({resources:this.resources,clock:options.clock??null,
+    this.application=new TouhouApplication({resources:this.resources,clock:options.clock??null,musicPlayer:this.graphics.musicPlayer,
       pixels:host?.readTexturePixels&&host?.updateTexture?host:null,initialSelection:first,
       autostart:options.startBoss!==undefined||!!options.autostart,
       menuOptions:{background:this.graphics.title??this.graphics.createTitleBackground?.(),

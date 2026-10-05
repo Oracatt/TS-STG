@@ -6,19 +6,21 @@ import {SaveStore,Keys} from '@ts-stg/thlib';
 import {createRushPortraitGame} from '../games/rushboss/src/portrait-application.js';
 import {TouhouMusicCaption} from '@ts-stg/thlib/touhou';
 
-test('portrait music uses all five unchanged Rush archive tracks and original interleaved-sample loops',()=>{
+test('portrait music uses all six unchanged Rush archive tracks and original interleaved-sample loops',()=>{
   const manifest=JSON.parse(fs.readFileSync('games/rushboss/assets/manifest.json','utf8'));
   let id=0;const loaded=[],loops=[];
   const host={readText:path=>fs.readFileSync(path,'utf8'),loadTexture:()=>++id,unloadTexture(){},
     createRenderTarget:()=>++id,createTexture:()=>++id,loadMusic:path=>{loaded.push(path);return ++id;},
     setMusicLoop:(_id,begin,end)=>loops.push([begin,end])};
   const app=createRushPortraitGame(host,{store:new SaveStore()});
-  for(const [key,expected]of Object.entries({title:'魂の花',gamestart:'花の映る塚',grassland:'いたずらに命をかけて',riverside:'お惠みサマーレイソ',frozenforest:'凝霜的魇花'})){
+  for(const [key,expected]of Object.entries({title:'魂の花',gamestart:'花の映る塚',grassland:'いたずらに命をかけて',riverside:'お惠みサマーレイソ',frozenforest:'凝霜的魇花','game-over':"Player's Score"})){
     app.graphics.playMusic(key);const track=manifest.music[key];
     assert.equal(track.file,`bgm/${expected}.wav`);assert.equal(loaded.at(-1),`games/rushboss/assets/${track.file}`);
     assert.deepEqual(loops.at(-1),[track.loopBegin/(track.sampleRate*track.channels),track.loopEnd/(track.sampleRate*track.channels)]);
     assert.equal(createHash('sha256').update(fs.readFileSync(loaded.at(-1))).digest('hex'),manifest.files[track.file].sha256);
   }
+  assert.deepEqual(manifest.music['game-over'],{file:"bgm/Player's Score.wav",loopBegin:0,loopEnd:6683972,channels:2,sampleRate:44100});
+  assert.equal(manifest.files[manifest.music['game-over'].file].sha256,'5a0fc96c17660b13205a98c0c76b8efe82e3096d16375f8fbcee38fdfc135e28');
   assert.ok(loaded.every(path=>!path.includes('th20_')));app.destroy();
   const visualSkin=JSON.parse(fs.readFileSync('games/rushboss/assets/portrait/manifest.json','utf8'));
   assert.equal(visualSkin.music,undefined);

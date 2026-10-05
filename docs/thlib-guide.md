@@ -39,7 +39,7 @@ globalThis.__tsstg_game = new TouhouApplication({
 
 玩家在盖黑期间使用 `finishStageVisibility()` 收起僚机并结束旧 Bomb；调用 `updateStageVisibility(inputMask, context)` / `drawStageVisibility()` 继续正常更新和绘制自机本体、已有自机弹与附属动画，通过上下文关闭新射击和 Bomb。背景遮罩只在背景层，不会令自机消失。关卡交接时调用 `resetForStage()` 清理自机弹、判定点及临时状态并恢复僚机，保留位置、分数和资源。单独恢复僚机可调用 `restoreStageVisibility()`。先前把原源码 `Owner::player_primary` 误认为自机，实际它是弹幕控制器；普通换关不禁用自机本体或 Replay 的输入更新回调。详见 [自机关卡交接](touhou-player-stage-visibility.md)。
 
-`TouhouMusicFade` 提供原作衰减曲线的固定帧淡出，默认 2 秒，通过 `setVolume(gain)` 与 `stop()` 回调接入业务音乐。设置中的音量使用百分比，回调得到可传给底层音频的线性增益；`touhouMusicVolume()` 可单独转换原衰减值。暂停时不更新 owner，换曲时销毁旧 owner。曲目、BGM 文件和播放列表始终属于业务。详见 [音乐衰减](touhou-music.md)。
+`TouhouMusic` 提供按需加载、缓存、循环区间、重播、暂停恢复和固定帧淡出。将它通过 `TouhouApplication.musicPlayer` 注入后，公共续关界面会保存当前曲目和位置，播放业务配置的 `game-over` 曲目；续关时恢复原位置，退出或重试时停止临时曲，交给新场景选曲。符卡练习和练习完成界面保留当前音乐。`gameOverOptions.music` 可替换曲目键，设为 `null` 可关闭自动换曲；BGM 文件和播放列表始终属于业务。底层 `TouhouMusicFade` 和 `touhouMusicVolume()` 仍可独立使用，前者音量使用 0–100，`TouhouMusic` 使用 0–1。详见 [音乐生命周期与衰减](touhou-music.md)。
 
 Replay、Player Data、Music Room、Option、Manual 等栏目需要应用提供自己的数据与页面处理器；公共 `TouhouApplication` 尚未自带这些原作页面的完整业务实现，默认禁用未接入的入口。通过 `menuOptions.onSelect`、暂停/结算的 `onReplay`、`onOptions`、`onManual` 接入页面。显式 `excluded` 配置优先。下文简易 `Game` 模板中的设置、录像等功能属于另一套原型接口，不能理解为这些原作页面已完整还原。
 

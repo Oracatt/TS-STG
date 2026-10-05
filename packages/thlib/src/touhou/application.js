@@ -13,9 +13,9 @@ export class TouhouApplication {
     createGame=options=>new TouhouGame(options), createMenu=options=>new TouhouTitleMenu(options),
     onSceneChange, onPauseChange, onAfterUpdate, onQuit, clock=null, initialSelection={},
     autostart=false, clearColor=0x000000ff, ownResources=false, transitionOptions={},
-    createTransition=options=>new TouhouSceneTransition(options),scenes={},initialScene=null }={}) {
+    createTransition=options=>new TouhouSceneTransition(options),scenes={},initialScene=null,musicPlayer=null }={}) {
     Object.assign(this,{resources,pixels,gameOptions,menuOptions,createGame,createMenu,
-      onSceneChange,onPauseChange,onAfterUpdate,onQuit,clock,clearColor,ownResources,transitionOptions,createTransition});
+      onSceneChange,onPauseChange,onAfterUpdate,onQuit,clock,clearColor,ownResources,transitionOptions,createTransition,musicPlayer});
     if(clock!==null&&typeof clock!=='function')throw new TypeError('Touhou application clock must return platform time in seconds');
     this.createBank=createBank??(resources?(name=>resources.createBank(name)):null);
     this.selection={character:0,difficulty:1,mode:'normal',...initialSelection};
@@ -82,6 +82,7 @@ export class TouhouApplication {
     }else if(mode==='game'){
       const supplied=typeof this.gameOptions==='function'?this.gameOptions(this.selection,this):this.gameOptions;
       const options={...supplied,character:this.selection.character,difficulty:supplied?.difficulty??this.selection.difficulty};
+      if(this.musicPlayer)options.gameOverOptions={musicPlayer:this.musicPlayer,...options.gameOverOptions};
       const player=this.resources?.players?.[this.selection.character]??(this.selection.character===0?{bank:'pl00'}:this.selection.character===1?{bank:'pl01'}:null);
       const playerOptions={...options.systemOptions?.player};
       if(player?.profile&&playerOptions.profile===undefined)playerOptions.profile=player.profile;

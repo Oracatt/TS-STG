@@ -40,7 +40,7 @@ export class TouhouGameOver {
   constructor({ bank, font = null, player, session = {}, sound, onContinue, onExit, onRestart, onScene,
     onReplay, onOptions, onManual, onOpen, onStock, onSaveRanking, drawBackground,
     rankings = null, savedName = '        ', timestamp = 0, actualFrames = 0, targetFrames = 1,
-    completed = false, restart = false, initialMask = 0, music = 'game-over',
+    completed = false, restart = false, initialMask = 0, music = 'game-over', musicPlayer = null,
     continuePolicy=continueTouhouGame,canContinue=null,formatStage=stageLabel } = {}) {
     if (!bank || !player) throw new TypeError('TouhouGameOver requires front ANM bank and player');
     if(continuePolicy!==null&&typeof continuePolicy!=='function')throw new TypeError('Continue policy must be a function or null');
@@ -55,7 +55,12 @@ export class TouhouGameOver {
     this.rank = -1; this.nameCursor = 0; this.playerName = String(savedName).slice(0, 8).padEnd(8, ' '); this.nameLength = this.playerName.trimEnd().length;
     if (this.playerName !== '        ') this.nameCursor = TOUHOU_NAME_CHARACTERS.length - 1;
     if (restart) { this.active = false; onScene?.(4, true); onExit?.(); return; }
-    sound?.(14); onOpen?.({ music: session.mode === 2 ? null : music, pauseMusic: session.mode !== 2, savedInput: 1, clockScale: 1 });
+    // finish_game saves and replaces the current track; finish_practice does
+    // not touch music. Spell practice also keeps its ongoing track on failure.
+    const changeMusic = !completed && session.mode !== 2;
+    this.musicInterruption = changeMusic && music !== null ? musicPlayer?.interrupt(music) : null;
+    if (!completed) sound?.(14);
+    onOpen?.({ music: changeMusic ? music : null, pauseMusic: changeMusic, savedInput: 1, clockScale: 1 });
   }
   phaseTo(phase) { this.phase = phase; this.age = 0; }
   allowsContinue(){
@@ -100,9 +105,13 @@ export class TouhouGameOver {
     this.active = false; this.panel?.destroy(); this.bank.collect();
     if (choice === 0) {
       this.continuePolicy(this.player,this.session,{onStock:this.onStock});
+      this.musicInterruption?.restore(); this.musicInterruption = null;
       this.onContinue?.({player:this.player,session:this.session});
-    } else if (choice === 1) { this.onScene?.(4, true); this.onExit?.(); }
-    else if (choice === 5) { this.onScene?.(this.session.mode !== 0 || this.session.stageKind === 'extra' ? 10 : 24, false); this.onRestart?.(); }
+    } else if (choice === 1 || choice === 5) {
+      this.musicInterruption?.discard(); this.musicInterruption = null;
+      if (choice === 1) { this.onScene?.(4, true); this.onExit?.(); }
+      else { this.onScene?.(this.session.mode !== 0 || this.session.stageKind === 'extra' ? 10 : 24, false); this.onRestart?.(); }
+    }
   }
   nameInput(confirm, cancel) {
     const b = this.buttons, length = TOUHOU_NAME_CHARACTERS.length;
@@ -170,7 +179,7 @@ export class TouhouGameOver {
     if (![11, 14, 16].includes(this.phase) && this.session.mode !== 2) write(`Credit ${this.session.credits}`, 184, 448);
     this.external?.draw?.(draw); return draw;
   }
-  destroy() { this.active = false; this.panel?.destroy(); this.bank.collect(); }
+  destroy() { this.musicInterruption?.discard(); this.musicInterruption = null; this.active = false; this.panel?.destroy(); this.bank.collect(); }
   snapshot() { return { active: this.active, phase: this.phase, age: this.age, selection: this.selection,
     rank: this.rank, playerName: this.playerName, nameCursor: this.nameCursor, credits: this.session.credits,
     continues: this.session.continues, excluded: [...this.excluded] }; }
