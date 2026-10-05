@@ -76,7 +76,8 @@ test('combat start is idempotent; pause retains roots and stop/clear cancel comb
   const charge = owner.beginCharge(), death = owner.beginDeath({ delayFrames: 0 });
   owner.update({ combatActive: false });
   assert.equal(owner.combatActive, false); assert.ok(aura.every(vm => !vm.alive));
-  assert.equal(charge.alive, false); assert.equal(death.alive, true);
+  assert.equal(charge.alive, true, 'stopping combat leaves the independent charge tail alive');
+  owner.clearCharges(); assert.equal(charge.alive, false); assert.equal(death.alive, true);
   assert.equal(owner.distortionReady, false); assert.equal(owner.distortion.currentRadius, 16);
   owner.update({ combatActive: true });
   assert.equal(owner.aura[0].time, 1); assert.equal(owner.distortion.currentRadius, 18);

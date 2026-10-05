@@ -3,8 +3,10 @@ export interface TouhouBossPhaseDescriptor {spell?:boolean;hp?:number;maximumHp?
 export interface TouhouBossPhasePlanOptions<T> {
  isSpell?:(phase:T,index:number)=>boolean;
  weight?:(phase:T,index:number)=>number;
- /** Equal adjacent non-null keys form an explicit group, up to five sections. */
+ /** Equal adjacent non-null keys form an explicit group. */
  group?:(phase:T,index:number)=>unknown;
+ /** Original preset: five sections. Larger groups require corresponding HUD marker capacity. */
+ maxSections?:number;
  /** shared (default): source whole-group arc. full: each spell uses its own
   * complete ring immediately; nonspells retain grouped sections. HP is unchanged. */
  spellRing?:'shared'|'full';

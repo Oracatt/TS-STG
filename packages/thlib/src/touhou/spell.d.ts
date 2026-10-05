@@ -14,6 +14,8 @@ export interface TouhouSpellPresentation{screenView?:TouhouView;infoView?:Touhou
 export class TouhouSpell{constructor(options?:{player?:TouhouPlayer;textBank?:AnmBank|null;effectBank?:AnmBank|null;font?:{draw(draw:DrawList,text:string,options:Record<string,unknown>):unknown}|null;context?:TouhouSpellContext;records?:Record<number,TouhouSpellRecord>;fallbackRecords?:Record<number,TouhouSpellRecord>;difficulty?:number;stage?:number;mode?:number;viewIndex?:number;playback?:boolean;presentation?:TouhouSpellPresentation});
   player:TouhouPlayer;flags:number;age:TouhouTimer;frames:number;lastFrames:number;bonus:number;initialBonus:number;duration:number;spellIndex:number;captureIndex:number;encodedTime:number;name:string;records:Record<number,TouhouSpellRecord>;position:{x:number;y:number;z:number};result:TouhouSpellResult|null;
   readonly active:boolean;readonly captureEligible:boolean;readonly survival:boolean;readonly suppressesBombDamage:boolean;readonly remaining:number;
+  /** Pause simulation age/bonus without freezing presentation or settling the card. Reset by begin(). */
+  clockPaused:boolean;readonly generation:number;
   begin(options?:{id?:number;name?:string;duration?:number;survival?:boolean;reversed?:boolean;keepStageBackground?:boolean;boss?:{x:number;y:number;z?:number}|null;background?:AnmInstance|null;portrait?:AnmInstance|null},context?:TouhouSpellContext):this;
   update(context?:TouhouSpellContext):this;draw(draw:DrawList,view?:TouhouView,screenView?:TouhouView):DrawList;fail(reason?:string,context?:TouhouSpellContext):boolean;
   notifyBombStart(context?:TouhouSpellContext):boolean;notifyPlayerHit(context?:TouhouSpellContext):boolean;notifyPlayerMiss(context?:TouhouSpellContext):boolean;

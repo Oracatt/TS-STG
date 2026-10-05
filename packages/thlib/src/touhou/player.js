@@ -1,23 +1,37 @@
 import { Keys } from '../input.js';
 import { f32, PI, add, sub, mul, div, trunc32, polar, atan2, rectangleCircle, TouhouTimer, TouhouRNG } from './math.js';
-import { fireTouhouPattern } from './shots.js';
-import { TouhouReimuBomb, TouhouMarisaBomb, applyTouhouDamage } from './bombs.js';
+import { fireTouhouPlayerWeapons } from './shots.js';
+import { applyTouhouDamage } from './bombs.js';
 import { validateTouhouShots } from './shot-data.js';
 import { TOUHOU_OWNER_PRIORITIES } from './render-order.js';
 import {touhouCircleCollision} from './bullet-collision.js';
+import {TOUHOU_PLAYER_PROFILES} from './player-profile.js';
+import {resolveTouhouPlayerRules} from './player-rules.js';
+import {resolveTouhouWorld} from './world.js';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const fixed = value => trunc32(mul(value, 128));
 /** Restored base Reimu/Marisa. Coordinates and power use original frame units. */
 export class TouhouPlayer {
-  constructor({ character = 0, sht, bank = null, effectBank = null, power = 100, lives = 2, bombs = 2,
+  constructor({ character = 0, profile, rules, shoot, shotFactory, bombFactory, sht, bank = null, effectBank = null, power, lives, bombs,
     state = 1, x = 0, y = 400, seed = 1, rng = null,
-    bounds = { x: -192, y: 0, width: 384, height: 448 }, movementInsets = {},
+    world, bounds, movementInsets = {},
     respawnX = 0, respawnY = 400, respawnStartY = 480 } = {}) {
-    if (character !== 0 && character !== 1) throw new RangeError('Touhou character must be 0 (Reimu) or 1 (Marisa)');
+    if(profile===undefined){
+      if(character!==0&&character!==1)throw new RangeError('A custom Touhou character requires an explicit profile');
+      profile=character===0?TOUHOU_PLAYER_PROFILES.reimu:TOUHOU_PLAYER_PROFILES.marisa;
+    }
+    if(!profile||!(typeof profile.id==='string'&&profile.id.length||Number.isSafeInteger(profile.id)))throw new TypeError('Touhou player profile requires a string or integer id');
+    this.profile=profile;this.rules=resolveTouhouPlayerRules(profile.rules,rules);this.destroyed=false;
+    this.shoot=shoot??profile.shoot??fireTouhouPlayerWeapons;
+    this.shotFactory=shotFactory??profile.shotFactory??null;
+    this.bombFactory=bombFactory!==undefined?bombFactory:profile.bombFactory??null;
+    if(typeof this.shoot!=='function'||this.shotFactory!==null&&typeof this.shotFactory!=='function'||this.bombFactory!==null&&typeof this.bombFactory!=='function')throw new TypeError('Player weapon and Bomb strategies must be functions');
     validateTouhouShots(sht);
-    this.character = character; this.sht = sht; this.bank = bank; this.effectBank = effectBank;
-    this.bounds = { ...bounds }; this.movementInsets = { left: 8, top: 32, right: 8, bottom: 16, ...movementInsets };
+    this.character = profile.id; this.sht = sht; this.bank = bank; this.effectBank = effectBank;
+    this.weaponLevels=sht.maxPower??4;
+    this.world=resolveTouhouWorld({world,bounds});this.bounds=this.world.bounds;bounds=this.bounds;
+    this.movementInsets = { left: 8, top: 32, right: 8, bottom: 16, ...movementInsets };
     const inset = this.movementInsets;
     if (![bounds.x, bounds.y, bounds.width, bounds.height, ...Object.values(inset), respawnX, respawnY, respawnStartY].every(Number.isFinite) ||
       bounds.width <= inset.left + inset.right || bounds.height <= inset.top + inset.bottom) throw new RangeError('Invalid Touhou player playfield');
@@ -28,17 +42,20 @@ export class TouhouPlayer {
     this.fixedX = fixed(x); this.fixedY = fixed(y); this.x = div(this.fixedX, 128); this.y = div(this.fixedY, 128);
     this.state = state; this.timer = new TouhouTimer(0); this.focusTimer = new TouhouTimer(0);
     this.invulnerability = new TouhouTimer(0); this.focused = false;
-    this.power = clamp(power | 0, 0, 400); this.lives = clamp(lives | 0, -1, 7); this.bombs = clamp(bombs | 0, 0, 10);
-    this.maxPower = 400; this.respawnBombs = 2; this.deaths = 0; this.graze = 0;
-    this.startingPower = 100; this.score = 0; this.pointValue = 10000; this.pointItems = 0;
-    this.maxLives = 7; this.maxBombs = 7; this.lifeFragments = 0; this.bombFragments = 0; this.extendCount = 0;
-    this.collectSpeed = 5; this.collectRadius = 30; this.attractRadius = 70; this.collectLine = 128;
+    const r=this.rules;
+    this.maxPower=r.maxPower;this.powerPerLevel=r.powerPerLevel;this.respawnBombs=r.respawnBombs;
+    this.maxLives=r.maxLives;this.maxBombs=r.maxBombs;
+    this.power = clamp((power??r.initialPower) | 0, 0, this.maxPower); this.lives = clamp((lives??r.initialLives) | 0, -1, this.maxLives); this.bombs = clamp((bombs??r.initialBombs) | 0, 0, r.bombStockLimit);
+    this.deaths = 0; this.graze = 0;
+    this.startingPower = r.startingPower; this.score = 0; this.pointValue = r.pointValueMinimum; this.pointItems = 0;
+    this.lifeFragments = 0; this.bombFragments = 0; this.extendCount = 0;
+    this.collectSpeed = r.collectSpeed; this.collectRadius = r.collectRadius; this.attractRadius = r.attractRadius; this.collectLine = r.collectLine;
     this.speeds = sht.speeds.map(fixed); this.motionX = 0; this.motionY = 0;
     this.previousMotionX = 0; this.movementScale = 1; this.motionOffsetX = 0; this.motionOffsetY = 0;
     this.smoothFactor = 30; this.history = Array.from({ length: 33 }, () => ({ x: this.fixedX, y: this.fixedY }));
-    this.normalRadius = this.focusRadius = 3; this.normalExtent = this.focusExtent = { x: 1.5, y: 1.5 };
-    this.collisionPercent = 100; this.deathbombFrames = 8;
-    this.options = Array.from({ length: 10 }, (_, index) => ({ index, active: false, fixedX: 0, fixedY: -51200,
+    this.normalRadius = r.normalRadius;this.focusRadius=r.focusRadius;this.normalExtent={...r.normalExtent};this.focusExtent={...r.focusExtent};
+    this.collisionPercent = 100; this.deathbombFrames = r.deathbombFrames;
+    this.options = Array.from({ length: Math.max(10,this.weaponLevels) }, (_, index) => ({ index, active: false, fixedX: 0, fixedY: -51200,
       x: 0, y: -400, changed: 0, animation: null, fullAnimation: null, focused: false }));
     this.animation = null; this.animationScript = 0; this.boundThisFrame = false; this.focusEffect = null;
     this.shots = []; this.nextShotId = 1; this.laserGroups = new Map();
@@ -49,7 +66,7 @@ export class TouhouPlayer {
     this.stageVisibility = false; this.stageVisibilityAge = 0;
     this.bindAnimation(0); this.refreshPower();
   }
-  get powerLevel() { this.power = clamp(this.power | 0, 0, 400); return Math.trunc(this.power / 100); }
+  get powerLevel() { this.power = clamp(this.power | 0, 0, this.maxPower); return Math.min(this.weaponLevels,Math.trunc(this.power / this.powerPerLevel)); }
   get invulnerableFrames() { return this.invulnerability.current; }
   bindAnimation(script) {
     this.animation?.destroy(); this.animationScript = script;
@@ -77,10 +94,10 @@ export class TouhouPlayer {
       option.animation = this.bank?.create(this.sht.optionScripts[0], { x: option.x, y: option.y,beforeStart:vm=>{vm.layer=14;} }) ?? null;
       // power.cpp uses named_spawn flags 2: prepend this registered VM.
       // option_frame.cpp focus replacement instead uses flags 0 below.
-      if (this.power >= 400) option.fullAnimation = this.bank?.create(this.sht.fullPowerScripts[0], { x: option.x, y: option.y,front:true }) ?? null;
+      if (this.power >= this.maxPower) option.fullAnimation = this.bank?.create(this.sht.fullPowerScripts[0], { x: option.x, y: option.y,front:true }) ?? null;
     }
   }
-  setPower(value) { this.power = clamp(value | 0, 0, 400); this.refreshPower(); }
+  setPower(value) { this.power = clamp(value | 0, 0, this.maxPower); this.refreshPower(); }
   /** Stage cover retracts options through source interrupt3. The player
    * callback remains enabled: gameplay's "player_primary" is actually the
    * enemy-bullet controller. Cover cleanup retires the separate Bomb owner. */
@@ -108,17 +125,31 @@ export class TouhouPlayer {
    * position or persistent resource/score record. Source stage_reset.cpp and
    * owner.cpp::clear_shots define these local state resets. */
   resetForStage() {
+    if(this.destroyed)return this;
     this.state=1;this.timer.set(0);this.focusTimer.set(0);
     this.focusEffect?.destroy();this.focusEffect=null;
     for(const shot of this.shots)shot.destroy();this.shots.length=0;this.laserGroups.clear();
     this.shootTimer.set(-1);this.secondaryShootTimer.set(-1);this.shotGate.set(0);
     this.restoreStageVisibility();this.refreshPower();this.bombBlocksShots=false;
-    this.movementScale=1;this.deathbombFrames=8;
+    this.movementScale=1;
     this.history=Array.from({length:33},()=>({x:this.fixedX,y:this.fixedY}));
-    this.speeds=this.sht.speeds.map(fixed);
-    this.collectSpeed=5;this.collectRadius=30;this.attractRadius=70;this.collectLine=128;
-    this.normalRadius=this.focusRadius=3;this.normalExtent=this.focusExtent={x:1.5,y:1.5};
     return this;
+  }
+  /** Release this player's owners without disposing the shared resource banks. */
+  destroy() {
+    if(this.destroyed)return;
+    this.destroyed=true;
+    this.bomb?.destroy();this.bomb=null;this.bombBlocksShots=false;
+    for(const shot of this.shots)shot.destroy();
+    this.shots.length=0;this.laserGroups.clear();
+    this.animation?.destroy();this.animation=null;
+    this.focusEffect?.destroy();this.focusEffect=null;
+    for(const option of this.options){
+      option.animation?.destroy();option.fullAnimation?.destroy();
+      option.animation=option.fullAnimation=null;option.active=false;
+    }
+    for(const effect of this.effects)effect.animation.destroy();
+    this.effects.length=0;this.damageRegions.length=0;
   }
   updateOptions() {
     for (const option of this.options) {
@@ -132,7 +163,7 @@ export class TouhouPlayer {
         option.animation?.destroy(); option.fullAnimation?.destroy(); option.fullAnimation = null;
         option.animation = this.bank?.create(this.sht.optionScripts[0], { x: option.x, y: option.y,beforeStart:vm=>{vm.layer=14;} }) ?? null;
         option.animation?.interrupt(7);
-        if (this.power >= 400) { option.fullAnimation = this.bank?.create(this.sht.fullPowerScripts[0], { x: option.x, y: option.y }) ?? null; option.fullAnimation?.interrupt(7); }
+        if (this.power >= this.maxPower) { option.fullAnimation = this.bank?.create(this.sht.fullPowerScripts[0], { x: option.x, y: option.y }) ?? null; option.fullAnimation?.interrupt(7); }
         option.focused = this.focused;
       }
       const offset = this.focused ? option.focusOffset : option.normalOffset;
@@ -189,26 +220,29 @@ export class TouhouPlayer {
     this.updateOptions();
   }
   pressed(key) { return (this.mask & ~this.previousMask & key) !== 0; }
-  canBomb(context) { return this.bombs > 0 && !this.bomb?.alive && context.enemyReady !== false && !context.bossSuppressed; }
+  canBomb(context) { return !this.destroyed && !!this.bombFactory && this.bombs > 0 && !this.bomb?.alive && context.enemyReady !== false && !context.bossSuppressed; }
   triggerBomb(context = {}) {
     if (!this.canBomb(context)) return false;
     this.bombs--;
-    this.bomb = this.character === 0 ? new TouhouReimuBomb(this, context) : new TouhouMarisaBomb(this, context);
+    try{
+      this.bomb = this.bombFactory(this, context);
+      if(!this.bomb||typeof this.bomb.alive!=='boolean'||typeof this.bomb.update!=='function'||typeof this.bomb.draw!=='function'||typeof this.bomb.destroy!=='function')throw new TypeError('Bomb factory must return a live update/draw/destroy owner');
+    }catch(error){this.bombs++;this.bomb=null;throw error;}
     context.spell?.notifyBombStart(context);
     if (this.state === 4) { this.state = 1; this.timer.set(60); }
     context.onEvent?.('bomb', { player: this }); return true;
   }
   hit(context = {}) {
-    if (this.state === 2 || this.state === 3 || this.state === 4 || this.invulnerability.current > 0 || context.bossSuppressed) return false;
+    if (this.destroyed || this.state === 2 || this.state === 3 || this.state === 4 || this.invulnerability.current > 0 || context.bossSuppressed) return false;
     context.spell?.notifyPlayerHit(context);
-    this.state = 4; this.timer.set(0); this.invulnerability.set(6); this.deathbombFrames = 8;
+    this.state = 4; this.timer.set(0); this.invulnerability.set(this.rules.hitInvulnerability);
     this.bindAnimation(0);
     if (this.effectBank) this.effects.push({ animation: this.effectBank.create(22, { x: this.x, y: this.y }), age: 0 });
     context.sound?.(2, this.x); context.onEvent?.('hit', { x: this.x, y: this.y }); return true;
   }
   beginDeath(context) {
-    this.lives = clamp(this.lives - 1, -1, 7); this.deaths = clamp(this.deaths + 1, 0, 999);
-    this.state = 2; this.timer.set(0); this.invulnerability.set(180); this.bindAnimation(0);
+    this.lives = clamp(this.lives - 1, -1, this.maxLives); this.deaths = clamp(this.deaths + 1, 0, 999);
+    this.state = 2; this.timer.set(0); this.invulnerability.set(this.rules.deathInvulnerability); this.bindAnimation(0);
     if (this.effectBank) this.effects.push({ animation: this.effectBank.create(21, { x: this.x, y: this.y }), age: 0 });
     for (const option of this.options) { option.active = false; option.animation?.interrupt(1); option.fullAnimation?.interrupt(1); }
     context.spell?.notifyPlayerMiss(context);
@@ -225,8 +259,7 @@ export class TouhouPlayer {
         if (this.shootTimer.current >= 0 || held) {
           if (this.shootTimer.current < 0) { if (this.secondaryShootTimer.current < 0) this.secondaryShootTimer.set(0); this.shootTimer.set(0); }
           if (this.shootTimer.current !== this.shootTimer.previous) {
-            fireTouhouPattern(this, this.powerLevel, this.shootTimer.current, this.secondaryShootTimer.current, context);
-            fireTouhouPattern(this, (this.focused ? 10 : 5) + this.powerLevel, this.shootTimer.current, this.secondaryShootTimer.current, context);
+            this.shoot(this,this.shootTimer.current,this.secondaryShootTimer.current,context);
           }
           if (this.shootTimer.current >= 14) { if (!held) this.shootTimer.set(-1); else this.shootTimer.add(-14, rate); }
           else this.shootTimer.tick(rate);
@@ -242,6 +275,7 @@ export class TouhouPlayer {
     this.powerChanged = false; this.shotGate.tick(rate); this.shotAge.tick(rate);
   }
   update(mask = 0, context = {}) {
+    if(this.destroyed)return this;
     this.previousMask = this.mask; this.mask = mask >>> 0; this.boundThisFrame = false;
     const rate = context.timerRate ?? 1;
     let normal = false;
@@ -279,20 +313,21 @@ export class TouhouPlayer {
     }
     if (this.state === 2) {
       if (this.timer.current === 3) {
-        const level = this.powerLevel, percent = level >= 4 ? 80 : level >= 3 ? 60 : level >= 2 ? 50 : 40;
-        if (this.power > 100) this.power = Math.max(100, this.power - percent);
+        const losses=this.rules.deathPowerLoss,percent=losses[Math.min(this.powerLevel,losses.length-1)];
+        if (this.power > this.rules.minimumPower) this.power = Math.max(this.rules.minimumPower, this.power - percent);
         const angle = atan2(-this.bounds.height / 2, sub(this.respawnX, this.x));
-        for (let i = 0; i < 7; i++) context.spawnItem?.({ type: 'power', x: this.x, y: this.y, speed: 3,
-          angle: sub(add(div(mul(f32(i), PI), 28), angle), div(mul(PI, 3.5), 28)) });
+        const count=this.rules.deathDropCount;
+        for (let i = 0; i < count; i++) context.spawnItem?.({ type: 'power', x: this.x, y: this.y, speed: 3,
+          angle: sub(add(div(mul(f32(i), PI), 4*count), angle), div(mul(PI, count/2), 4*count)) });
         this.refreshPower();
       }
       if (this.timer.current >= 30) {
         if (this.lives < 0 && this.timer.current === 30) context.onEvent?.('gameover', { player: this });
         else {
-          this.state = 0; this.bombs = this.bombs < 2 ? clamp(this.respawnBombs, 2, 10) : clamp(this.bombs, 0, 10);
+          this.state = 0; this.bombs = this.bombs < this.respawnBombs ? clamp(this.respawnBombs, 0, this.rules.bombStockLimit) : clamp(this.bombs, 0, this.rules.bombStockLimit);
           this.damageRegions.push({ shape: 'circle', x: this.x, y: this.y, radius: 32, growth: 16, remaining: 30, damage: 150, bomb: false });
           this.deathPosition = { x: this.x, y: this.y }; this.setPosition(this.respawnX, this.respawnStartY);
-          this.invulnerability.set(280); this.timer.set(0);
+          this.invulnerability.set(this.rules.respawnInvulnerability); this.timer.set(0);
           context.onEvent?.('respawn', { player: this });
         }
       }
@@ -357,6 +392,7 @@ export class TouhouPlayer {
     context.sound?.(42, position.x); context.onEvent?.('graze', { player: this, delay });
   }
   draw(draw, view = { x: 336, y: 24, scale: 1.5, screenScale: 1 }) {
+    if(this.destroyed)return;
     for (const shot of this.shots) shot.draw(draw, view);
     for (const option of this.options) { option.animation?.draw(draw, view); option.fullAnimation?.draw(draw, view); }
     if (this.state !== 2 && this.state !== 3 && this.state !== 6 && this.animation) {
@@ -378,6 +414,6 @@ export class TouhouPlayer {
       options: this.options.filter(option => option.active).map(option => ({ x: option.x, y: option.y })),
       shots: this.shots.map(shot => ({ id: shot.id, pattern: shot.pattern, index: shot.index, x: shot.x, y: shot.y,
         angle: shot.angle, speed: shot.speed, state: shot.state, time: shot.timer.current, width: shot.width })),
-      bomb: this.bomb ? { character: this.character, time: this.bomb.timer.current } : null, rng: this.rng.state };
+      bomb: this.bomb ? { character: this.character, time: this.bomb.timer?.current??0 } : null, rng: this.rng.state };
   }
 }

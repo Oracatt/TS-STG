@@ -8,9 +8,10 @@ import { f32, add, mul, div } from './math.js';
 export class TouhouBossPhasePlan {
   constructor(phases, { isSpell = phase => !!phase.spell,
     weight = phase => phase.healthWeight ?? phase.hp ?? phase.maximumHp ?? phase.maxHp,
-    group = phase => phase.healthGroup, spellRing = 'shared' } = {}) {
+    group = phase => phase.healthGroup, spellRing = 'shared', maxSections = 5 } = {}) {
     if (!Array.isArray(phases)) throw new TypeError('Boss phases must be an array');
     if (spellRing !== 'shared' && spellRing !== 'full') throw new RangeError('Boss spellRing must be shared or full');
+    if (!Number.isSafeInteger(maxSections) || maxSections < 1) throw new RangeError('maxSections must be a positive integer');
     this.spellRing = spellRing;
     this.phases = phases.map((phase, index) => {
       const value = f32(weight(phase, index));
@@ -26,7 +27,7 @@ export class TouhouBossPhasePlan {
         while (!this.phases[end].spell && end + 1 < this.phases.length &&
           (this.phases[end + 1].group === undefined || this.phases[end + 1].group === null)) end++;
       }
-      if (end - start > 4) throw new RangeError('The original Boss ring supports at most five sections; split the health group');
+      if (end - start >= maxSections) throw new RangeError(`The Boss ring supports at most ${maxSections} sections; split the health group or configure its marker capacity`);
       let maximum = 0;
       for (let i = start; i <= end; i++) maximum = add(maximum, this.phases[i].weight);
       if (!Number.isFinite(maximum)) throw new RangeError('Boss health group exceeds float32 range');

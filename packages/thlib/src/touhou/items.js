@@ -1,4 +1,6 @@
 import { f32, PI, add, sub, mul, div, polar, atan2, cos, sin, wrapAngle, trunc32, TouhouTimer, TouhouRNG } from './math.js';
+import {TOUHOU_PLAYER_RULES} from './player-rules.js';
+import {resolveTouhouWorld} from './world.js';
 
 // source_reconstruction/item_system/{spawn,frame,rewards,environment}.cpp.
 // IDs 9..13 and their magic-stone reward counters are deliberately outside this module.
@@ -14,41 +16,58 @@ const idiv = (a, b) => Math.trunc(a / b) | 0;
 const roundedPoints = amount => Math.max(10, isub(amount, amount % 10));
 const distanceSquared = (a, b) => { const x = sub(a.x, b.x), y = sub(a.y, b.y); return add(mul(x, x), mul(y, y)); };
 const notice=(context,type,value=0)=>{if(context.hudNotice)context.hudNotice(type,value);else context.onEvent?.('hudNotice',{type,value});};
-const itemType=type=>typeof type==='string'?(aliases[type]??Number(type)):type;
+const itemType=type=>typeof type==='string'?(aliases[type]??(/^\d+$/.test(type)?Number(type):type)):type;
 const supportedType=type=>Number.isInteger(type)&&(type>=1&&type<=8||type===14||type===15);
+const rulesFor=player=>player.rules??TOUHOU_PLAYER_RULES;
 
 /** Original common collectible controller. Score uses the original stored units (display score / 10). */
 export class TouhouItems {
-  constructor({ player, bank = null, effectBank = null, rng = null, difficulty = 1, context = {} } = {}) {
+  constructor({ player, bank = null, effectBank = null, rng = null, difficulty = 1, context = {},world,bounds,definitions=[],capacity=512 } = {}) {
     if (!player) throw new TypeError('TouhouItems requires a player');
+    if(!Number.isSafeInteger(capacity)||capacity<0)throw new RangeError('Item capacity must be a nonnegative integer');
+    this.capacity=capacity;
     this.player = player; this.bank = bank; this.effectBank = effectBank; this.rng = rng ?? player.rng ?? new TouhouRNG(1);
+    this.world=resolveTouhouWorld({world:world??player.world,bounds:bounds??(world||player.world?undefined:player.bounds)});
+    this.definitions=new Map();for(const [type,definition]of definitions)this.register(type,definition);
     this.difficulty = difficulty; this.context = context; this.items = []; this.effects = [];
     this.speedScale = 1; this.spawnCounter = 0; this.pointCounter = 0; this.cancelPointIncrement = (difficulty + 1) | 0;
     this.attract = false; this.attractionCenter = { x: 0, y: 0 }; this.processed = 0; this.nextId = 1;
-    const defaults = { power: 0, startingPower: 100, maxPower: 400, score: 0, pointValue: 10000, pointItems: 0,
-      maxLives: 7, maxBombs: 7, lifeFragments: 0, bombFragments: 0, extendCount: 0,
-      collectSpeed: 5, collectRadius: 30, attractRadius: 70, collectLine: 128 };
+    const r=rulesFor(player);
+    const defaults = { power: 0, startingPower: r.startingPower, maxPower: r.maxPower,powerPerLevel:r.powerPerLevel, score: 0, pointValue: r.pointValueMinimum, pointItems: 0,
+      maxLives: r.maxLives, maxBombs: r.maxBombs, lifeFragments: 0, bombFragments: 0, extendCount: 0,
+      collectSpeed: r.collectSpeed, collectRadius: r.collectRadius, attractRadius: r.attractRadius, collectLine: r.collectLine };
     for (const [key, value] of Object.entries(defaults)) player[key] ??= value;
   }
+  /** Register an application-owned collectible while retaining source motion,
+   * attraction, lifetime and collection notifications. Existing items retain
+   * their definition if a later registration replaces the same type. */
+  register(type,definition){
+    type=itemType(type);if(type===14)type=6;
+    if(!(typeof type==='string'&&type.length||Number.isSafeInteger(type)&&type>=0)||!definition||typeof definition.collect!=='function')throw new TypeError('Item definitions require a type and collect callback');
+    for(const key of ['script','upScript'])if(definition[key]!==undefined&&(!Number.isSafeInteger(definition[key])||definition[key]<-1))throw new RangeError(`${key} must be an animation script or -1`);
+    if(definition.spawnEffect!==undefined&&typeof definition.spawnEffect!=='function')throw new TypeError('Item spawnEffect must be a function');
+    this.definitions.set(type,Object.freeze({...definition}));return this;
+  }
+  supports(type){type=itemType(type);return supportedType(type)||this.definitions.has(type);}
   spawn({ type = 1, x = 0, y = 0, angle = -PI / 2, speed = 2, delay = 0, color = 0xffffffff,
     extra = 0, sound = -1, state = 1 } = {}, context = this.context) {
-    if (typeof type === 'string') type = aliases[type];
+    type=itemType(type);
     if (type === 14) type = 6;
-    if (!Number.isInteger(type) || type < 1 || (type > 8 && type !== 15))
-      throw new RangeError('Only original common item IDs 1–8, 14 and 15 are supported; stone items are excluded');
+    if (!this.supports(type))throw new RangeError('Unknown common item type; register an application item definition first (stone items are excluded by default)');
     this.spawnCounter = iadd(this.spawnCounter, 1);
     // Source15 is a difficulty-dependent counter that occasionally emits an
     // ordinary point item. It is not an automatically collected small point.
     // cancelPoint is retained only as a legacy alias; phase clearing uses no drop.
-    if (type === 15) { this.pointCounter = iadd(this.pointCounter, this.cancelPointIncrement); if (this.pointCounter < 10) return null; this.pointCounter = 0; type = 2; }
-    if (this.items.length >= 512) return null;
-    const velocity = polar(f32(angle), f32(speed)), bounds = this.player.bounds ?? { x: -192, y: 0, width: 384, height: 448 };
+    if (type === 15&&!this.definitions.has(type)) { this.pointCounter = iadd(this.pointCounter, this.cancelPointIncrement); if (this.pointCounter < 10) return null; this.pointCounter = 0; type = 2; }
+    if (this.items.length >= this.capacity) return null;
+    const velocity = polar(f32(angle), f32(speed)), bounds = this.world.bounds,definition=this.definitions.get(type);
     const item = { id: this.nextId++, type, state, x: f32(Math.max(bounds.x, Math.min(bounds.x + bounds.width, x))), y: f32(y),
       vx: velocity.x, vy: velocity.y, attractionSpeed: 0, delay: delay | 0, sound, extra,
-      timer: new TouhouTimer(), drawState: 0, animation: null, secondaryAnimation: null };
+      timer: new TouhouTimer(), drawState: 0, animation: null, secondaryAnimation: null,definition:definition??null };
     if (item.delay === 0) this.spawnEffect(item, context);
-    item.animation = this.bank?.create(scripts[type][0]) ?? null;
-    item.secondaryAnimation = this.bank?.create(scripts[type][1]) ?? null;
+    const bank=definition&&'bank'in definition?definition.bank:this.bank,script=definition?definition.script:scripts[type][0],upScript=definition?definition.upScript:scripts[type][1];
+    item.animation = script!==undefined&&script>=0?bank?.create(script)??null:null;
+    item.secondaryAnimation = upScript!==undefined&&upScript>=0?bank?.create(upScript)??null:null;
     item.animation?.U(0x490, color);
     this.items.unshift(item); return item;
   }
@@ -76,11 +95,11 @@ export class TouhouItems {
     const center=itemType(centerType),ordered=new Map();
     if(![x,y,rx,ry].every(Number.isFinite)||rx<0||ry<0)
       throw new RangeError('Enemy drop position and nonnegative scatter radii must be finite');
-    if(center!==0&&!supportedType(center))throw new RangeError('Enemy center drop must be a common item type or zero');
+    if(center!==0&&!this.supports(center))throw new RangeError('Enemy center drop must be a registered item type or zero');
     for(const [key,count]of Object.entries(counts)){
       const type=itemType(key);
-      if(!supportedType(type)||!Number.isSafeInteger(count)||count<0||count>0x7fffffff)
-        throw new RangeError('Enemy drop counts require common item types and nonnegative signed32-bit counts');
+      if(!this.supports(type)||!Number.isSafeInteger(count)||count<0||count>0x7fffffff)
+        throw new RangeError('Enemy drop counts require registered item types and nonnegative signed32-bit counts');
       const total=(ordered.get(type)??0)+count;
       if(total>0x7fffffff)throw new RangeError('Combined enemy drop count exceeds signed32-bit range');
       ordered.set(type,total);
@@ -89,7 +108,8 @@ export class TouhouItems {
     if(center)emit(center,x,y);
     // The initial random angle is consumed even when every count is zero.
     let angle=mul(this.rng.signed(),PI);
-    for(const [type,count]of [...ordered].sort((a,b)=>a[0]-b[0]))for(let index=0;index<count;index++){
+    const byType=(a,b)=>typeof a[0]==='number'&&typeof b[0]==='number'?a[0]-b[0]:typeof a[0]==='number'?-1:typeof b[0]==='number'?1:a[0]<b[0]?-1:a[0]>b[0]?1:0;
+    for(const [type,count]of [...ordered].sort(byType))for(let index=0;index<count;index++){
       const scale=add(mul(this.rng.unit(),.5),.5);
       emit(type,add(mul(mul(cos(angle),rx),scale),x),add(mul(mul(sin(angle),ry),scale),y));
       angle=wrapAngle(add(add(div(PI,2),angle),div(mul(this.rng.signed(),PI),4)));
@@ -97,6 +117,7 @@ export class TouhouItems {
     return result;
   }
   spawnEffect(item, context) {
+    if(item.definition){item.definition.spawnEffect?.(item,context,this);return;}
     if (![1, 2, 4, 5, 6, 7].includes(item.type)) return;
     const effect = this.effectBank?.create(94, { x: item.x, y: item.y }); if (effect) this.effects.push(effect);
     if (item.type === 4 || item.type === 5) context.sound?.(74, 0);
@@ -108,7 +129,7 @@ export class TouhouItems {
   forcedCollect(context) {
     const p = this.player;
     return (p.state !== 2 && p.state !== 4 && !(p.collectLine <= p.y)) ||
-      (!!p.bomb?.alive && p.bomb.timer.current < 60) || !!context.bossCollecting;
+      (!!p.bomb?.alive && (p.bomb.timer?.current??0) < 60) || !!context.bossCollecting;
   }
   move(item, scale, extra = 1) {
     item.x = add(item.x, mul(mul(item.vx, scale), extra));
@@ -123,7 +144,7 @@ export class TouhouItems {
   }
   update(context = this.context) {
     const p = this.player, scale = context.clockScale ?? 1; this.processed = 0;
-    const bounds = p.bounds ?? { x: -192, y: 0, width: 384, height: 448 };
+    const bounds = this.world.bounds;
     const outside = item => !(item.y <= bounds.y + bounds.height + 24) || !(item.x > bounds.x - 8 && item.x < bounds.x + bounds.width + 8);
     for (const item of this.items) {
       if (!item.state) continue;
@@ -165,41 +186,43 @@ export class TouhouItems {
     const p = this.player; if (p.power >= p.maxPower) return false;
     p.power = iadd(p.power, amount);
     if (p.maxPower < p.power) { p.power = p.maxPower; notice(context,2); }
-    return idiv(isub(p.power, amount), p.startingPower) !== idiv(p.power, p.startingPower);
+    return idiv(isub(p.power, amount), p.powerPerLevel) !== idiv(p.power, p.powerPerLevel);
   }
   addBombs(amount, context = this.context) {
-    const p = this.player; p.bombs = iadd(p.bombs, amount); p.maxBombs = clamp(p.maxBombs, 0, 7);
+    const p = this.player; p.bombs = iadd(p.bombs, amount);
     if (p.maxBombs <= p.bombs) p.bombFragments = 0;
     if (p.maxBombs < p.bombs) p.bombs = p.maxBombs; else context.sound?.(46, 0);
     this.bombHud(context);
   }
-  bombHud(context) { const p = this.player; p.bombs = clamp(p.bombs, 0, 10); p.bombFragments = clamp(p.bombFragments, 0, 10); context.onEvent?.('bombStock', { count: p.bombs, fragments: p.bombFragments, maximum: p.maxBombs }); }
-  lifeHud(context) { const p = this.player; p.lives = clamp(p.lives, -1, 7); p.lifeFragments = clamp(p.lifeFragments, 0, 10); context.onEvent?.('lifeStock', { count: p.lives, fragments: p.lifeFragments, maximum: p.maxLives }); }
+  bombHud(context) { const p = this.player,r=rulesFor(p); p.bombs = clamp(p.bombs, 0, Math.max(r.bombStockLimit,p.maxBombs)); p.bombFragments = clamp(p.bombFragments, 0, r.fragmentLimit); context.onEvent?.('bombStock', { count: p.bombs, fragments: p.bombFragments, maximum: p.maxBombs }); }
+  lifeHud(context) { const p = this.player,r=rulesFor(p); p.lives = clamp(p.lives, -1, p.maxLives); p.lifeFragments = clamp(p.lifeFragments, 0, r.fragmentLimit); context.onEvent?.('lifeStock', { count: p.lives, fragments: p.lifeFragments, maximum: p.maxLives }); }
   addBombFragments(amount, context = this.context) {
-    const p = this.player; p.maxBombs = clamp(p.maxBombs, 0, 7);
-    if (p.bombs < p.maxBombs) { p.bombFragments = iadd(p.bombFragments, amount); if (p.bombFragments > 2) { p.bombFragments = 0; this.addBombs(1, context); } this.bombHud(context); }
+    const p = this.player;
+    if (p.bombs < p.maxBombs) { p.bombFragments = iadd(p.bombFragments, amount); if (p.bombFragments >= rulesFor(p).bombFragmentThreshold) { p.bombFragments = 0; this.addBombs(1, context); } this.bombHud(context); }
     else p.bombFragments = 0;
   }
   extendLife(context = this.context) {
-    const p = this.player; p.maxLives = clamp(p.maxLives, 0, 7);
+    const p = this.player;
     if (p.maxLives <= p.lives) p.lifeFragments = 0; p.lives = iadd(p.lives, 1);
     if (p.maxLives < p.lives) { p.lives = p.maxLives; p.lifeFragments = 0; }
     this.lifeHud(context); context.sound?.(17, 0); notice(context,4); p.extendCount = iadd(p.extendCount, 1);
   }
   addLifeFragments(amount, context = this.context) {
-    const p = this.player; p.maxLives = clamp(p.maxLives, 0, 7);
+    const p = this.player,r=rulesFor(p);
     if (p.lives < p.maxLives) {
       p.lifeFragments = iadd(p.lifeFragments, amount);
-      const end = this.difficulty === 4 ? 9 : 30;
+      const end = this.difficulty === 4 ? r.extraLifeExtendLimit : r.lifeExtendLimit;
       if (p.extendCount < 0 || p.extendCount > end) throw new RangeError('Original life-fragment table index is outside its valid progression');
-      const threshold = p.extendCount === end ? 99999999 : 3;
+      const threshold = p.extendCount === end ? 99999999 : r.lifeFragmentThreshold;
       while (threshold <= p.lifeFragments) { p.lifeFragments = isub(p.lifeFragments, threshold); this.extendLife(context); }
       this.lifeHud(context);
     } else p.lifeFragments = 0;
   }
   collect(item, context = this.context) {
-    const p = this.player; p.power = clamp(p.power, 0, 400); p.maxPower = 400; p.pointValue = clamp(p.pointValue, 10000, 1000000);
+    const p = this.player,r=rulesFor(p); p.power = clamp(p.power, 0, p.maxPower); p.pointValue = clamp(p.pointValue, r.pointValueMinimum, r.pointValueMaximum);
     let amount = 0;
+    const definition=item.definition===undefined?this.definitions.get(item.type):item.definition;
+    if(definition){amount=definition.collect(item,p,context,this)??0;context.onEvent?.('itemCollect',{item,player:p,amount});return amount;}
     const refresh = () => { p.refreshPower?.(); this.floatingScore(item, -1, 0xffffff40, context); context.sound?.(13, item.x); };
     if (item.type === 1) {
       if (p.power < p.maxPower) { amount = 100; if (this.addPower(1, context)) refresh(); }
@@ -217,7 +240,7 @@ export class TouhouItems {
       this.floatingScore(item, amount, full ? 0xffffff00 : 0xffffffff, context); this.addScore(amount, item, context);
       p.pointItems = clamp(iadd(p.pointItems, 1), 0, 1000000);
     } else if (item.type === 3) {
-      if (p.power < p.maxPower) { amount = 100; p.startingPower = clamp(p.startingPower, 100, 400); if (this.addPower(p.startingPower, context)) refresh(); }
+      if (p.power < p.maxPower) { amount = 100; if (this.addPower(p.startingPower, context)) refresh(); }
       else { amount = 20000; this.addScore(20000, item, context); this.floatingScore(item, 20000, 0xff808080, context); context.sound?.(13, item.x); }
       this.addScore(amount, item, context);
     } else if (item.type === 4) this.addLifeFragments(1, context);

@@ -7,13 +7,14 @@ import { AnmInterpolation } from './anm-interpolation.js';
 import { TOUHOU_OWNER_PRIORITIES } from './render-order.js';
 import {createTouhouBulletAnimation,configureTouhouBulletBirth,createTouhouBulletCancelAnimation} from './bullet-presentation.js';
 import {TouhouBulletCollision,updateTouhouBulletCollision,touhouBulletInCancelCircle,touhouBulletInCancelRectangle} from './bullet-collision.js';
+import { resolveTouhouWorld } from './world.js';
 
 const wordBuffer = new DataView(new ArrayBuffer(4));
 const floatWord = value => { wordBuffer.setFloat32(0, value, true); return wordBuffer.getUint32(0, true); };
 const wordFloat = value => { wordBuffer.setUint32(0, value, true); return wordBuffer.getFloat32(0, true); };
 const bit = number => BigInt(number);
 const timer = value => new TouhouTimer(value);
-const outside = (b, w, h, top = 0) => add(b.x, w) <= -192 || sub(b.x, w) >= 192 || add(b.y, h) <= top || sub(b.y, h) >= 448;
+const outside = (b, w, h, topMargin = 0) => b.world.outside(b, w, h, topMargin);
 const position = b => ({ x: b.x, y: b.y, z: b.z });
 
 /** Encode one original 11-word extended command, preserving its float/int lanes. */
@@ -36,9 +37,14 @@ function commandsOf(commands = []) {
 }
 
 export class TouhouBulletField {
-  constructor({ bank, styles, random = new TouhouRandom(1), visualRandom = new TouhouRandom(2), capacity = 2000 } = {}) {
+  constructor({ bank, styles, random = new TouhouRandom(1), visualRandom = new TouhouRandom(2), capacity = 2000, world, bounds, autoBounds = true } = {}) {
     if (!bank?.create || !Array.isArray(styles) || styles.length < 50) throw new TypeError('Original bullet ANM bank and 50-entry style table required');
-    if (!Number.isInteger(capacity) || capacity < 1 || capacity > 2000) throw new RangeError('Original bullet pool supports 1..2000 slots');
+    // Slots are ordinary JS array indices, not a native Uint16 pool. The only
+    // upper bound here is the language's maximum array length; allocation may
+    // still fail when a caller requests more storage than the host can supply.
+    if (!Number.isSafeInteger(capacity) || capacity < 1 || capacity > 0xffffffff) throw new RangeError('Bullet capacity must be a positive supported array length');
+    if (typeof autoBounds !== 'boolean') throw new TypeError('Bullet autoBounds must be boolean');
+    this.world = resolveTouhouWorld({ world, bounds }); this.bounds = this.world.bounds; this.autoBounds = autoBounds;
     this.bank = bank; this.styles = styles; this.random = random; this.visualRandom = visualRandom;
     this.capacity = capacity; this.free = Array.from({ length: capacity }, (_, i) => i);
     this.slots = Array.from({ length: capacity }, () => ({ cancelScript: 0 }));
@@ -54,6 +60,8 @@ export class TouhouBulletField {
   emit(parameters = {}) {
     const p = { x: 0, y: 0, type: 0, color: 0, pattern: 1, count: 1, rows: 1, speed: 1, speedStep: 1, angle: 0, angleStep: 0, ...parameters };
     const commands = commandsOf(p.commands);
+    const world = resolveTouhouWorld({ world: p.world ?? this.world, bounds: p.bounds }), autoBounds = p.autoBounds ?? this.autoBounds;
+    if (typeof autoBounds !== 'boolean') throw new TypeError('Bullet autoBounds must be boolean');
     if (!Number.isInteger(p.count) || !Number.isInteger(p.rows) || p.count < 1 || p.rows < 1) throw new RangeError('Positive integer row/count required');
     const style = touhouStyle(this.styles, p.type, p.color), emitted = [];
     const playerAngle = p.playerAngle ?? this.angleToPlayer(p);
@@ -71,7 +79,7 @@ export class TouhouBulletField {
         commands, commandIndex: p.commandIndex ?? 0, commandLoop: 0, activeMask: 0n, motion: new Map(),
         age: timer(0), totalAge: timer(0), offscreenGrace: 5, frozen: false,
         collisionEnabled: true, secondaryRate: 1, primaryRate: 1, commandSound: p.commandSound ?? 38, child: null,
-        animation: null, cancelKind: 0, previewOnly: p.previewOnly ?? false, mark: 0 };
+        animation: null, cancelKind: 0, previewOnly: p.previewOnly ?? false, mark: 0, world, bounds: world.bounds, autoBounds };
       if (p.spawnRadius) { const delta = polar(angle, f32(p.spawnRadius)); b.x = add(b.x, delta.x); b.y = add(b.y, delta.y); }
       b.animation = createTouhouBulletAnimation(this.bank,style, { x: b.x, y: b.y }, {spriteRemap: id => b.style.remapSprite(id)});
       b.animation.U(0x4a0, (b.animation.U(0x4a0) & ~0x03000000) | 0x01000000);
@@ -141,7 +149,7 @@ export class TouhouBulletField {
           else if (mode === 7) { angle = f(0) <= -999990 ? b.angle : f(0) < 990 ? f(0) : this.angleToPlayer(b); speed = add(mul(this.random.signedUnit(), f(1)), b.speed); }
           this.startMotion(b, 16, { angle, speed, mode, duration: i(4), count: i(5), turns: 0 }); break;
         }
-        case 6: this.startMotion(b, 64, { speed: f(0), width: op[5] & 32 ? f(1) : 384, height: op[5] & 32 ? f(2) : 448, count: i(4), mask: op[5], bounces: 0 }); break;
+        case 6: this.startMotion(b, 64, { speed: f(0), width: op[5] & 32 ? f(1) : b.bounds.width, height: op[5] & 32 ? f(2) : b.bounds.height, count: i(4), mask: op[5], bounces: 0 }); break;
         case 7: b.protectedFrames = i(4); break;
         case 8: this.startMotion(b, 0x100, { timer: timer(i(4)), incomingCheck: !!op[5] }); break;
         case 9: this.changeStyle(b, op[4], op[5]); break;
@@ -237,16 +245,17 @@ export class TouhouBulletField {
     return finished;
   }
   bounce(b, c) {
+    const { centerX, centerY } = b.bounds;
     const width = this.context.boundsWidth > 0 ? f32(this.context.boundsWidth) : c.width;
     const height = this.context.boundsHeight > 0 ? f32(this.context.boundsHeight) : c.height;
-    if (!(b.x <= div(-width, 2) || b.x >= div(width, 2) || b.y <= sub(224, div(height, 2)) || b.y >= add(224, div(height, 2)))) return 0;
+    if (!(b.x <= add(centerX, div(-width, 2)) || b.x >= add(centerX, div(width, 2)) || b.y <= sub(centerY, div(height, 2)) || b.y >= add(centerY, div(height, 2)))) return 0;
     let bounced = false;
     for (const mask of [1, 2, 8, 4]) {
-      const enabled = mask === 1 ? b.y < sub(224, div(height, 2)) : mask === 2 ? b.y >= add(224, div(height, 2)) : mask === 8 ? b.x >= div(width, 2) : b.x < div(-width, 2);
+      const enabled = mask === 1 ? b.y < sub(centerY, div(height, 2)) : mask === 2 ? b.y >= add(centerY, div(height, 2)) : mask === 8 ? b.x >= add(centerX, div(width, 2)) : b.x < add(centerX, div(-width, 2));
       if (!(c.mask & mask) || !enabled) continue; bounced = true;
       if (c.mask & 16) continue;
-      if (mask === 1 || mask === 2) { b.angle = wrapAngle(-b.angle); b.y = sub(mask === 2 ? add(448, height) : sub(448, height), b.y); }
-      else { b.angle = wrapAngle(wrapAngle(add(wrapAngle(sub(-b.angle, PI)), 0))); b.x = sub(mask === 8 ? width : -width, b.x); }
+      if (mask === 1 || mask === 2) { b.angle = wrapAngle(-b.angle); b.y = sub(mask === 2 ? add(mul(centerY, 2), height) : sub(mul(centerY, 2), height), b.y); }
+      else { b.angle = wrapAngle(wrapAngle(add(wrapAngle(sub(-b.angle, PI)), 0))); b.x = sub(add(mul(centerX, 2), mask === 8 ? width : -width), b.x); }
     }
     if (bounced) { if (c.speed > -990) b.speed = c.speed; this.setVelocity(b); c.bounces++; this.sound(b); }
     return c.bounces >= c.count ? this.clearMotion(b, 64) : 0;
@@ -256,8 +265,8 @@ export class TouhouBulletField {
     const size = this.spriteSize(b); if (!outside(b, div(size.width, 2), div(size.height, 2))) return false;
     const direction = polar(b.angle, 1); let negative = -999, positive = -999;
     for (let i = 0; i < 4; i++) {
-      let x = sub(div(i & 1 ? add(384, size.width) : sub(-384, size.width), 2), b.x);
-      let y = sub(add(224, div(i & 2 ? add(448, size.height) : sub(-448, size.height), 2)), b.y);
+      let x = sub(add(b.bounds.centerX, div(i & 1 ? add(b.bounds.width, size.width) : sub(-b.bounds.width, size.width), 2)), b.x);
+      let y = sub(add(b.bounds.centerY, div(i & 2 ? add(b.bounds.height, size.height) : sub(-b.bounds.height, size.height), 2)), b.y);
       const length = sqrt(add(mul(x, x), mul(y, y))); if (Math.abs(length) >= f32(.01)) { x = div(x, length); y = div(y, length); }
       const cross = sub(mul(direction.x, y), mul(direction.y, x)), dot = add(mul(direction.x, x), mul(direction.y, y));
       if (cross <= 0 && negative < dot && dot >= 0) negative = dot;
@@ -268,10 +277,10 @@ export class TouhouBulletField {
   screenWrap(b) {
     const c = b.motion.get(0x1000); if (!c) return;
     const size = this.spriteSize(b); if (!outside(b, div(size.width, 2), div(size.height, 2))) return;
-    if ((c.mask & 1) && b.y < 0) b.y = add(add(b.y, 448), size.height);
-    else if ((c.mask & 2) && b.y > 448) b.y = sub(b.y, add(448, size.height));
-    else if ((c.mask & 4) && b.x < -192) b.x = add(add(b.x, 384), size.width);
-    else if ((c.mask & 8) && b.x > 192) b.x = sub(b.x, add(384, size.width)); else return;
+    if ((c.mask & 1) && b.y < b.bounds.top) b.y = add(add(b.y, b.bounds.height), size.height);
+    else if ((c.mask & 2) && b.y > b.bounds.bottom) b.y = sub(b.y, add(b.bounds.height, size.height));
+    else if ((c.mask & 4) && b.x < b.bounds.left) b.x = add(add(b.x, b.bounds.width), size.width);
+    else if ((c.mask & 8) && b.x > b.bounds.right) b.x = sub(b.x, add(b.bounds.width, size.width)); else return;
     c.wraps++; this.sound(b); if (c.wraps >= c.count) this.clearMotion(b, 0x1000);
   }
   advance(b) {
@@ -294,7 +303,7 @@ export class TouhouBulletField {
     else if (b.state === 4) b.primaryRate = b.secondaryRate = 1;
     this.screenWrap(b);
     const size = this.spriteSize(b);
-    if (!(b.activeMask & 0x100n) && b.offscreenGrace < 1 && outside(b, div(mul(size.width, b.scale), 2), div(mul(size.height, b.scale), 2), -64)) { this.retire(b); return; }
+    if (b.autoBounds && !(b.activeMask & 0x100n) && b.offscreenGrace < 1 && outside(b, div(mul(size.width, b.scale), 2), div(mul(size.height, b.scale), 2), 64)) { this.retire(b); return; }
     if (b.protectedFrames) b.protectedFrames = (b.protectedFrames - 1) | 0;
     if (b.offscreenGrace > 0) b.offscreenGrace--;
     if (!b.frozen) b.animation.update();
@@ -350,7 +359,7 @@ export class TouhouBulletField {
     let count = 0;
     for (const b of this.bullets) {
       if (![1, 2].includes(b.state) || b.protectedFrames) continue;
-      if (!touhouBulletInCancelRectangle(b,x,y,width,height,angle)) continue;
+      if (!touhouBulletInCancelRectangle(b,x,y,width,height,angle,b.bounds)) continue;
       b.cancelKind = kind & 3; this.cancel(b, dropMode); this.cancelCounter++; count++;
     }
     return count;

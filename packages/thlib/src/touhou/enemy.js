@@ -2,6 +2,7 @@
 // Source: runtime_state/motion.cpp; gameplay/enemy_movement.cpp (497f40 family).
 import { f32,PI,add,sub,mul,div,polar,rotate,sin,atan2,wrapAngle,angleDifference,snap,TouhouTimer } from './math.js';
 import { TouhouHealth, applyTouhouEnemyDamage } from './damage.js';
+import { resolveTouhouWorld } from './world.js';
 const vec=(v={})=>({x:f32(v.x??0),y:f32(v.y??0),z:f32(v.z??0)});
 const plus=(a,b)=>({x:add(a.x,b.x),y:add(a.y,b.y),z:add(a.z,b.z)});
 const minus=(a,b)=>({x:sub(a.x,b.x),y:sub(a.y,b.y),z:sub(a.z,b.z)});
@@ -71,7 +72,9 @@ export class TouhouEnemy {
   constructor({id=0,bank,script=0,x=0,y=0,hp=40,radius=12,directional=true,motion,
     onUpdate,onDefeat,onContact,deathBank=null,deathScript,deathSound=(id&1)+3,animationFile=2,
     primaryFlags=0,flags=0,contactWidth=24,contactHeight=24,contactAngle=0,
-    damageInvulnerability=2,contactInvulnerability=0,hitSound=-1,spell=false,drop=[]}={}) {
+    damageInvulnerability=2,contactInvulnerability=0,hitSound=-1,spell=false,drop=[],world,bounds,autoBounds=true}={}) {
+    if(typeof autoBounds!=='boolean')throw new TypeError('Enemy autoBounds must be boolean');
+    this.world=resolveTouhouWorld({world,bounds});this.bounds=this.world.bounds;this.autoBounds=autoBounds;
     Object.assign(this,{id,bank,script,radius:f32(radius),directional,onUpdate,onDefeat,onContact,deathBank,
       deathScript:deathScript??touhouEnemyDeathScript(script,animationFile),deathSound,drop,
       primaryFlags:primaryFlags>>>0,flags:flags>>>0,contactWidth:f32(contactWidth),contactHeight:f32(contactHeight),contactAngle:f32(contactAngle)});
@@ -162,9 +165,9 @@ export class TouhouEnemy {
     this.updateAnimation(context);
     // Original deliberately uses animation height for x extent and width for y.
     const halfX=div(Math.abs(mul(this.animation.height,this.animation.scaleY)),2),halfY=div(Math.abs(mul(this.animation.width,this.animation.scaleX)),2);
-    const outside=-192>add(this.x,halfX)||sub(this.x,halfX)>192||0>add(this.y,halfY)||sub(this.y,halfY)>448;
+    const outside=this.world.outside(this,halfX,halfY,0,true);
     if(!outside)this.entered=true;
-    else if(this.entered&&!this.keepOffscreen){this.alive=false;this.animation.destroy();}
+    else if(this.autoBounds&&this.entered&&!this.keepOffscreen){this.alive=false;this.animation.destroy();}
     if(!context.deferEnemyContact)this.collidePlayer(context.player,context);
     if(this.damageInvulnerability.current>0)this.damageInvulnerability.add(-1,context.timerRate??1);
     if(this.contactInvulnerability.current>0)this.contactInvulnerability.add(-1,context.timerRate??1);

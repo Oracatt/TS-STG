@@ -136,10 +136,16 @@ export class TouhouBossPresentation {
   /** Bind a Boss without starting combat. ECL519 waits for the active dialogue
    * to release it before source aura99/108 and ECL621. Neither the body's reveal
    * nor an elapsed entrance timer releases that independent dialogue gate. */
-  enter(boss, { distortion = this.distortionOptions } = {}) {
+  enter(boss, { distortion = this.distortionOptions, profile = this.profileName,
+    auraScripts = profile === this.profileName ? this.auraScripts : null, auraView = this.auraView } = {}) {
     this.checkAlive();
     if (!boss || !Number.isFinite(boss.x) || !Number.isFinite(boss.y)) throw new TypeError('A Boss with finite original-space x/y is required');
-    if (this.boss !== boss || distortion !== this.distortionOptions || !this.distortion) {
+    if (!TOUHOU_BOSS_PROFILES[profile]) throw new RangeError('Unknown original Boss presentation profile');
+    const scripts = auraScripts ?? TOUHOU_BOSS_PROFILES[profile].auraScripts;
+    const changed = profile !== this.profileName || scripts.length !== this.auraScripts.length || scripts.some((id, i) => id !== this.auraScripts[i]);
+    this.profile = TOUHOU_BOSS_PROFILES[profile]; this.profileName = profile;
+    this.auraScripts = scripts.slice(); this.auraView = auraView;
+    if (this.boss !== boss || changed || distortion !== this.distortionOptions || !this.distortion) {
       this.distortionOptions = distortion;
       this.distortion = distortion === false ? null : new TouhouEnemyDistortion({
         radius: this.profile.radius, color: this.profile.color, ...distortion });
@@ -147,7 +153,10 @@ export class TouhouBossPresentation {
     }
     if (this.boss !== boss) {
       this.stopCombat();
+      this.clearCharges();
       this.entrance?.destroy(); this.entrance = null;
+    }
+    if (this.boss !== boss || changed) {
       for (const vm of this.aura) vm.destroy();
       this.aura.length = 0; this.auraPending = true;
     }
@@ -168,11 +177,11 @@ export class TouhouBossPresentation {
     this.combatActive = false;
     for (const vm of this.aura) vm.destroy(); this.aura.length = 0;
     this.auraPending = !!this.boss;
-    for (const charge of this.charges) charge.destroy(); this.charges.length = 0;
     if (this.distortionReady) this.distortion = this.distortionOptions === false ? null : new TouhouEnemyDistortion({
       radius: this.profile.radius, color: this.profile.color, ...this.distortionOptions });
     this.distortionReady = false; return this;
   }
+  clearCharges() { for (const charge of this.charges) charge.destroy(); this.charges.length = 0; return this; }
   /** Start once when the stage calls for an appearance. enter/update/phase
    * changes never summon fog implicitly; flyIn permits caller-owned movement. */
   beginEntrance(options = {}) {
@@ -207,7 +216,6 @@ export class TouhouBossPresentation {
   /** Reusable attack charge. Coordinates use x -192..192, y 0..448. */
   beginCharge(options = {}) {
     this.checkAlive();
-    this.startCombat();
     const charge = new TouhouBossCharge(this.banks.effect, { x: this.boss?.x ?? 0, y: this.boss?.y ?? 128,
       z: this.boss?.z ?? 0, ...options });
     this.charges.push(charge); return charge;
@@ -334,6 +342,7 @@ export class TouhouBossPresentation {
   }
   clearBoss(updateHud = true) {
     this.stopCombat();
+    this.clearCharges();
     this.entrance?.destroy(); this.entrance = null;
     for (const vm of this.aura) vm.destroy(); this.aura.length = 0;
     this.auraPending = false;

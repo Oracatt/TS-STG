@@ -73,14 +73,17 @@ export function verifyThlibTypes(library){
  const source=readFileSync(join(root,'tests/fixtures/thlib-consumer.ts'),'utf8')+gameplayConsumer;writeFileSync(join(consumer,'consumer.ts'),source);
  const compilerOptions={target:'ES2022',module:'NodeNext',moduleResolution:'NodeNext',lib:['ES2022'],types:[],strict:true,
   noEmit:true,skipLibCheck:false,noUncheckedIndexedAccess:true,verbatimModuleSyntax:true};
- writeFileSync(join(consumer,'tsconfig.json'),JSON.stringify({compilerOptions,files:['consumer.ts']},null,2));
+ const extraFixtures=['thlib-app-extension.ts','thlib-framework-extension.ts'];
+ for(const file of extraFixtures)cpSync(join(root,'tests/fixtures',file),join(consumer,file));
+ writeFileSync(join(consumer,'tsconfig.json'),JSON.stringify({compilerOptions,files:['consumer.ts',...extraFixtures]},null,2));
  function run(args){const result=spawnSync(process.execPath,[compiler,...args],{cwd:consumer,encoding:'utf8',windowsHide:true,timeout:60000});
   if(result.error)throw result.error;assert.equal(result.status,0,`${result.stdout}\n${result.stderr}`);return result.stdout.trim();}
  const version=run(['--version']);run(['--project','tsconfig.json','--pretty','false']);
  return {compiler:version,consumer,sourcePackage:resolve(library),compilerOptions,
   apiGroups:['application lifecycle','captured and direct title backgrounds','stage selection callbacks','dialogue lifecycle and portrait injection','CP936 text surfaces','public subpath and root exports','source laser origin factory','source gameplay passes and owner callback priorities','shared projectile collision and cancellation owners','scene transition ownership and early selection callback','generic Boss phase cues and fixed charge clock','bankless Boss defeat and cancellation wave owners',
-    'custom Boss outcomes, body holds and reusable escape owners','nearby bullet cancellation and public game defeat lifecycle','optional dialogue entrance profiles and staged events','dialogue exit profiles and early handoff callbacks','stage-clear rewards and bankless normal stage transitions','bankless music fading and source volume conversion','player stage visibility and transient reset lifecycle'],
-  rejectedMisuses:[...source.matchAll(/@ts-expect-error/g)].length,workspaceLinks:false,ambientPlatformTypes:false};
+    'custom Boss outcomes, body holds and reusable escape owners','nearby bullet cancellation and public game defeat lifecycle','optional dialogue entrance profiles and staged events','dialogue exit profiles and early handoff callbacks','stage-clear rewards and bankless normal stage transitions','bankless music fading and source volume conversion','player stage visibility and transient reset lifecycle',
+    'application scene registry and selection pages','custom character banks and portrait/continue policies','shared world and configurable system factories','fixed-frame phase sequencing and player/item profiles'],
+  rejectedMisuses:[...[source,...extraFixtures.map(file=>readFileSync(join(consumer,file),'utf8'))].join('\n').matchAll(/@ts-expect-error/g)].length,workspaceLinks:false,ambientPlatformTypes:false};
 }
 
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){

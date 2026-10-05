@@ -6,6 +6,7 @@ import {touhouBulletCommand} from './bullets.js';
 import {anmSpriteVertices} from './anm-render.js';
 import {getTouhouLaserCollisionSegments,updateTouhouLaserCollision} from './laser-collision.js';
 import {cancelTouhouLaser,eraseTouhouLaser} from './laser-cancellation.js';
+import {resolveTouhouWorld} from './world.js';
 
 const viewDefault={x:336,y:24,scale:1.5};
 const vector=(x=0,y=0,z=0)=>({x:f32(x),y:f32(y),z:f32(z)});
@@ -14,10 +15,10 @@ const minus=(a,b)=>vector(sub(a.x,b.x),sub(a.y,b.y),sub(a.z??0,b.z??0));
 const scale=(a,s)=>vector(mul(a.x,s),mul(a.y,s),mul(a.z??0,s));
 const direction=(angle,length)=>({...polar(angle,length),z:0});
 const square=(x,y)=>add(mul(x,x),mul(y,y));
-const outside=(p,w,h)=>add(p.x,w)<=-192||sub(p.x,w)>=192||add(p.y,h)<=0||sub(p.y,h)>=448;
 function advanceCurveBounds(l,rate){
+  if(!l.autoBounds)return true;
   if(l.grace.current<=0&&!(l.activeMask&0x100n)){
-    for(let i=0;i<l.p.count;i++)if(!outside(l.samples[i].position,l.width,l.width))return true;
+    for(let i=0;i<l.p.count;i++)if(!l.world.outside(l.samples[i].position,l.width,l.width))return true;
     return false;
   }
   l.grace.add(-1,rate);return true;
@@ -65,7 +66,13 @@ export function touhouCurveSample(nodes,time,previous={position:vector(),angle:0
 }
 
 export class TouhouLaserField {
-  constructor({bank=null,styles}={}){if(bank!==null&&!bank?.create||!Array.isArray(styles)||styles.length<50)throw new TypeError('Original style table and optional bullet ANM bank required');this.bank=bank;this.styles=styles;this.lasers=[];this.effects=[];this.nextId=0x10000;this.cancelCounter=0;this.context={};this.player=null;this.drivenCurveOrigins=new WeakMap();}
+  constructor({bank=null,styles,world,bounds,autoBounds=true,capacity=512}={}){
+    if(bank!==null&&!bank?.create||!Array.isArray(styles)||styles.length<50)throw new TypeError('Original style table and optional bullet ANM bank required');
+    if(typeof autoBounds!=='boolean')throw new TypeError('Laser autoBounds must be boolean');
+    if(!Number.isSafeInteger(capacity)||capacity<1||capacity>0xffffffff)throw new RangeError('Laser capacity must be a positive supported array length');
+    this.world=resolveTouhouWorld({world,bounds});this.bounds=this.world.bounds;this.autoBounds=autoBounds;this.capacity=capacity;
+    this.bank=bank;this.styles=styles;this.lasers=[];this.effects=[];this.nextId=0x10000;this.cancelCounter=0;this.context={};this.player=null;this.drivenCurveOrigins=new WeakMap();
+  }
   get count(){return this.lasers.filter(l=>l.alive).length;}
   spawnStraight(parameters={}){return this.spawn(0,parameters);}
   spawnInfinite(parameters={}){return this.spawn(1,parameters);}
@@ -104,8 +111,10 @@ export class TouhouLaserField {
     laser.samples=next;laser.live=true;laser.p.live=true;return laser;
   }
   spawn(kind,parameters){
-    if(this.count>=512)return null;
+    if(this.count>=this.capacity)return null;
     const p={x:0,y:0,z:0,type:0,color:0,angle:0,width:16,speed:4,length:160,initialLength:0,lengthLimit:0,radialOffset:0,growthSpeed:8,angularVelocity:0,velocity:vector(),delay:30,grow:20,sustain:120,shrink:20,count:64,time:0,live:false,flags:0,sound:-1,motionSound:-1,...parameters};
+    const world=resolveTouhouWorld({world:p.world??this.world,bounds:p.bounds}),autoBounds=p.autoBounds??this.autoBounds;
+    if(typeof autoBounds!=='boolean')throw new TypeError('Laser autoBounds must be boolean');
     for(const key of ['x','y','z','angle','width','speed','length','initialLength','lengthLimit','radialOffset','growthSpeed','angularVelocity','time']){if(!Number.isFinite(p[key]))throw new TypeError(`Laser ${key} must be finite`);p[key]=f32(p[key]);}
     if(p.width<0||p.length<0||p.initialLength<0||p.length>8192||p.initialLength>8192)throw new RangeError('Laser width/length outside supported original sample buffer');
     if(kind===2&&(!Number.isInteger(p.count)||p.count<4||p.count>512))throw new RangeError('Curve count must be in 4..512');
@@ -118,7 +127,7 @@ export class TouhouLaserField {
       length:kind===0?p.initialLength:p.length,travel:kind===0&&p.initialLength>p.length?f32(.01):0,velocity:direction(p.angle,p.speed),
       age:new TouhouTimer(),time:new TouhouTimer(p.time),grazeTimer:new TouhouTimer(),touching:0,flashColor:null,grace:new TouhouTimer(30),delay:new TouhouTimer(3),
       activeMask:0n,commands:new Map(),commandIndex:p.commandIndex??0,commandLoop:0,protectedFrames:0,updated:false,killPending:false,
-      animation:null,origin:null,tip:null,scale1:1,scale2:1,path:null,samples:null,live:p.live,pausePath:false};
+      animation:null,origin:null,tip:null,scale1:1,scale2:1,path:null,samples:null,live:p.live,pausePath:false,world,bounds:world.bounds,autoBounds};
     const script=kind===2?(p.type===1?0x147:p.type+0x91):style.script;
     if(this.bank){l.animation=this.bank.create(script,{spriteRemap:kind===2&&p.type!==1?()=>p.color+0x20c:id=>style.remapSprite(id)});
     this.configureAnimation(l.animation,true);l.origin=createTouhouLaserOrigin(this.bank,p.color);
@@ -182,7 +191,7 @@ export class TouhouLaserField {
   advance(l,rate){
     this.motion(l,rate);
     if(l.kind===0){const step=mul(mul(mul(rate,l.speed),l.scale1),l.scale2);if(l.p.length>l.length)l.length=Math.min(add(l.length,step),l.p.length);else{l.travel=add(l.travel,step);l.position=plus(l.position,scale(scale(scale(l.velocity,rate),l.scale1),l.scale2));if(l.p.lengthLimit>0&&add(l.travel,l.length)>l.p.lengthLimit){l.length=l.p.length=sub(l.p.lengthLimit,l.travel);if(l.length<=0)return false;}}
-      if(l.grace.current<=0&&l.delay.current<=0){if(outside(l.position,l.width,l.width)&&outside(plus(l.position,direction(l.angle,l.length)),l.width,l.width))return false;}else{if(l.grace.current>0)l.grace.add(-1,rate);if(l.delay.current>0)l.delay.add(-1,rate);}
+      if(l.grace.current<=0&&l.delay.current<=0){if(l.autoBounds&&l.world.outside(l.position,l.width,l.width)&&l.world.outside(plus(l.position,direction(l.angle,l.length)),l.width,l.width))return false;}else{if(l.grace.current>0)l.grace.add(-1,rate);if(l.delay.current>0)l.delay.add(-1,rate);}
     }else if(l.kind===1){
       if(l.p.lengthLimit>l.length)l.length=Math.min(add(l.length,mul(rate,l.p.growthSpeed)),l.p.lengthLimit);
       l.angle=wrapAngle(add(l.angle,mul(rate,l.p.angularVelocity)));l.position=vector(l.p.x,l.p.y,l.p.z);
@@ -222,13 +231,13 @@ export class TouhouLaserField {
   }
   effect(l,p,circle=false){if(!this.bank)return;const type=l.p.type;let script;if(l.kind===2||type<18||type===34||type===38)script=l.p.color*2+0xd4;else if(type<(circle?32:31)||l.kind===1&&type<32)script=l.p.color*2+0x104;else if(type<34)script=l.p.color*2+0x11c;else return;const vm=this.bank.create(script,{x:p.x,y:p.y,z:p.z??0});this.effects.push(vm);this.context.onLaserCancelEffect?.(l,vm);}
   cancelOne(l,center,width,height,angle,circle,check){
-    return cancelTouhouLaser(l,center,width,height,angle,circle,{check,clockScale:this.context.clockScale??1,
+    return cancelTouhouLaser(l,center,width,height,angle,circle,{check,world:l.world,clockScale:this.context.clockScale??1,
       onEffect:(laser,p,isCircle)=>this.effect(laser,p,isCircle),onCancel:count=>{this.cancelCounter+=count;},
-      onSpawnStraight:p=>this.spawnStraight(p),onSpawnCurve:p=>this.spawnCurve(p)});
+      onSpawnStraight:p=>this.spawnStraight({...p,world:l.world,bounds:undefined,autoBounds:l.p.autoBounds??this.autoBounds}),onSpawnCurve:p=>this.spawnCurve({...p,world:l.world,bounds:undefined,autoBounds:l.p.autoBounds??this.autoBounds})});
   }
   cancelCircle(x,y,radius,{check=true}={}){let count=0;for(const l of this.lasers.slice())if(l.alive&&l.state!==1)count+=this.cancelOne(l,vector(x,y),radius,0,0,true,check);return count;}
   cancelRectangle(x,y,width,height,angle=0,{check=true}={}){let count=0;for(const l of this.lasers.slice())if(l.alive&&l.state!==1&&l.updated)count+=this.cancelOne(l,vector(x,y),width,height,angle,false,check);return count;}
-  erase(l,options={}){return eraseTouhouLaser(l,{...options,onEffect:(laser,p,circle)=>this.effect(laser,p,circle)});}
+  erase(l,options={}){return eraseTouhouLaser(l,{world:l.world??this.world,...options,onEffect:(laser,p,circle)=>this.effect(laser,p,circle)});}
   drawCurve(l,draw,view){
     if(!this.bank)return draw;
     if(l.p.count<2){const p=l.samples[0]?.position??l.position;l.origin.F(0x2c,p.x);l.origin.F(0x30,p.y);l.origin.draw(draw,view);return draw;}

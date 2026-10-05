@@ -1,12 +1,12 @@
 // Source: laser_system/type{0,1,2}_cancellation.cpp.
 // Source mask sampling/splitting is independent of external movement and rendering.
 import {f32,add,sub,mul,div,sqrt,polar,rotate} from './math.js';
+import {resolveTouhouWorld} from './world.js';
 const vector=(x=0,y=0,z=0)=>({x:f32(x),y:f32(y),z:f32(z)});
 const plus=(a,b)=>vector(add(a.x,b.x),add(a.y,b.y),add(a.z??0,b.z??0));
 const scale=(a,s)=>vector(mul(a.x,s),mul(a.y,s),mul(a.z??0,s));
 const direction=(angle,length)=>({...polar(angle,length),z:0});
 const square=(x,y)=>add(mul(x,x),mul(y,y));
-const outside=(p,w,h)=>add(p.x,w)<=-192||sub(p.x,w)>=192||add(p.y,h)<=0||sub(p.y,h)>=448;
 
 function segmentIntersection(p,q,r,t){
   const first=add(mul(sub(p.x,q.x),sub(r.y,p.y)),mul(sub(p.y,q.y),sub(p.x,r.x)));
@@ -28,14 +28,16 @@ function rectangleRectangle(c,w,h,a,p,pw,ph,pa){
  * the retained source owner and emit new source straight/curve parameters.
  * External callers supply only effect/entity creation; they do not choose the
  * trim, split thresholds, speed8 debris, timing, or protected-frame rules. */
-export function cancelTouhouLaser(l,center,width,height,angle=0,circle=false,{check=true,clockScale=1,onEffect=null,onCancel=null,onSpawnStraight=null,onSpawnCurve=null}={}){
+export function cancelTouhouLaser(l,center,width,height,angle=0,circle=false,{check=true,clockScale=1,onEffect=null,onCancel=null,onSpawnStraight=null,onSpawnCurve=null,world,bounds}={}){
+    const geometry=resolveTouhouWorld({world:world??l.world??l.p.world,bounds:bounds??(world||l.world?undefined:l.p.bounds)});
+    const inherit=callback=>callback?(parameters=>callback({...parameters,world:geometry,bounds:undefined,autoBounds:l.p.autoBounds})):null;
     if(check&&l.protectedFrames)return 0;const mask=[];let count=0;
     const test=(p,step)=>circle?square(sub(center.x,p.x),sub(center.y,p.y))<=mul(width,width):l.kind===2?rectPoint(center,width,height,angle,p):rectangleRectangle(center,width,height,angle,p,step.x,step.y,l.angle);
     if(l.kind===2){for(let i=0;i<l.p.count;i++){const p=l.samples[i].position;mask.push(test(p)?1:0);if(mask[i]){count++;if(i%20===0)onEffect?.(l,p,circle);}}}
     else{const step=direction(l.angle,16);let p=plus(l.position,direction(l.angle,8));for(let distance=8;(l.kind===0||!circle)?add(8,distance)<=l.length:add(8,distance)<l.length;distance=add(distance,16)){
-      mask.push(test(p,step)?1:0);if(mask.at(-1)){count++;if(l.kind===0?(!circle||(count-1)%4===0):(!circle||!outside(p,32,32)))onEffect?.(l,p,circle);}p=plus(p,step);
+      mask.push(test(p,step)?1:0);if(mask.at(-1)){count++;if(l.kind===0?(!circle||(count-1)%4===0):(!circle||!geometry.outside(p,32,32)))onEffect?.(l,p,circle);}p=plus(p,step);
     }}
-    if(count){onCancel?.(count,l);if(l.kind===0){if(count===mask.length)l.killPending=true;else splitStraight(l,mask,onSpawnStraight);}else if(l.kind===1)splitInfinite(l,mask,onSpawnStraight);else{if(count===l.p.count)l.killPending=true;else splitCurve(l,mask,clockScale,onSpawnCurve);}}
+    if(count){onCancel?.(count,l);if(l.kind===0){if(count===mask.length)l.killPending=true;else splitStraight(l,mask,inherit(onSpawnStraight));}else if(l.kind===1)splitInfinite(l,mask,inherit(onSpawnStraight));else{if(count===l.p.count)l.killPending=true;else splitCurve(l,mask,clockScale,inherit(onSpawnCurve));}}
     return count;
   }
 function splitStraight(l,mask,onSpawnStraight){
@@ -58,4 +60,4 @@ function splitCurve(l,mask,clockScale,onSpawnCurve){
     if(retained<4)l.killPending=true;else{l.p.count=retained;l.samples.length=retained;}
   }
 /** Explicit erase uses the source effect spacing and state1 retirement. */
-export function eraseTouhouLaser(l,{check=true,onEffect=null}={}){if(check&&l.protectedFrames)return 0;let count=0;if(l.kind===2){for(let i=0;i<l.p.count;i++)if(i%3===0)onEffect?.(l,l.samples[i].position,true);}else{const step=direction(l.angle,16);let p=plus(l.position,direction(l.angle,8));for(let d=8;add(8,d)<l.length;d=add(d,16)){count++;if(l.kind===0||!outside(p,16,16))onEffect?.(l,p,true);p=plus(p,step);}}l.state=1;return count;}
+export function eraseTouhouLaser(l,{check=true,onEffect=null,world,bounds}={}){const geometry=resolveTouhouWorld({world:world??l.world??l.p.world,bounds:bounds??(world||l.world?undefined:l.p.bounds)});if(check&&l.protectedFrames)return 0;let count=0;if(l.kind===2){for(let i=0;i<l.p.count;i++)if(i%3===0)onEffect?.(l,l.samples[i].position,true);}else{const step=direction(l.angle,16);let p=plus(l.position,direction(l.angle,8));for(let d=8;add(8,d)<l.length;d=add(d,16)){count++;if(l.kind===0||!geometry.outside(p,16,16))onEffect?.(l,p,true);p=plus(p,step);}}l.state=1;return count;}

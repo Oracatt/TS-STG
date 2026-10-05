@@ -92,7 +92,8 @@ test('Boss presentation owns reusable charges, pauses their clock, and keeps ent
   const readBank=name=>new AnmBank(JSON.parse(fs.readFileSync(new URL(`../packages/thlib/assets/touhou-common/anm/${name}.json`,import.meta.url))),{loadTexture:()=>17});
   const banks={effect:readBank('effect'),front:readBank('front'),ascii_960:readBank('ascii_960')};
   const owner=new TouhouBossPresentation({banks}),boss={x:12,y:128,alive:true,hp:1000,maximumHp:1000};owner.enter(boss);
-  const charge=owner.beginCharge();owner.update();assert.equal(charge.age,1);assert.deepEqual(owner.aura.map(vm=>vm.scriptId),[99,108]);
+  const charge=owner.beginCharge();owner.update();assert.equal(charge.age,1);assert.deepEqual(owner.aura,[]);
+  owner.startCombat();owner.update();assert.deepEqual(owner.aura.map(vm=>vm.scriptId),[99,108]);
   const before=JSON.stringify(charge.snapshot());owner.update({paused:true});assert.equal(JSON.stringify(charge.snapshot()),before);
   owner.clearBoss();assert.equal(charge.alive,false,'Removing the Boss cancels attack preparation instead of leaking it into another encounter');
   owner.destroy();assert.equal(charge.alive,false);assert.equal(banks.effect.instances.filter(vm=>vm.alive).length,0);

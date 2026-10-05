@@ -3,6 +3,7 @@ import type { DrawList } from '../index.js';
 import type { TouhouPlayer,TouhouPlayerContext } from './player.js';
 import type { TouhouHealth } from './damage.js';
 import type { TouhouTimer } from './math.js';
+import type { TouhouWorld,TouhouWorldOptions,TouhouNormalizedWorldBounds } from './world.js';
 export interface TouhouVector {x:number;y:number;z:number;}
 export interface TouhouMotionOptions {position?:Partial<TouhouVector>;velocity?:Partial<TouhouVector>;delta?:Partial<TouhouVector>;flags?:number;speed?:number;angle?:number;radius?:number;angularVelocity?:number;axisAngle?:number;ellipseScale?:number;phase?:number;damping?:number;}
 export class TouhouMotion {
@@ -18,8 +19,9 @@ export interface TouhouEnemyContext extends TouhouPlayerContext {player?:TouhouP
   /** Return true to replace only the ordinary enemy death sound/ANM; drops and defeat callbacks still run. */
   presentEnemyDeath?:(enemy:TouhouEnemy,source:unknown)=>boolean;
   onEnemyDefeat?:(enemy:TouhouEnemy,source:unknown)=>void;[key:string]:unknown;}
-export interface TouhouEnemyOptions {id?:number;bank:AnmBank;script?:number;x?:number;y?:number;hp?:number;radius?:number;directional?:boolean;motion?:TouhouMotion;onUpdate?:(enemy:TouhouEnemy,context:TouhouEnemyContext)=>void;onDefeat?:(enemy:TouhouEnemy,context:TouhouEnemyContext,source:unknown)=>void;onContact?:(enemy:TouhouEnemy,player:TouhouPlayer,context:TouhouEnemyContext)=>void;deathBank?:AnmBank|null;deathScript?:number;deathSound?:number;animationFile?:number;primaryFlags?:number;flags?:number;contactWidth?:number;contactHeight?:number;contactAngle?:number;damageInvulnerability?:number;contactInvulnerability?:number;hitSound?:number;spell?:boolean;drop?:Array<Record<string,unknown>>;}
+export interface TouhouEnemyOptions extends TouhouWorldOptions {id?:number;bank:AnmBank;script?:number;x?:number;y?:number;hp?:number;radius?:number;directional?:boolean;motion?:TouhouMotion;onUpdate?:(enemy:TouhouEnemy,context:TouhouEnemyContext)=>void;onDefeat?:(enemy:TouhouEnemy,context:TouhouEnemyContext,source:unknown)=>void;onContact?:(enemy:TouhouEnemy,player:TouhouPlayer,context:TouhouEnemyContext)=>void;deathBank?:AnmBank|null;deathScript?:number;deathSound?:number;animationFile?:number;primaryFlags?:number;flags?:number;contactWidth?:number;contactHeight?:number;contactAngle?:number;damageInvulnerability?:number;contactInvulnerability?:number;hitSound?:number;spell?:boolean;drop?:Array<Record<string,unknown>>;autoBounds?:boolean;}
 export class TouhouEnemy {
+ world:TouhouWorld;bounds:Readonly<TouhouNormalizedWorldBounds>;autoBounds:boolean;
  constructor(options:TouhouEnemyOptions);id:number;x:number;y:number;hp:number;radius:number;alive:boolean;age:number;direction:number;motion:TouhouMotion;animation:AnmInstance;effects:AnmInstance[];invulnerable?:boolean;keepOffscreen?:boolean;
  health:TouhouHealth;readonly damageTotal:number;damageInvulnerability:TouhouTimer;contactInvulnerability:TouhouTimer;primaryFlags:number;flags:number;contactWidth:number;contactHeight:number;contactAngle:number;deathScript:number;deathSound:number;
  lastHitPosition:TouhouVector;

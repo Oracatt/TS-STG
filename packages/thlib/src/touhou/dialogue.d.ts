@@ -23,8 +23,20 @@ export const TOUHOU_DIALOGUE_EXIT_PRESETS:Readonly<{
 /** Active body top-left and height in original 640x480 screen coordinates. */
 export interface TouhouDialoguePlayerPortrait {x:number;y:number;height:number;}
 export interface TouhouDialoguePortraitState {x:number;y:number;width:number;height:number;color:number;alpha:number;layer:number;}
+export interface TouhouDialoguePortraitProfile {bank:string;root:number;body:number;face?:number;x:number;y:number;width:number;height:number;}
+/** Factory-owned portrait lifecycle. It does not need the source player ANM banks. */
+export interface TouhouDialoguePortrait {
+ draw(draw:DrawList,step:TouhouDialogueStep,dialogue:TouhouDialogue,view:AnmView):void;
+ update?(dialogue:TouhouDialogue):void;setStep?(step:TouhouDialogueStep,dialogue:TouhouDialogue):void;
+ setActive?(active:boolean,dialogue:TouhouDialogue):void;finish?(dialogue:TouhouDialogue):void;dispose?():void;
+ state?(dialogue:TouhouDialogue):TouhouDialoguePortraitState|null;
+}
 export interface TouhouDialogueStep {text?:string;speaker?:'left'|'right';emotion?:string;terminal?:boolean;coldFrames?:number;autoFrames?:number;boxStyle?:number;x?:number;y?:number;events?:TouhouDialogueEvent[];portraits?:{left?:{present?:boolean;emotion?:string};right?:{present?:boolean;emotion?:string}};}
-export interface TouhouDialogueOptions {resources:TouhouResources;steps?:TouhouDialogueStep[];character?:0|1;codePage?:number;charsPerFrame?:number;startDelayFrames?:number;skipMask?:number;skipHoldFrames?:number;maxLineBytes?:number;textColor?:number;speakerNames?:{left?:string;right?:string};onEvent?:(event:TouhouDialogueEvent,step:TouhouDialogueStep,dialogue:TouhouDialogue)=>void;onComplete?:(dialogue:TouhouDialogue)=>void;
+export interface TouhouDialogueOptions {resources:TouhouResources;steps?:TouhouDialogueStep[];character?:string|number;codePage?:number;charsPerFrame?:number;startDelayFrames?:number;skipMask?:number;skipHoldFrames?:number;maxLineBytes?:number;textColor?:number;speakerNames?:{left?:string;right?:string};onEvent?:(event:TouhouDialogueEvent,step:TouhouDialogueStep,dialogue:TouhouDialogue)=>void;onComplete?:(dialogue:TouhouDialogue)=>void;
+  /** Extends the built-in 0/1 profiles. IDs outside that set never silently select Marisa. */
+  portraitProfiles?:Record<string,TouhouDialoguePortraitProfile>;
+  /** Called for each present side; null uses its source preset. Returned portraits are updated and disposed by the dialogue. */
+  createPortrait?:(side:'left'|'right',step:TouhouDialogueStep,dialogue:TouhouDialogue)=>TouhouDialoguePortrait|null;
   /** Optional first-step staging. Default null preserves immediate entry.
    * Times are relative to entry after startDelayFrames. Replaces the first
    * step's coldFrames; subsequent steps retain their authored input policy. */

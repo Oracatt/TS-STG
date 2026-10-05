@@ -61,7 +61,8 @@ test('all four difficulties and both restored characters are carried into portra
   for(let difficulty=0;difficulty<4;difficulty++)for(let character=0;character<2;character++){
     app.start({mode:'normal',difficulty,character,bossIndex:0,phaseIndex:0});const battle=app.battle;
     assert.equal(battle.difficulty,difficulty);assert.equal(battle.sharedPlayer.character,character);
-    assert.deepEqual(battle.sharedPlayer.bounds,{x:-192,y:0,width:384,height:448});
+    const {x,y,width,height}=battle.sharedPlayer.bounds;
+    assert.deepEqual({x,y,width,height},{x:-192,y:0,width:384,height:448});
     assert.equal(battle.player.y,224-battle.sharedPlayer.y);
   }
   f.close();
@@ -124,7 +125,7 @@ test('saved replay restores every effective session option after a fresh launch 
 
 test('replays before the source phase timeline are rejected before replacing the current game',{skip:!available},()=>{
   const f=setup({startBoss:0}),{app}=f;tick(app,120);const data=app.saveReplay(),current=app.application.game;
-  assert.equal(data.config.revision,14);const old=structuredClone(data);old.config.revision=13;
+  assert.equal(data.config.revision,15);const old=structuredClone(data);old.config.revision=14;
   assert.throws(()=>app.playReplay(old),/different game revision/);assert.equal(app.application.game,current);
   app.profile.replays=[{label:'earlier build',data:old}];app.application.openMenu();tick(app,132);
   app.application.menu.openUtilityPage(4);const list=app.application.menu.external.list;

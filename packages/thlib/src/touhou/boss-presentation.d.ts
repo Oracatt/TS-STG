@@ -51,15 +51,16 @@ export class TouhouBossPresentation {
   entrance:TouhouBossEntrance|null;readonly bossVisible:boolean;readonly bossEffectsVisible:boolean;readonly entranceReady:boolean;
   readonly cameraOffset:{x:number;y:number};visualRng:Pick<TouhouRNG,'next'>;
   view:AnmView;screenView:AnmView;context:TouhouSpellContext;distortion:TouhouEnemyDistortion|null;distortionReady:boolean;
-  enter(boss:TouhouBossHudEnemy,options?:Pick<TouhouBossPresentationOptions,'distortion'>):this;
+  enter(boss:TouhouBossHudEnemy,options?:Pick<TouhouBossPresentationOptions,'distortion'|'profile'|'auraScripts'|'auraView'>):this;
   /** Explicitly start persistent aura/warp on the next eligible update; idempotent between attack phases. */
   startCombat():this;
-  /** Clear combat aura/warp and charges; does not finish spell rules or cancel independent death effects. */
+  /** Clear combat aura/warp; independent charge/death effects and spell rules retain their lifetime. */
   stopCombat():this;
+  clearCharges():this;
   /** Beginning an actual spell also starts combat. */
   beginSpell(options?:Parameters<TouhouSpell['begin']>[0]):TouhouSpell;
   beginEntrance(options?:TouhouBossEntranceOptions):TouhouBossEntrance;
-  /** Beginning attack preparation also starts combat. */
+  /** Visual preparation only. The stage chooses when to start combat. */
   beginCharge(options?:TouhouBossChargeOptions):TouhouBossCharge;
   beginDeath(options?:TouhouBossDeathOptions):TouhouBossDeath;
   setSpellState(state?:TouhouBossDisplayState):this;update(state?:TouhouBossPresentationState):this;

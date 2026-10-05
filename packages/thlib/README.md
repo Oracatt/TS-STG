@@ -39,6 +39,19 @@ accept custom labels, actions, script mappings, layout, banks and backgrounds;
 unconfigured application pages are disabled by default. Persistence, BGM,
 specific stages and branding are callbacks or injected resources.
 
+The restored defaults are composable. `systemOptions` and `factories` configure
+the owners in `TouhouGame`; `TouhouWorld` shares playfield geometry and projectile
+capacities are explicit. Player profiles provide `shoot`, `shotFactory` and
+`bombFactory`, with numerical defaults in `TOUHOU_PLAYER_RULES`. Custom items use
+`TouhouItems.register`. The default HUD reads the same player rules.
+
+`TouhouPhaseSequence` composes fixed-frame enter/run/leave generators without
+implicitly settling spells, clearing bullets, awarding drops or destroying a
+Boss. Boss registration is separate from the presentation focus, and charge
+effects do not start combat. Arbitrary application scenes, selection lists,
+resource banks, portraits and continue policies are injectable. See the
+extension section in the SDK's `docs/thlib-guide.md` for ownership and examples.
+
 The default shared banks include `front`, `text` and `title` alongside both
 players, bullets, effects, enemies and bitmap glyphs. Generic frame/menu art is
 included; the source title logo, title background/illustration, specific Boss

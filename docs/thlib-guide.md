@@ -104,7 +104,7 @@ if (phaseClock.patternReady) updateAuthoredPattern();
 伤害、保护期、阶段切换或胜负。直接提供 `healthBars` 时也可设置 `animateFill:false`
 取消向上填充动画；保护期的隐藏规则仍生效。
 
-名字下面的星星表示当前/即将到来的符卡之后还剩几张；减少时使用原作放大淡出动画。名字通过 `name` 提供，字体/贴图可由 `TouhouBossHud` 的 `drawName` 回调替换。最多两组血环、每环四个分隔标记、十颗星沿用原作默认。更多出场参数、动画生命周期和源码证据见 [Boss 出场](touhou-boss-entrance.md) 与 [Boss HUD](touhou-boss-hud.md)。
+名字下面的星星表示当前/即将到来的符卡之后还剩几张；减少时使用原作放大淡出动画。名字通过 `name` 提供，字体/贴图可由 `TouhouBossHud` 的 `drawName` 回调替换。默认两组血环、每环四个分隔标记、十颗星；`panelCount`、`markerCount`、`starCapacity` 可覆盖容量，超过十颗星时必须提供 `createStar(index, bank)` 的排版/动画。阶段规划器的 `maxSections` 应与 HUD 标记容量对应。更多出场参数、动画生命周期和源码证据见 [Boss 出场](touhou-boss-entrance.md) 与 [Boss HUD](touhou-boss-hud.md)。
 
 ### 最终击破、消弹与对话
 
@@ -113,6 +113,91 @@ if (phaseClock.patternReady) updateAuthoredPattern();
 公共 `TouhouGame` 在登记 Boss 的 HP 归零时保留身体，通过 `enterBoss(boss,{onDefeated})` 或全局 `onBossDefeated` 交给关卡决定后续；没有处理器时发送 `bossdefeated` 事件。需要完整爆炸预设时显式调用 `game.beginBossDefeat(boss)`。也可以先结算再接对话、用 `resumeBoss()` 继续下一阶段，或调用 `beginBossEscape()` 飞走、`removeBoss()` 无特效移除。`TouhouBossEscape` 本身只提供可配置的固定帧移动，不绑定奖励或消弹。使用独立模拟框架的爆炸预设时，接入 `cancelCircle`、`clearAll`、`onMove` 和 `onBurst` 回调；`TouhouBulletField.cancelNearbyCircle` 提供原作清弹圆波所需的特殊消弹规则。离开场景调用 `destroy()`，不会触发清弹或击破；需要业务主动提前完成时可调用 `finish()`。
 
 战后对话由舞台编排控制，应在 `bossburst` 事件后按业务时间启动，不要等待爆炸粒子全部消失。一、三、四、六面的源脚本在 Boss 退场后固定等待 60 帧；对话和死亡特效可以同时存在。API、完整接入示例和源码位置见 [Boss 击破与渐进消弹](touhou-boss-defeat.md)。
+
+## 扩展还原框架
+
+默认数值和素材仍由公共预设提供。自定义角色、关卡和界面在调用方组合，无需修改 thlib 源文件。以下接口属于 `@ts-stg/thlib/touhou`；后文的简易 `Game/World` 是另一套可选模板。
+
+### 系统配置与世界
+
+`TouhouGame.systemOptions` 将局部选项传给 `player`、`bullets`、`lasers`、`items`、`enemy`、`hud`、`bossHud`、`spell`、`bossPresentation`、`damage`。`factories` 的同名回调接收合并后的选项和 Game，返回符合该系统接口的实例。工厂实例归 Game 所有；自定义资源可在幂等 `destroy()` 中释放。通常只需配置；需要替换行为时再提供工厂。`spawnEnemy(options)` 的本次参数优先于公共 enemy 配置。
+
+```js
+import { TouhouGame, TouhouWorld } from '@ts-stg/thlib/touhou';
+const world = new TouhouWorld({bounds:{x:-192,y:0,width:384,height:448}});
+const game = new TouhouGame({
+  banks, font, sht, styles, world,
+  systemOptions: {
+    bullets: {capacity:4000}, lasers: {capacity:1024}, items: {capacity:1024},
+    player: {rules:{initialLives:3}},
+    bossHud: {markerCount:6}
+  }
+});
+```
+
+世界几何不可变，默认自机、敌人、子弹、激光和道具共享同一 `world`。出界、反弹、循环和消弹裁剪使用它；单个对象可覆盖 `bounds`，弹幕/激光/敌人可配置 `autoBounds`。这不自动缩放原作动画、Bomb 轨迹、镜头或 HUD；更换画幅还需配置 `view/viewport`、自机出生/复活位置和界面。默认弹幕、激光、道具容量分别为 2000、512、512。
+
+### 角色、武器、Bomb 和道具
+
+`TOUHOU_PLAYER_PROFILES.reimu/marisa` 组合原角色行为；`TOUHOU_PLAYER_RULES` 集中保存原作规则。`systemOptions.player.profile` 可传自定义 `{id,rules,shoot,shotFactory,bombFactory}`，同名 Player 选项优先于 profile。新角色需要自己的动画 bank 和合法 SHT 数据；仅更换角色身份不会偷偷套用魔理沙 Bomb。
+
+`shoot(player,frame,secondaryFrame,context)` 在原射击节拍中调用，可组合导出的 `fireTouhouPlayerWeapons`；`shotFactory` 替换单发武器对象。`bombFactory(player,context)` 返回具有 `alive/update/draw/destroy` 的对象，设为 `null` 可禁用 Bomb。伤害、音效、消弹仍通过 context 接入公共系统。跨关重置保留玩家配置，退出 Game 会清理自定义武器和 Bomb。
+
+规则可配置火力单位和上限、库存、碎片阈值、吸收、判定及决死时间等。原 SHT 仍只有自己的武器档位；提高库存火力上限不等于凭空增加新武器。公共 HUD 使用同一规则显示数值，原素材的七个库存槽之外用实际数量标注；更换完整布局可用 `factories.hud`。自定义角色/难度标签用 `characterScript/difficultyScript` 指定，未指定的未知身份不绘制冒用的角色标签。
+
+```js
+game.items.register('medal', {
+  bank: myItemBank, script: 0,
+  collect(item, player, context) { player.score += 500; }
+});
+game.items.spawn({type:'medal',x:0,y:120});
+```
+
+自定义道具复用原道具移动、吸收、出界和回收生命周期；奖励逻辑由 `collect` 决定，`spawnEffect` 可增加出生效果。公共类型和业务类型均通过同一个道具系统管理。
+
+### 阶段编排和 Boss 归属
+
+`TouhouPhaseSequence` 只管理 `enter → run/update → leave` 生命周期。`enter/run/leave` 可返回固定帧 generator；无 `run` 的阶段等待外部 `finish(result)`，有 `run` 的阶段在 generator 完成后结束，也可提前 `finish`。提前结束会先关闭攻击 generator，执行其 `finally`，再执行 `leave`；销毁整个流程则关闭任务而不执行后续阶段。异步 Promise 不属于确定性游戏时钟。
+
+```js
+import { wait } from '@ts-stg/thlib';
+import { TouhouPhaseSequence } from '@ts-stg/thlib/touhou';
+const sequence = new TouhouPhaseSequence([
+  {name:'arrival', run:function* (game) {
+    game.enterBoss(boss,{entrance:{mode:'blackFog'}});
+    while (!game.bossPresentation.entranceReady) yield 1;
+  }},
+  {name:'attack', enter(game) {
+    game.startBossCombat(boss);
+    // 设置 HP，并由本阶段 update/run 推进业务弹幕。
+  }, leave:function* (game) {
+    game.stopBossCombat(boss);
+    yield* wait(30); // 此等待由关卡指定。
+  }},
+  {name:'after', run:function* (game) {
+    // 可等待自己的对话、移动或其它演出。
+    game.beginBossEscape(boss);
+  }}
+],{context:game});
+game.registerBoss(boss,{onDefeated:()=>{sequence.finish('defeated');}});
+// 每帧调用 sequence.update()；离开关卡时调用 sequence.destroy()。
+```
+
+流程不隐式清弹、掉落、结算符卡或爆炸；这些仍需调用对应公共组件。Game 的 `stage` 也接受 `{update(game),destroy()}`，可让它持有 sequence 并随场景退出清理。`runBossSequence(boss,generator)` 和返回 generator 的 `onDefeated` 则由 Game 自动推进，移除该 Boss/退出场景会取消所属任务。`holdBoss` 暂停实体的更新、移动和碰撞，不暂停外部协程；阶段攻击用 `sequence.finish()` 收尾，或保存任务句柄再调用 `game.tasks.cancel(handle)`。这样战后对话/退场任务仍能运行。
+
+`registerBoss` 登记角色及其击破回调，独立于 `enterBoss/setBoss` 的当前 HUD/特效焦点。切换焦点不会让上一只 Boss 丢失击破处理。`startBossCombat/stopBossCombat` 控制攻击就绪状态；`beginCharge` 只创建聚能，`clearCharges` 显式清理聚能。每次 `enterBoss` 可选择 `profile:'boss'|'midboss'` 或自定义 aura 参数。当前 Game 默认仍组合一张活动符卡和一套焦点演出；独立的并行符卡/演出需要调用方额外组合实例。
+
+`onSpellTimeout({game,boss,spell})` 可替换 Game 默认超时结算；传 `null` 只发送一次 `spelltimeout` 事件。每次 `beginSpell` 都有独立 generation，旧 Boss 的退出序列不会结算后来开启的同编号符卡。`spell.clockPaused` 暂停模拟计时和 bonus 递减，动画继续更新；它不代表平台计时暂停。
+
+### 应用、选择页、资源与续关
+
+`new TouhouApplication({scenes,initialScene})` 或 `registerScene(name,factory)` 可注册任意场景。工厂接收 `{selection,data,createBank}` 和 app，返回 `update`、`draw` 或 `render`，以及可选 `destroy`。通过该 `createBank` 创建的场景资源自动回收。`switchScene(name,{data,selection,transition:true})` 复用公共幕帘；更新回调内发起的切换在当前帧更新完成后执行。
+
+菜单的 `difficulties/characters` 接受 ID 列表或 `{id,label}`，`selectionFlow` 决定难度/角色页面的顺序，也能按模式返回不同列表。`createSelectionPage(kind,menu)` 给自定义 ID 提供画面，公共输入和选择结果仍可复用。默认难度、两名角色和原动画时序保持。自定义字符串难度需要在 `gameOptions(selection)` 中映射成 `TouhouGame` 使用的数值难度，或交给自己的 Game 工厂处理。
+
+`createTouhouResources` 支持额外 `archives/bankNames/shots/styles/players`，`registerBank(name,decodedAnm)` 追加已解码动画。`players[id]={bank,profile,sht}` 将自定义角色选项交给 Application。名称空间由应用决定，不往公共资源清单添加具体作品内容。对话的 `portraitProfiles` 替换预设参数，`createPortrait(side,step,dialogue)` 可接入完整的自定义立绘生命周期。
+
+GameOver 使用 `session.stageKind:'extra'` 判断 Extra，普通第七关不再被误认。`canContinue` 控制资格；`continuePolicy(player,session,context)` 完整替换补给和重置，然后才调用 `onContinue`。默认策略保留原作补给并遵守玩家配置的上限。
 
 ## 标题背景与练习列表
 

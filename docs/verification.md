@@ -1,5 +1,17 @@
 # 本机验证记录
 
+## 2026-10-05：还原框架的组合接口
+
+对照固定版本 LuaSTG/THlib 的所有权分工，新增共享 `TouhouWorld`、固定帧 `TouhouPhaseSequence`、自机 profile/rules、武器/Bomb 工厂、业务道具、任意应用场景和选择页、资源与立绘注册、可替换续关策略。Boss 登记和演出焦点分离，聚能不隐式开战；旧退出序列按符卡属主和 generation 结算，避免误收新卡。默认原作预设继续提供相同素材和机制，具体游戏内容未迁入 thlib。
+
+- 853 项 Node 测试全部通过，没有跳过。覆盖默认源 C++ 浮点向量、碰撞、自机和16项魔理沙升火力回归，以及新阶段/工厂销毁、跨 Boss 属主、角色与道具、HUD 容量和自定义武器档位。
+- V8、QuickJS 各通过7200帧完整模拟和1800次录像驱动调用；这是各后端与对应 Node 模拟/回放的验证，不是性能基准。
+- `verify-touhou-framework-extension.mjs` 的120帧新接口夹具在 Node、V8、QuickJS 的状态逐值一致，覆盖共享世界、自定义角色/Bomb/道具、阶段取消和场景交接，全程无窗口。
+- 魔理沙连续射击到400火力的高速/低速原生状态和 PNG 在两后端一致，且 V8 两张 PNG 与本轮重构前保存的截图字节相同。Boss 保留身体对话、飞离、移除及爆炸四组原生场景的状态/PNG 也在两后端一致；已查看代表图。
+- 实际 npm tarball 独立安装检查、本地 SDK 重建及消费者运行通过，严格 TypeScript 消费者包含新接口并拒绝84种错误用法。SDK 仍不含两个 Demo、具体 Boss/背景或 BGM；未发布。
+
+新接口用法见 [thlib 使用方式](thlib-guide.md)。报告位于 `reports/touhou/framework-extension`、`reports/touhou/marisa-power`、`reports/touhou/boss-outcome`；构建日志在 `build/framework-*`。Rush 输入录像版本由14提升至15，以拒绝旧机制版本。上述证据覆盖所列模拟与画面，不等同于全游戏和原作 EXE 逐像素验证；本轮未运行原作 EXE。
+
 ## 2026-10-04：RushBoss 三关背景与具体 Boss 美术
 
 按最新范围，竖屏 Demo 恢复 Rush 原草地、河岸、冰雪森林透视场景、三套符卡背景、三个 Boss 的精灵动画、对白表情立绘和90帧开卡立绘。素材保持源资源包字节与哈希；导入校验通过（190文件、108纹理），未运行或复制原 EXE。具体场景和美术均属于 `games/rushboss`，公共 thlib 的灵梦／魔理沙、自机武器、Bomb、弹幕和碰撞、HUD、开卡双圈、SpellCardAttack、倒计时和扭曲保持共用。

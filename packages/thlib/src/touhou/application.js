@@ -13,41 +13,58 @@ export class TouhouApplication {
     createGame=options=>new TouhouGame(options), createMenu=options=>new TouhouTitleMenu(options),
     onSceneChange, onPauseChange, onAfterUpdate, onQuit, clock=null, initialSelection={},
     autostart=false, clearColor=0x000000ff, ownResources=false, transitionOptions={},
-    createTransition=options=>new TouhouSceneTransition(options) }={}) {
+    createTransition=options=>new TouhouSceneTransition(options),scenes={},initialScene=null }={}) {
     Object.assign(this,{resources,pixels,gameOptions,menuOptions,createGame,createMenu,
       onSceneChange,onPauseChange,onAfterUpdate,onQuit,clock,clearColor,ownResources,transitionOptions,createTransition});
     if(clock!==null&&typeof clock!=='function')throw new TypeError('Touhou application clock must return platform time in seconds');
     this.createBank=createBank??(resources?(name=>resources.createBank(name)):null);
     this.selection={character:0,difficulty:1,mode:'normal',...initialSelection};
+    this.scenes=new Map();for(const [name,factory]of Object.entries(scenes))this.registerScene(name,factory);
     this.scene=null;this.game=null;this.menu=null;this.mode=null;this.disposed=false;
     this.drawList=new DrawList();this._updating=false;this._pending=null;this._paused=false;this._banks=[];
     this.transition=null;this._transitionBanks=[];this._transitionSelection=null;this.sceneUpdated=false;
-    if(autostart)this.start(this.selection);else this.openMenu();
+    if(initialScene!==null)this.switchScene(initialScene);else if(autostart)this.start(this.selection);else this.openMenu();
   }
-  _request(mode,selection,transition=false){
+  registerScene(name,factory){
     if(this.disposed)throw new Error('Touhou application has been disposed');
-    if(this._updating){this._pending={mode,selection,transition};return;}
-    if(transition&&this.transitionOptions!==false){this._beginTransition(selection);return;}
+    if(typeof name!=='string'||!name||typeof factory!=='function')throw new TypeError('Scene registration requires a nonempty name and factory');
+    this.scenes.set(name,factory);return this;
+  }
+  switchScene(name,{selection={},transition=false,data=null}={}){
+    this._request(name,{...this.selection,...selection},transition,data);return this;
+  }
+  _request(mode,selection,transition=false,data=null){
+    if(this.disposed)throw new Error('Touhou application has been disposed');
+    if(!this.scenes.has(mode)&&mode!=='title'&&mode!=='game')throw new RangeError(`Unknown application scene: ${mode}`);
+    if(this._updating){this._pending={mode,selection,transition,data};return;}
+    if(transition&&this.transitionOptions!==false){this._beginTransition(mode,selection,data);return;}
     this._clearTransition();
-    this._enter(mode,selection);
+    this._enter(mode,selection,data);
+    const pending=this._pending;this._pending=null;if(pending)this._request(pending.mode,pending.selection,pending.transition,pending.data);
   }
   _clearTransition(){
-    this.transition?.destroy();this.transition=null;this._transitionSelection=null;
+    this.transition?.destroy();this.transition=null;this._transitionSelection=null;this._transitionTarget=null;
     for(const bank of this._transitionBanks)bank.dispose?.();this._transitionBanks=[];
   }
-  _beginTransition(selection){
-    // A repeated title callback must not restart the cover indefinitely.
-    if(this.transition?.phase==='cover')return;
+  _beginTransition(mode,selection,data){
+    // A new request may redirect the covered handoff without restarting it.
+    if(this.transition?.phase==='cover'){this._transitionSelection=selection;this._transitionTarget={mode,data};return;}
     this._clearTransition();
     const options={...this.transitionOptions};
     const create=name=>{if(!this.createBank)throw new TypeError('Scene transition requires a bank factory');const bank=this.createBank(name);this._transitionBanks.push(bank);return bank;};
     try{
       options.bank??=create('screenswitch');
       if(options.loadingBank===undefined)options.loadingBank=create('ascii_960');
-      this.transition=this.createTransition(options,this);this._transitionSelection=selection;
+      this.transition=this.createTransition(options,this);this._transitionSelection=selection;this._transitionTarget={mode,data};
     }catch(error){this._clearTransition();throw error;}
   }
-  _enter(mode,selection){
+  _enter(mode,selection,data=null){
+    // Lifecycle callbacks may request another scene. Finish owning the current
+    // scene first, then process that request just like a request from update().
+    const updating=this._updating;this._updating=true;
+    try{this._activateScene(mode,selection,data);}finally{this._updating=updating;}
+  }
+  _activateScene(mode,selection,data){
     this.sceneUpdated=false;
     const previousMode=this.mode,previousScene=this.scene;
     previousScene?.destroy?.();
@@ -55,17 +72,30 @@ export class TouhouApplication {
     this.scene=this.game=this.menu=null;
     if(this._paused){this._paused=false;this.onPauseChange?.(false,this);}
     this.mode=mode;
-    if(mode==='game'){
-      this.selection={...this.selection,...selection};
+    this.selection={...this.selection,...selection};
+    if(this.scenes.has(mode)){
+      const createBank=name=>{if(!this.createBank)throw new TypeError('Scene requires a resource bank factory');const bank=this.createBank(name);this._banks.push(bank);return bank;};
+      this.scene=this.scenes.get(mode)({selection:{...this.selection},data,createBank},this);
+      if(!this.scene||typeof this.scene.update!=='function'||(typeof this.scene.draw!=='function'&&typeof this.scene.render!=='function'))
+        throw new TypeError('Scene must implement update and draw or render');
+      if(mode==='game')this.game=this.scene;if(mode==='title')this.menu=this.scene;
+    }else if(mode==='game'){
       const supplied=typeof this.gameOptions==='function'?this.gameOptions(this.selection,this):this.gameOptions;
-      const options={...supplied,character:this.selection.character,difficulty:this.selection.difficulty};
+      const options={...supplied,character:this.selection.character,difficulty:supplied?.difficulty??this.selection.difficulty};
+      const player=this.resources?.players?.[this.selection.character]??(this.selection.character===0?{bank:'pl00'}:this.selection.character===1?{bank:'pl01'}:null);
+      const playerOptions={...options.systemOptions?.player};
+      if(player?.profile&&playerOptions.profile===undefined)playerOptions.profile=player.profile;
+      if(player?.sht&&playerOptions.sht===undefined)playerOptions.sht=player.sht;
       if(!options.banks){
         if(!this.createBank)throw new TypeError('Touhou application requires banks or a resource bank factory');
+        if(!player?.bank&&!playerOptions.bank)throw new TypeError('Custom character requires a player resource profile or explicit player bank');
         options.banks={};
-        for(const name of ['front','bullet','effect','enemy','ascii_960','text',this.selection.character?'pl01':'pl00']){
+        for(const name of new Set(['front','bullet','effect','enemy','ascii_960','text',...(player?.bank?[player.bank]:[])])){
           const bank=this.createBank(name);options.banks[name]=bank;this._banks.push(bank);
         }
       }
+      if(player?.bank&&playerOptions.bank===undefined)playerOptions.bank=options.banks[player.bank];
+      if(Object.keys(playerOptions).length)options.systemOptions={...options.systemOptions,player:playerOptions};
       options.font??=this.resources?.font;options.styles??=this.resources?.styles;
       options.sht??=this.resources?.shots[this.selection.character];
       if(!options.pauseCapture&&this.pixels){
@@ -103,8 +133,9 @@ export class TouhouApplication {
     if(this.transition?.phase==='cover'){
       this.transition.update();
       if(this.transition.ready){
-        const selection=this._transitionSelection;this._transitionSelection=null;
-        this._enter('game',selection);this.transition.reveal();
+        const selection=this._transitionSelection,target=this._transitionTarget,transition=this.transition;this._transitionSelection=null;this._transitionTarget=null;
+        this._enter(target.mode,selection,target.data);
+        if(this.transition===transition)transition.reveal();
       }
     }else{
       this._updating=true;
@@ -113,8 +144,8 @@ export class TouhouApplication {
       // the same activation frame. Gameplay keeps ticking during the reveal.
       if(this.transition){this.transition.update();if(!this.transition.alive)this._clearTransition();}
     }
-    const pending=this._pending;this._pending=null;if(pending)this._request(pending.mode,pending.selection,pending.transition);
-    const paused=this.mode==='game'&&this.game.paused&&this.game.pauseVisual instanceof TouhouPause;
+    const pending=this._pending;this._pending=null;if(pending)this._request(pending.mode,pending.selection,pending.transition,pending.data);
+    const paused=this.mode==='game'&&this.game?.paused&&this.game.pauseVisual instanceof TouhouPause;
     if(!!paused!==this._paused){this._paused=!!paused;this.onPauseChange?.(this._paused,this);}
     this.onAfterUpdate?.(this);
     // card_system/timing.cpp runs after the frame, including paused gameplay.
@@ -122,15 +153,15 @@ export class TouhouApplication {
     // clock preserves deterministic simulation and explicit postFrame users.
     if(this.clock)this.postFrame(this.clock());
   }
-  postFrame(nowSeconds){return this.game?.postFrame?.(nowSeconds)??null;}
+  postFrame(nowSeconds){return this.scene?.postFrame?.(nowSeconds)??null;}
   render(){
     if(this.disposed)return [];
-    if(this.mode==='game'){
-      const commands=this.game.render();if(!this.transition)return commands;
+    if(typeof this.scene.render==='function'){
+      const commands=this.scene.render();if(!this.transition)return commands;
       const draw=this.drawList.reset();for(const command of commands)draw.push(command);
       this.transition.draw(draw);return draw.commands;
     }
-    const draw=this.drawList.reset().clear(this.clearColor);this.menu.draw(draw);this.transition?.draw(draw);return draw.commands;
+    const draw=this.drawList.reset().clear(this.clearColor);this.scene.draw(draw);this.transition?.draw(draw);return draw.commands;
   }
   snapshot(){return{mode:this.mode,...this.scene?.snapshot?.(),...(this.transition?{transition:this.transition.snapshot()}: {})};}
   destroy(){

@@ -2,16 +2,18 @@ import type {DrawList} from '../index.js';
 import type {AnmBank,AnmInstance,AnmCreateOptions} from './anm.js';
 import type {TouhouBulletCommand} from './bullets.js';
 import type {TouhouLaserCollisionState,TouhouLaserCollisionSegment} from './laser-collision.js';
+import type {TouhouWorld,TouhouWorldOptions,TouhouNormalizedWorldBounds} from './world.js';
 /** Original laser origin ANM 58..73. Owner draws it at priority 39. */
 export function createTouhouLaserOrigin(bank:AnmBank,color?:number,options?:AnmCreateOptions):AnmInstance;
 export interface TouhouCurveSample {position:{x:number;y:number;z:number};velocity:{x:number;y:number;z:number};angle:number;speed:number;actor?:unknown;}
 export interface TouhouCurveNode {kind:0|1|2;begin:number;end:number;position:{x:number;y:number;z:number};direction?:{x:number;y:number;z:number};angle:number;speed:number;acceleration:number;angularAcceleration:number;}
 export function touhouCurveSample(nodes:TouhouCurveNode[],time:number,previous?:TouhouCurveSample,backwards?:boolean,fallback?:TouhouCurveSample):TouhouCurveSample;
-export interface TouhouLaserParameters {x?:number;y?:number;z?:number;type?:number;color?:number;angle?:number;width?:number;speed?:number;length?:number;initialLength?:number;lengthLimit?:number;radialOffset?:number;growthSpeed?:number;angularVelocity?:number;velocity?:{x:number;y:number;z?:number};delay?:number;grow?:number;sustain?:number;shrink?:number;count?:number;time?:number;live?:boolean;flags?:number;sound?:number;motionSound?:number;commands?:TouhouBulletCommand[];commandIndex?:number;path?:TouhouCurveNode[];}
-export interface TouhouLaser extends TouhouLaserCollisionState {id:number;alive:boolean;driven?:boolean;autoBounds?:boolean;collisionEnabled?:boolean;travel:number;speed:number;protectedFrames:number;animation:AnmInstance|null;origin:AnmInstance|null;tip:AnmInstance|null;samples:TouhouCurveSample[]|null;path:TouhouCurveNode[]|null;}
+export interface TouhouLaserParameters extends TouhouWorldOptions {x?:number;y?:number;z?:number;type?:number;color?:number;angle?:number;width?:number;speed?:number;length?:number;initialLength?:number;lengthLimit?:number;radialOffset?:number;growthSpeed?:number;angularVelocity?:number;velocity?:{x:number;y:number;z?:number};delay?:number;grow?:number;sustain?:number;shrink?:number;count?:number;time?:number;live?:boolean;flags?:number;sound?:number;motionSound?:number;commands?:TouhouBulletCommand[];commandIndex?:number;path?:TouhouCurveNode[];autoBounds?:boolean;}
+export interface TouhouLaser extends TouhouLaserCollisionState {id:number;alive:boolean;driven?:boolean;autoBounds?:boolean;collisionEnabled?:boolean;travel:number;speed:number;protectedFrames:number;animation:AnmInstance|null;origin:AnmInstance|null;tip:AnmInstance|null;samples:TouhouCurveSample[]|null;path:TouhouCurveNode[]|null;world:TouhouWorld;bounds:Readonly<TouhouNormalizedWorldBounds>;}
 export class TouhouLaserField {
  /** With bank:null, identical movement/collision/cancellation run without animations or drawing. */
- constructor(options:{bank?:AnmBank|null;styles:unknown[]});readonly count:number;lasers:TouhouLaser[];effects:AnmInstance[];cancelCounter:number;
+ constructor(options:TouhouWorldOptions & {bank?:AnmBank|null;styles:unknown[];autoBounds?:boolean;capacity?:number});readonly count:number;readonly capacity:number;lasers:TouhouLaser[];effects:AnmInstance[];cancelCounter:number;
+ world:TouhouWorld;bounds:Readonly<TouhouNormalizedWorldBounds>;autoBounds:boolean;
  spawnStraight(parameters?:TouhouLaserParameters):TouhouLaser|null;spawnInfinite(parameters?:TouhouLaserParameters):TouhouLaser|null;spawnCurve(parameters?:TouhouLaserParameters):TouhouLaser|null;
  /** Caller updates geometry; source field retains collisions, ANM, cancellation and detached debris.
   * Curve-only autoBounds defaults to false. When true, source grace and the complete history

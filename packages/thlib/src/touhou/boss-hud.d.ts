@@ -13,7 +13,7 @@ export interface TouhouBossHealthBar {
 export interface TouhouBossHudState {bosses?:Array<TouhouBossHudEnemy|null>;player?:Pick<TouhouPlayer,'x'|'y'>;spell?:TouhouSpell;spellFlags?:number;remainingFrames?:number;remainingSpells?:number;healthBars?:Array<TouhouBossHealthBar|null>;name?:string;hidden?:boolean;dialogue?:boolean;timerHidden?:boolean;paused?:boolean;labelScript?:number;sound?:(id:number,x:number)=>void;}
 export type TouhouBossNameRenderer=(draw:DrawList,name:string,options:TouhouTextOptions,animation:AnmInstance)=>void;
 export class TouhouBossHud {
- constructor(options:{bank:AnmBank;textBank:AnmBank;font?:TouhouBitmapFont|null;pointer?:AnmInstance|null;managePointer?:boolean;drawName?:TouhouBossNameRenderer|null;nameStyle?:TouhouTextOptions});
+ constructor(options:{bank:AnmBank;textBank:AnmBank;font?:TouhouBitmapFont|null;pointer?:AnmInstance|null;managePointer?:boolean;drawName?:TouhouBossNameRenderer|null;nameStyle?:TouhouTextOptions;panelCount?:number;markerCount?:number;starCapacity?:number;createStar?:(index:number,bank:AnmBank)=>AnmInstance});
  bank:AnmBank;textBank:AnmBank;font:TouhouBitmapFont|null;pointer:AnmInstance;managePointer:boolean;numbers:AnmInstance[];
  panels:Array<{fraction:number;target:number;hp:number;markers:number[];animations:AnmInstance[];near:boolean}>;
  seconds:number;hundredths:number;previousSeconds:number;timerMode:number;pointerMode:number;timerVisible:boolean;

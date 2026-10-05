@@ -14,6 +14,13 @@ export class TouhouButtons extends RepeatingInput {
   get repeat12(){return this.channels.repeat12.mask;}set repeat12(mask){this.channels.repeat12.mask=mask|0;}
 }
 export const TOUHOU_MAIN_LABELS=Object.freeze(['Game Start','Extra Start','Practice','Spell Practice','Replay','Player Data','Music Room','Option','Manual','Quit']);
+const entries=(values,name)=>{
+  if(!Array.isArray(values)||!values.length)throw new TypeError(`${name} requires a nonempty selection list`);
+  const result=values.map(value=>typeof value==='object'&&value!==null?{...value}:{id:value});
+  if(result.some(value=>!['string','number'].includes(typeof value.id))||new Set(result.map(value=>value.id)).size!==result.length)
+    throw new TypeError(`${name} requires unique string or number IDs`);
+  return result;
+};
 export function touhouMenuStyle(index,selected,{excluded=false,flash=0,jitter=0}={}) {
   if(excluded)return {color:0xff808080,shadowColor:0x40ffffff,offset:0};
   if(index!==selected)return {color:0xff608080,shadowColor:0xff404040,offset:0};
@@ -24,10 +31,16 @@ export function touhouMenuStyle(index,selected,{excluded=false,flash=0,jitter=0}
 export class TouhouTitleMenu {
   constructor({bank,decorationBank,font,background,labels=TOUHOU_MAIN_LABELS,excluded=[1],difficulty=1,character=0,onSelect,onStart,sound,
     scripts={},childScripts={},startModes={0:'normal',2:'practice'},quitIndex=labels.length-1,
-    layout={font:7,x:186,y:230,lineHeight:23},disposeBanks=false,disposeBackground=false}={}) {
+    layout={font:7,x:186,y:230,lineHeight:23},disposeBanks=false,disposeBackground=false,
+    difficulties=[0,1,2,3],characters=[0,1],selectionFlow=['difficulty','character'],createSelectionPage=null}={}) {
     Object.assign(this,{bank,decorationBank,font,background,labels:[...labels],excluded:new Set(excluded),difficulty,character,onSelect,onStart,sound});this.renderQueue=new TouhouRenderQueue();
     Object.assign(this,{scripts,childScripts,startModes,quitIndex,layout:{font:7,x:186,y:230,lineHeight:23,...layout},disposeBanks,disposeBackground});this.destroyed=false;
     this.buttons=new TouhouButtons();this.handles=new Map();this.state='main';this.phase=1;this.age=0;this.selection=0;this.selectionAge=0;this.flashAge=0;this.finished=false;
+    this.difficulties=entries(difficulties,'Difficulty');this.characters=entries(characters,'Character');
+    this.selectionFlow=selectionFlow;this.createSelectionPage=createSelectionPage;this.selectionPage=null;this.flow=['difficulty','character'];this.flowIndex=0;
+    if(createSelectionPage!==null&&typeof createSelectionPage!=='function')throw new TypeError('Selection page factory must be a function');
+    if(!createSelectionPage&&Array.isArray(selectionFlow)&&((selectionFlow.includes('difficulty')&&this.difficulties.some(v=>![0,1,2,3].includes(v.id)))||(selectionFlow.includes('character')&&this.characters.some(v=>![0,1].includes(v.id)))))
+      throw new TypeError('Custom selection entries require an explicit createSelectionPage presentation');
     this.spawn(0);this.spawn(31);
   }
   spawn(script){const mapped=this.scripts[script]??script;if(mapped===false)return null;const vm=this.bank.create(mapped);this.handles.set(script,vm);return vm;}
@@ -36,6 +49,41 @@ export class TouhouTitleMenu {
   childSignal(script,id,label,immediate=false){const vm=this.child(script,id);if(vm){if(immediate)vm.interruptNow(label,true);else vm.interrupt(label,true);}}
   childVisible(script,id,visible){const vm=this.child(script,id);if(vm){const show=n=>{n.flag(1,visible?1:0);for(const c of n.children)show(c);};show(vm);}}
   phaseTo(phase){this.phase=phase;this.age=0;}
+  get selectionEntries(){return this.state==='difficulty'?this.difficulties:this.characters;}
+  get selectedId(){return this.selectionEntries[this.selection]?.id;}
+  _closeSelectionPage(){this.selectionPage?.destroy?.();this.selectionPage=null;}
+  _preparePage(kind){
+    this._closeSelectionPage();this.state=kind;this.selection=Math.max(0,this.selectionEntries.findIndex(entry=>entry.id===this[kind]));this.phaseTo(1);
+    this.selectionPage=this.createSelectionPage?.(kind,this)??null;
+    if(this.selectionPage&&typeof this.selectionPage.draw!=='function')throw new TypeError('Selection presentation must implement draw');
+    const builtin=kind==='difficulty'?[0,1,2,3]:[0,1];
+    if(!this.selectionPage&&this.selectionEntries.some(entry=>!builtin.includes(entry.id)))throw new TypeError(`Missing custom ${kind} selection presentation`);
+    return !!this.selectionPage;
+  }
+  _openFlow(index){
+    this.flowIndex=index;
+    if(index<0){this.returnMain();return;}
+    const page=this.flow[index];if(page==='difficulty')this.openDifficulty();else if(page==='character')this.openCharacter();
+    else{this._closeSelectionPage();this.finished=true;this.onStart?.({character:this.character,difficulty:this.difficulty,mode:this.mode});}
+  }
+  _startSelection(){
+    const flow=typeof this.selectionFlow==='function'?this.selectionFlow(this.mode,this):this.selectionFlow;
+    if(!Array.isArray(flow)||flow.some(page=>page!=='difficulty'&&page!=='character')||new Set(flow).size!==flow.length)
+      throw new TypeError('Selection flow must contain unique difficulty/character pages');
+    this.flow=[...flow];this._openFlow(0);
+  }
+  _customPage(){
+    const b=this.buttons,page=this.selectionPage;
+    if(this.phase===1&&this.age>6)this.phaseTo(2);
+    else if(this.phase===2){
+      let moved=false;if(b.repeat(Keys.UP|Keys.LEFT))moved=this.move(-1,this.selectionEntries.length)||moved;
+      if(b.repeat(Keys.DOWN|Keys.RIGHT))moved=this.move(1,this.selectionEntries.length)||moved;
+      if(moved){this.sound?.(10);page.onSelectionChange?.(this.selectedId,this);}
+      if(b.pressed&(Keys.BOMB|Keys.CANCEL|Keys.PAUSE)){this.phaseTo(4);this.sound?.(9);}
+      else if(b.pressed&(Keys.SHOOT|Keys.CONFIRM)){this.phaseTo(3);this.sound?.(7);}
+    }else if(this.phase===3&&this.age>=14){this[this.state]=this.selectedId;this._openFlow(this.flowIndex+1);}
+    else if(this.phase===4&&this.age>=6)this._openFlow(this.flowIndex-1);
+  }
   move(delta,count,wrap=true){const old=this.selection;let next=old;for(let i=0;i<count;i++){next=wrap?(next+delta+count)%count:Math.max(0,Math.min(count-1,next+delta));if(this.state!=='main'||!this.excluded.has(next))break;}this.selection=next;return next!==old;}
   main(){
     const b=this.buttons,confirm=!!(b.pressed&(Keys.SHOOT|Keys.CONFIRM)),cancel=!!(b.pressed&(Keys.BOMB|Keys.CANCEL|Keys.PAUSE));
@@ -46,48 +94,51 @@ export class TouhouTitleMenu {
       if(cancel){this.sound?.(9);if(this.selection===this.quitIndex)this.phaseTo(4);else this.selection=this.quitIndex;}
       if(confirm&&!this.excluded.has(this.selection)){this.flashAge=30;this.sound?.(this.selection===this.quitIndex?9:7);this.signal(31,1,true,false);this.decoration?.interrupt(1,true);this.phaseTo(4);}
     }else if(this.phase===4&&this.age>=20){
-      if(this.startModes[this.selection]!==undefined&&this.onStart){this.mode=this.startModes[this.selection];this.signal(0,3);this.openDifficulty();}
+      if(this.startModes[this.selection]!==undefined&&this.onStart){this.mode=this.startModes[this.selection];this.signal(0,3);this._startSelection();}
       else {this.finished=true;this.onSelect?.(this.selection,this);}
     }
   }
   openDifficulty(){
-    this.state='difficulty';this.selection=this.difficulty;this.phaseTo(1);this.spawn(58);this.signal(58,3);this.signal(58,this.selection+13,true,false);this.spawn(34);
+    this.flowIndex=Math.max(0,this.flow.indexOf('difficulty'));
+    if(this._preparePage('difficulty'))return;this.spawn(58);this.signal(58,3);this.signal(58,this.selectedId+13,true,false);this.spawn(34);
     for(let i=17;i<21;i++)this.childVisible(58,i,false);
   }
   difficultyPage(){
     const b=this.buttons;
     if(this.phase===1&&this.age>6)this.phaseTo(2);
     else if(this.phase===2){
-      let moved=false;if(b.repeat(Keys.UP|Keys.LEFT))moved=this.move(-1,4,false)||moved;if(b.repeat(Keys.DOWN|Keys.RIGHT))moved=this.move(1,4,false)||moved;
-      if(moved){this.sound?.(10);this.signal(58,3);this.signal(58,this.selection+7,true,false);}
+      let moved=false;if(b.repeat(Keys.UP|Keys.LEFT))moved=this.move(-1,this.difficulties.length,false)||moved;if(b.repeat(Keys.DOWN|Keys.RIGHT))moved=this.move(1,this.difficulties.length,false)||moved;
+      if(moved){this.sound?.(10);this.signal(58,3);this.signal(58,this.selectedId+7,true,false);}
       if(b.pressed&(Keys.BOMB|Keys.CANCEL|Keys.PAUSE)){this.phaseTo(4);this.sound?.(9);this.signal(58,1,true,false);}
-      else if(b.pressed&(Keys.SHOOT|Keys.CONFIRM)){this.signal(58,6,true,false);this.childSignal(58,this.selection+48,2);this.phaseTo(3);this.sound?.(7);}
-    }else if(this.phase===3&&this.age>=14){this.signal(34,1,true,false);this.difficulty=this.selection;this.openCharacter();}
-    else if(this.phase===4&&this.age>=6){this.signal(34,1,true,false);this.returnMain();}
+      else if(b.pressed&(Keys.SHOOT|Keys.CONFIRM)){this.signal(58,6,true,false);this.childSignal(58,this.selectedId+48,2);this.phaseTo(3);this.sound?.(7);}
+    }else if(this.phase===3&&this.age>=14){this.signal(34,1,true,false);this.difficulty=this.selectedId;this._openFlow(this.flowIndex+1);}
+    else if(this.phase===4&&this.age>=6){this.signal(34,1,true,false);this._openFlow(this.flowIndex-1);}
   }
   openCharacter(){
-    this.state='character';this.selection=this.character;this.phaseTo(1);this.spawn(35);this.spawn(12);this.signal(12,3);this.signal(12,this.selection+7,true,false);
+    this.flowIndex=Math.max(0,this.flow.indexOf('character'));
+    if(this._preparePage('character'))return;this.spawn(35);this.spawn(12);this.signal(12,3);this.signal(12,this.selectedId+7,true,false);
     this.childVisible(12,15,false);this.childVisible(12,16,false);
   }
   characterPage(){
     const b=this.buttons;
     if(this.phase===1&&this.age>6){this.phaseTo(2);this.childSignal(12,6,37,true);this.childSignal(12,7,37,true);}
     else if(this.phase===2){
-      if(b.repeat(Keys.LEFT)){this.sound?.(10);this.signal(12,this.selection+25,true);this.move(-1,2);this.signal(12,this.selection+13,true,false);}
-      if(b.repeat(Keys.RIGHT)){this.sound?.(10);this.signal(12,this.selection+19,true);this.move(1,2);this.signal(12,this.selection+7,true,false);}
-      if(b.pressed&(Keys.SHOOT|Keys.CONFIRM)){for(const child of [this.selection+6,this.selection+8,4,5])this.childSignal(12,child,6);this.sound?.(7);this.phaseTo(3);}
+      if(b.repeat(Keys.LEFT)){this.sound?.(10);this.signal(12,this.selectedId+25,true);this.move(-1,this.characters.length);this.signal(12,this.selectedId+13,true,false);}
+      if(b.repeat(Keys.RIGHT)){this.sound?.(10);this.signal(12,this.selectedId+19,true);this.move(1,this.characters.length);this.signal(12,this.selectedId+7,true,false);}
+      if(b.pressed&(Keys.SHOOT|Keys.CONFIRM)){for(const child of [this.selectedId+6,this.selectedId+8,4,5])this.childSignal(12,child,6);this.sound?.(7);this.phaseTo(3);}
       else if(b.pressed&(Keys.BOMB|Keys.CANCEL|Keys.PAUSE)){this.phaseTo(4);this.sound?.(9);}
     }else if(this.phase===3&&this.age>=14){
-      this.character=this.selection;this.finished=true;this.signal(12,6,true,false);this.signal(35,1,true);
+      this.character=this.selectedId;this.signal(12,6,true,false);this.signal(35,1,true);
       // The original proceeds to stone selection here. The engine application
       // instead receives the chosen base character, as explicitly requested.
-      this.onStart?.({character:this.character,difficulty:this.difficulty,mode:this.mode});
-    }else if(this.phase===4&&this.age>=6){this.character=this.selection;this.signal(12,1,true,false);this.signal(35,1,true,false);this.openDifficulty();}
+      this._openFlow(this.flowIndex+1);
+    }else if(this.phase===4&&this.age>=6){this.character=this.selectedId;this.signal(12,1,true,false);this.signal(35,1,true,false);this._openFlow(this.flowIndex-1);}
   }
-  returnMain(){this.state='main';this.selection=0;this.finished=false;this.phaseTo(1);this.age=120;this.spawn(31);this.signal(0,2);this.signal(31,2);}
+  returnMain(){this._closeSelectionPage();this.state='main';this.selection=0;this.finished=false;this.phaseTo(1);this.age=120;this.spawn(31);this.signal(0,2);this.signal(31,2);}
   update(mask){
     if(this.finished)return;
-    this.buttons.update(mask);if(this.state==='main')this.main();else if(this.state==='difficulty')this.difficultyPage();else this.characterPage();
+    this.buttons.update(mask);if(this.state==='main')this.main();else if(this.selectionPage)this._customPage();else if(this.state==='difficulty')this.difficultyPage();else this.characterPage();
+    this.selectionPage?.update?.(mask,this);
     this.bank.update();this.decorationBank?.update();this.background?.update();this.age++;if(this.selectionAge>0)this.selectionAge--;if(this.flashAge>0)this.flashAge--;
   }
   draw(draw){
@@ -97,8 +148,8 @@ export class TouhouTitleMenu {
       const style=touhouMenuStyle(i,this.selection,{excluded:this.excluded.has(i),flash:this.flashAge,jitter:this.selectionAge});
       this.font.draw(draw,this.labels[i],{font:this.layout.font,x:add(this.layout.x,style.offset),y:add(this.layout.y+i*this.layout.lineHeight,style.offset),alignX:0,...style});
     }
-    return draw;
+    this.selectionPage?.draw(draw,this);return draw;
   }
-  destroy(){if(this.destroyed)return;this.destroyed=true;for(const bank of new Set([this.bank,this.decorationBank].filter(Boolean))){for(const vm of bank.instances)vm.destroy();if(this.disposeBanks)bank.dispose();}if(this.disposeBackground)this.background?.destroy?.();}
+  destroy(){if(this.destroyed)return;this.destroyed=true;this._closeSelectionPage();for(const bank of new Set([this.bank,this.decorationBank].filter(Boolean))){for(const vm of bank.instances)vm.destroy();if(this.disposeBanks)bank.dispose();}if(this.disposeBackground)this.background?.destroy?.();}
   snapshot(){return {state:this.state,phase:this.phase,age:this.age,selection:this.selection,difficulty:this.difficulty,character:this.character};}
 }

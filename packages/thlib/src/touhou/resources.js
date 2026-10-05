@@ -6,17 +6,28 @@ import {TOUHOU_BULLET_STYLES} from './bullet-style-data.js';
 import {TouhouTextRenderer} from './text-renderer.js';
 
 export const TOUHOU_RESOURCE_BANKS=Object.freeze(['pl00','pl01','bullet','effect','enemy','ascii_960','front','text','title','screenswitch']);
-const bankNames=TOUHOU_RESOURCE_BANKS;
 /** Load the complete shared animation pack. A missing host selects exact-data,
  * headless simulation; it never substitutes a different weapon implementation. */
-export function createTouhouResources(host=null,{basePath='packages/thlib/assets/touhou-common',environment={},audioVolume=100}={}){
-  const shots=[...TOUHOU_PLAYER_DATA];shots.pl00=shots[0];shots.pl01=shots[1];
-  const banks=Object.fromEntries(bankNames.map(name=>[name,null])),data={},textureHandles=new Map(),createdBanks=new Set(),soundHandles=new Set(),dynamicTextures=new Map(),textRenderers=new Map();
+export function createTouhouResources(host=null,{basePath='packages/thlib/assets/touhou-common',environment={},audioVolume=100,
+  bankNames=TOUHOU_RESOURCE_BANKS,archives={},shots:shotData={},styles=TOUHOU_BULLET_STYLES,players={}}={}){
+  if(!Array.isArray(bankNames)||bankNames.some(name=>typeof name!=='string'||!name))throw new TypeError('Resource bank names must be nonempty strings');
+  const shots=Object.assign([...TOUHOU_PLAYER_DATA],shotData);shots.pl00=shots[0];shots.pl01=shots[1];
+  const playerProfiles={0:{bank:'pl00'},1:{bank:'pl01'},...players};
+  const banks=Object.fromEntries(bankNames.map(name=>[name,null])),data=Object.create(null),textureHandles=new Map(),createdBanks=new Set(),soundHandles=new Set(),dynamicTextures=new Map(),textRenderers=new Map();
   const prefix=String(basePath).replace(/\\/g,'/').replace(/\/$/,''),path=file=>`${prefix}/${file}`;
   let disposed=false;
   const requireActive=()=>{if(disposed)throw new Error('Touhou resources have been disposed');};
-  const resources={basePath:prefix,shots,styles:TOUHOU_BULLET_STYLES,banks,data,manifest:null,font:null,audio:null,audioManifest:null,
+  const resources={basePath:prefix,shots,styles,players:playerProfiles,banks,data,manifest:null,font:null,audio:null,audioManifest:null,
     get disposed(){return disposed;},
+    /** Register decoded, caller-owned data. Its texture paths are already resolved.
+     * Existing banks stay immutable so live scenes cannot silently change skin. */
+    registerBank(name,archive){
+      requireActive();if(typeof name!=='string'||!name)throw new TypeError('Resource bank name must be nonempty');
+      if(Object.hasOwn(data,name))throw new Error(`Animation bank already registered: ${name}`);
+      data[name]=archive;
+      try{banks[name]=resources.createBank(name);return banks[name];}
+      catch(error){delete data[name];throw error;}
+    },
     createBank(name){
       requireActive();if(!data[name])throw new Error(`Shared animation bank unavailable: ${name}`);
       const bank=new AnmBank(data[name],adapter),disposeBank=bank.dispose.bind(bank);let bankDisposed=false;
@@ -77,15 +88,19 @@ export function createTouhouResources(host=null,{basePath='packages/thlib/assets
     }
     return surfaces.get(key);
   },unloadTexture:()=>{}};
-  if(!host?.readText)return resources;
+  if(!host?.readText){for(const [name,archive]of Object.entries(archives))resources.registerBank(name,archive);return resources;}
   const read=file=>JSON.parse(host.readText(path(file)));
   resources.manifest=read('manifest.json');
   if(resources.manifest.format!=='ts-stg-touhou-common-v1')throw new Error('Unsupported common Touhou resource pack');
-  for(const name of bankNames){const archive=resources.manifest.archives[name];if(!archive)throw new Error(`Missing common bank ${name}`);data[name]=read(archive.file);
-    for(const entry of data[name].entries)if(entry.texture.path)entry.texture.path=path(entry.texture.path);
-    banks[name]=resources.createBank(name);
+  for(const name of new Set([...bankNames,...Object.keys(resources.manifest.archives),...Object.keys(archives)])){
+    let archive=archives[name];
+    if(!archive){const descriptor=resources.manifest.archives[name];if(!descriptor)throw new Error(`Missing common bank ${name}`);archive=read(descriptor.file);
+      for(const entry of archive.entries)if(entry.texture.path)entry.texture.path=path(entry.texture.path);
+    }
+    resources.registerBank(name,archive);
   }
-  resources.font=new TouhouBitmapFont(data.ascii_960,adapter);
+  if(data.ascii_960)resources.font=new TouhouBitmapFont(data.ascii_960,adapter);
+  if(!resources.manifest.audio)return resources;
   resources.audioManifest=read(resources.manifest.audio);
   for(const file of resources.audioManifest.files)file.path=path(file.path);
   if(host.loadSound&&host.playSound)resources.audio=new TouhouAudio(resources.audioManifest,{

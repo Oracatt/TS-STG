@@ -16,8 +16,8 @@ import { TOUHOU_BULLET_STYLES } from '../packages/thlib/src/touhou/bullet-style-
 
 // Minimal valid shot data keeps collision tests independent of local artwork.
 // No weapon is active: its patterns and offsets are never used by a predicate.
-const sht={format:'ts-stg-touhou-shots',speeds:[4,4,2,2],patterns:Array.from({length:15},()=>[]),
-  offsets:[{normal:{},focus:{}}],optionScripts:[0],fullPowerScripts:[0]};
+const sht={format:'ts-stg-touhou-shots',maxPower:0,speeds:[4,4,2,2],patterns:Array.from({length:3},()=>[]),
+  offsets:[{normal:[[]],focus:[[]]}],optionScripts:[0],fullPowerScripts:[0]};
 function player(character=0){
   const p=new TouhouPlayer({character,sht,power:0,x:0,y:0});
   p.hitCalls=0;p.hit=()=>{p.hitCalls++;return true;}; // source CollisionServices::hit spy

@@ -68,7 +68,7 @@ test('a selected practice spell has a full ring, no future markers or stars, and
   const plan = new TouhouBossPhasePlan([sourcePhases[1]]);
   assert.deepEqual(plan.hudState(0), { remainingSpells: 0, healthBars: [{ current: 2200, maximum: 2200, phaseHealth: 2200, markers: [], groupIndex: 0 }] });
   for (const hp of [0, NaN, Infinity, -1, 1e-300]) assert.throws(() => new TouhouBossPhasePlan([{ hp }]), RangeError);
-  assert.throws(() => new TouhouBossPhasePlan(Array.from({ length: 6 }, () => ({ hp: 1, healthGroup: 'a' }))), /five sections/);
+  assert.throws(() => new TouhouBossPhasePlan(Array.from({ length: 6 }, () => ({ hp: 1, healthGroup: 'a' }))), /5 sections/);
   assert.throws(() => plan.hudState(-1), RangeError);
   assert.throws(() => plan.hudState(0, { maximumHp: 0 }), RangeError);
 });

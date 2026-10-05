@@ -44,7 +44,7 @@ test('stage cover retains the source player update and draw callbacks while opti
   }finally{p.bank.dispose();resources.dispose();}
 });
 
-test('resetForStage clears stage shots and focus without replacing persistent resources, position or banks',()=>{
+test('resetForStage clears stage shots and focus while preserving configured movement, collision and collection fields',()=>{
   const p=new TouhouPlayer({character:1,sht:TOUHOU_PLAYER_DATA[1],x:-23.75,y:321.5,power:300,lives:5,bombs:4});
   Object.assign(p,{score:123456,pointValue:76543,pointItems:17,lifeFragments:2,bombFragments:1,extendCount:3,deaths:4,graze:55,collisionPercent:87});
   const expected=record(p),rng=p.rng,bank=p.bank,focus=vm('focus');p.focusEffect=focus;
@@ -58,8 +58,8 @@ test('resetForStage clears stage shots and focus without replacing persistent re
   assert.deepEqual([p.shootTimer.current,p.secondaryShootTimer.current,p.shotGate.current],[-1,-1,0]);
   assert.equal(shot.destroyed,1);assert.equal(p.shots.length,0);assert.equal(p.laserGroups.size,0);assert.equal(focus.alive,false);assert.equal(p.focusEffect,null);
   assert.equal(p.options.filter(option=>option.active).length,3);
-  assert.deepEqual([p.collectSpeed,p.collectRadius,p.attractRadius,p.collectLine,p.normalRadius,p.focusRadius,p.deathbombFrames],[5,30,70,128,3,3,8]);
-  assert.deepEqual(p.speeds,p.sht.speeds.map(speed=>Math.trunc(Math.fround(speed*128))));
+  assert.deepEqual([p.collectSpeed,p.collectRadius,p.attractRadius,p.collectLine,p.normalRadius,p.focusRadius,p.deathbombFrames],[0,0,0,0,99,98,3]);
+  assert.deepEqual(p.speeds,[0,0,0,0],'stage cleanup does not reset the consumer movement policy');
   assert.ok(p.history.every(point=>point.x===p.fixedX&&point.y===p.fixedY));
 });
 

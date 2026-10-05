@@ -47,6 +47,7 @@ export const TOUHOU_DIALOGUE_PORTRAITS=Object.freeze({
   marisa:Object.freeze({root:77,body:73,face:75,x:0,y:90,width:309,height:389}),
   right:Object.freeze({x:248,y:120,width:220,height:360}),
 });
+const defaultPortraitProfiles={0:{...TOUHOU_DIALOGUE_PORTRAITS.reimu,bank:'pl00'},1:{...TOUHOU_DIALOGUE_PORTRAITS.marisa,bank:'pl01'}};
 const children=vm=>vm?[...vm.children,...vm.children.flatMap(children)]:[];
 const find=(vm,script)=>children(vm).find(child=>child.scriptId===script);
 const instructionBits=new DataView(new ArrayBuffer(4));
@@ -67,16 +68,20 @@ export function wrapTouhouDialogue(text,encode,{codePage=932,maxBytes=40}={}){
  * Optional charsPerFrame extends the default original whole-line reveal. */
 export class TouhouDialogue {
   constructor({resources,steps=[],character=0,codePage=932,onEvent,onComplete,onExitHandoff,drawPortrait,charsPerFrame=Infinity,
-    startDelayFrames=0,entrance=null,exit=null,skipMask=Keys.FOCUS,skipHoldFrames=20,maxLineBytes=40,speakerNames={},textColor=0x000000,playerPortrait={}}={}){
+    startDelayFrames=0,entrance=null,exit=null,skipMask=Keys.FOCUS,skipHoldFrames=20,maxLineBytes=40,speakerNames={},textColor=0x000000,playerPortrait={},
+    portraitProfiles={},createPortrait=null}={}){
     if(!resources?.createBank)throw new TypeError('TouhouDialogue requires public Touhou resources');
-    this.playerProfile=character?TOUHOU_DIALOGUE_PORTRAITS.marisa:TOUHOU_DIALOGUE_PORTRAITS.reimu;
-    this.playerPortrait=Object.freeze({x:playerPortrait.x??this.playerProfile.x,y:playerPortrait.y??this.playerProfile.y,height:playerPortrait.height??this.playerProfile.height});
+    this.playerProfile=portraitProfiles[character]??defaultPortraitProfiles[character]??null;
+    if(!this.playerProfile&&!createPortrait)throw new TypeError('Custom dialogue character requires a portrait profile or factory');
+    if(createPortrait!==null&&typeof createPortrait!=='function')throw new TypeError('Dialogue portrait factory must be a function');
+    this.createPortrait=createPortrait;this.customPortraits={};
+    this.playerPortrait=Object.freeze({x:playerPortrait.x??this.playerProfile?.x??0,y:playerPortrait.y??this.playerProfile?.y??0,height:playerPortrait.height??this.playerProfile?.height??1});
     if(!Number.isFinite(this.playerPortrait.x)||!Number.isFinite(this.playerPortrait.y)||!Number.isFinite(this.playerPortrait.height)||this.playerPortrait.height<=0)
       throw new RangeError('Player portrait layout requires finite x/y and positive height');
     Object.assign(this,{resources,steps,character,codePage,onEvent,onComplete,onExitHandoff,drawPortrait,charsPerFrame,skipMask,skipHoldFrames,maxLineBytes,speakerNames,textColor});
     this.entranceTiming=entranceTiming(entrance);this.entranceState=null;
     this.exitTiming=exitTiming(exit);this.exitState=null;this.displayStep=null;
-    this.front=resources.createBank('front');this.textBank=resources.createBank('text');this.portraitBank=resources.createBank(character?'pl01':'pl00');
+    this.front=resources.createBank('front');this.textBank=resources.createBank('text');this.portraitBank=this.playerProfile&&!createPortrait?resources.createBank(this.playerProfile.bank):null;
     this.buttons=new TouhouButtons();this.queue=new TouhouRenderQueue();this.age=0;this.index=-1;this.current=null;this.complete=false;this.disposed=false;
     this.startDelay=Math.max(0,startDelayFrames|0);this.page=0;this.cold=0;this.auto=0;this.textAge=0;this.shownCharacters=0;
     this.texts=[];for(let pair=0;pair<2;pair++)for(let line=0;line<2;line++){
@@ -115,15 +120,23 @@ export class TouhouDialogue {
     this._showStepText(step);
   }
   _createPortraits(step){
-    if(step.portraits?.left?.present&&!this.portrait){
+    for(const side of ['left','right'])if(step.portraits?.[side]?.present&&!this.customPortraits[side]&&this.createPortrait){
+      const portrait=this.createPortrait(side,step,this);
+      if(portrait){if(typeof portrait.draw!=='function')throw new TypeError('Dialogue portrait must implement draw');this.customPortraits[side]=portrait;}
+    }
+    if(step.portraits?.left?.present&&!this.customPortraits.left&&!this.playerProfile)throw new TypeError('Missing custom left dialogue portrait');
+    if(step.portraits?.left?.present&&!this.customPortraits.left&&!this.portrait){
+      this.portraitBank??=this.resources.createBank(this.playerProfile.bank);
       this.portrait=this.portraitBank.create(this.playerProfile.root);this.portraitMotion=find(this.portrait,this.playerProfile.body);
     }
     if(this.portrait)this.portrait.interruptNow(TOUHOU_DIALOGUE_EXPRESSIONS[step.portraits?.left?.emotion??step.emotion]??17,true);
-    if(step.portraits?.right?.present&&!this.rightPortraitMotion)this._createRightPortrait();
+    for(const side of ['left','right'])this.customPortraits[side]?.setStep?.(step,this);
+    if(step.portraits?.right?.present&&!this.customPortraits.right&&!this.rightPortraitMotion)this._createRightPortrait();
   }
   _activateSpeaker(step){
     this.portrait?.interruptNow(step.speaker==='left'?2:3,true);
     this.rightPortraitMotion?.interruptNow(step.speaker==='right'?2:3);
+    for(const side of ['left','right'])this.customPortraits[side]?.setActive?.(step.speaker===side,this);
   }
   _advanceEntrance(){
     const state=this.entranceState,timing=this.entranceTiming,step=this.current;
@@ -179,7 +192,8 @@ export class TouhouDialogue {
     if(!this.active)return;this.age++;this.buttons.update(mask);
     if(this.startDelay){if(--this.startDelay===0)this._enter(0);return;}
     const hadText=!!this.box;
-    this.front.update();this.textBank.update();this.portraitBank.update();this.rightPortraitBank?.update();
+    this.front.update();this.textBank.update();this.portraitBank?.update();this.rightPortraitBank?.update();
+    for(const portrait of Object.values(this.customPortraits))portrait.update?.(this);
     if(this.exiting){this.exitState.frame++;this._runExitCues();return;}
     if(this.entranceState&&!this.entranceState.inputReady){this.entranceState.frame++;this._advanceEntrance();}
     this._positionText();if(!this.box)return;
@@ -213,6 +227,7 @@ export class TouhouDialogue {
     return{x:0,y:0,scale:1,screenScale:(view.scale??1)*(view.screenScale??1)};
   }
   portraitState(side='left'){
+    if(this.customPortraits[side])return this.customPortraits[side].state?.(this)??null;
     const vm=side==='right'?this.rightPortraitMotion:this.portraitMotion;
     if(!vm?.alive)return null;const position=vm.worldPosition({screenScale:1}),profile=side==='right'?TOUHOU_DIALOGUE_PORTRAITS.right:this.playerProfile;
     return{x:position.x,y:position.y,width:profile.width,height:profile.height,color:vm.color,alpha:vm.alpha,layer:vm.layer};
@@ -230,6 +245,8 @@ export class TouhouDialogue {
       keepDefault=this.drawPortrait(target,this.exiting?this.displayStep:this.current,this,screenView)===false;
     },{order:this.rightPortraitMotion?.renderOrder??Infinity});
     if(keepDefault)this._drawDefaultPortrait(queue,view);
+    for(const [side,portrait]of Object.entries(this.customPortraits))queue.enqueue(this.portraitState(side)?.layer??35,
+      target=>portrait.draw(target,this.exiting?this.displayStep:this.current,this,screenView));
     this.front.draw(queue,screenView);this.textBank.draw(queue,screenView);queue.flush(draw);
   }
   /** Graceful close uses the configured original exit; dispose() remains the
@@ -242,6 +259,7 @@ export class TouhouDialogue {
     // MSG4/5 use pending recursive interrupt1, not immediate destruction.
     // Bodies/expressions slide and fade for30 frames using their source ANMs.
     this.portrait?.interrupt(1,true);this.rightPortraitMotion?.interrupt(1,true);
+    for(const portrait of Object.values(this.customPortraits))portrait.finish?.(this);
     // MSG6 clear_dialogue_text(false): blank the text surfaces, interrupt1
     // for their8-frame retirement, and delete the bubble tree. Its5-frame
     // optional fade is not requested by this source MSG ending sequence.
@@ -263,5 +281,5 @@ export class TouhouDialogue {
   }
   snapshot(){return{active:this.active,complete:this.complete,index:this.index,page:this.page,age:this.age,coldFrames:this.cold,autoFrames:this.auto,speaker:this.current?.speaker,text:this.current?.text,lines:this.pages?.[this.page]??[],boxScript:this.box?.scriptId??null,
     ...(this.entranceState?{entrance:{...this.entranceState}}:{}),...(this.exitState?{exit:{...this.exitState}}:{})};}
-  dispose(){if(this.disposed)return;this.disposed=true;this.front.dispose();this.textBank.dispose();this.portraitBank.dispose();this.rightPortraitBank?.dispose();}
+  dispose(){if(this.disposed)return;this.disposed=true;this.front.dispose();this.textBank.dispose();this.portraitBank?.dispose();this.rightPortraitBank?.dispose();for(const portrait of Object.values(this.customPortraits))portrait.dispose?.();this.customPortraits={};}
 }

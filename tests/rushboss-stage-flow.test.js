@@ -80,9 +80,9 @@ test('pausing freezes stage-clear/cover clocks and disposal never starts the nex
 test('stage replay stores effective timing and rejects the preceding deterministic revision',()=>{
   const f=fixture({stageClearTiming:{minFrames:20,autoFrames:40,exitFrames:10},stageTransitionTiming:{coverFrames:30,revealFrames:30}});
   try{
-    tick(f.app,10);const replay=f.app.exportReplay();assert.equal(replay.config.revision,14);
+    tick(f.app,10);const replay=f.app.exportReplay();assert.equal(replay.config.revision,15);
     assert.deepEqual(replay.config.settings.stageClearTiming,{minFrames:20,autoFrames:40,exitFrames:10});
     assert.deepEqual(replay.config.settings.stageTransitionTiming,{coverFrames:30,revealFrames:30});
-    const old=structuredClone(replay);old.config.revision=13;assert.throws(()=>f.app.playReplay(old),/different game revision/);
+    const old=structuredClone(replay);old.config.revision=14;assert.throws(()=>f.app.playReplay(old),/different game revision/);
   }finally{f.close();}
 });

@@ -57,9 +57,9 @@ const shade:number=titleShade(200,.5,1);
 const app=new TouhouApplication({resources,pixels:host,ownResources:true,
  menuOptions:{background:captureBackground,disposeBackground:true},
  gameOptions(selection,owner){
-  const difficulty:number=selection.difficulty;const mode:'title'|'game'=owner.mode;
+  const difficulty=Number(selection.difficulty);const mode:string=owner.mode;
   return {power:400,stage(game,frame){if(frame===difficulty)game.player.power=400;}};
- },onSceneChange(change,owner){const mode:'title'|'game'=change.mode;owner.snapshot();},
+ },onSceneChange(change,owner){const mode:string=change.mode;owner.snapshot();},
  onQuit(owner){owner.destroy();host.quit();}
 });
 app.update(Keys.CONFIRM);app.render();
@@ -109,8 +109,8 @@ laserOrigin.update();laserOrigin.draw(draw,view);laserOrigin.destroy();bulletBan
 // Negative checks fail if these public contracts accidentally become `any` or widen.
 // @ts-expect-error A dialogue speaker must select one of the two sides.
 const wrongSpeaker:TouhouDialogueStep={speaker:'center'};
-// @ts-expect-error Public player selection supports the two standard characters.
-new TouhouDialogue({resources,character:2});
+// @ts-expect-error Player identifiers must be strings or numbers.
+new TouhouDialogue({resources,character:{id:2}});
 // @ts-expect-error The encoder returns bytes, not a JavaScript string.
 wrapTouhouDialogue('test',()=> 'test');
 // @ts-expect-error Native texture handles are numbers (or null for direct backgrounds).
@@ -251,8 +251,8 @@ new TouhouSceneTransition({loadingBank:null});
 new TouhouSceneTransition({bank:transitionOptions.bank,coverFrames:'30'});
 // @ts-expect-error The application accepts a transition configuration or false.
 new TouhouApplication({resources,transitionOptions:true});
-// @ts-expect-error The delayed start retains the ordinary selection contract.
-app.startTransition({difficulty:'normal'});
+// @ts-expect-error Difficulty identifiers must be strings or numbers.
+app.startTransition({difficulty:{id:'normal'}});
 // @ts-expect-error Selection callback index is a number.
 new TouhouStageSelect({bank:titleBank,font:resources.font,entries:[{label:'Stage'}],onTransition:(entry,index:string)=>{}});
 // @ts-expect-error Attack time is a numeric simulation frame.

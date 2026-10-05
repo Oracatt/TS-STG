@@ -82,7 +82,7 @@ export class TouhouShot {
     let keep = (row.fields3c[0] !== 0 || player.shootTimer.current >= 0) && player.state !== 2 && player.state !== 4 &&
       !player.powerChanged && !context.dialogue && context.enemyReady !== false;
     if (row.fields3c[0] > 0 && this.timer.current >= row.fields3c[0]) keep = false;
-    const selected = player.sht.patterns[(player.focused ? 10 : 5) + player.powerLevel];
+    const selected = player.sht.patterns[(player.focused ? 2 : 1) * (player.weaponLevels+1) + player.powerLevel];
     if (this.option && !selected.some(record => (record.source & 15) === this.option.index + 1 && record.type === 2)) keep = false;
     if (!keep) { this.state = 2; this.animation?.interrupt(1); releaseLaserGroup(this); context.stopSound?.(20); }
     this.contact = false;
@@ -141,7 +141,7 @@ export class TouhouShot {
 }
 
 export function fireTouhouPattern(player, pattern, frame, secondary, context) {
-  if (pattern < 0 || pattern >= 15) throw new Error(`TOUHOU special weapon profile excluded: ${pattern}`);
+  if (!Number.isInteger(pattern)||pattern < 0 || pattern >= 3*((player.weaponLevels??4)+1)) throw new Error(`TOUHOU special weapon profile excluded: ${pattern}`);
   const rows = player.sht.patterns[pattern];
   if (!rows) throw new Error(`Missing SHT pattern ${pattern}`);
   for (let index = 0; index < rows.length; index++) {
@@ -150,10 +150,18 @@ export function fireTouhouPattern(player, pattern, frame, secondary, context) {
     if (row.type === 2 && player.laserGroups.has(row.group)) {
       const existing = player.laserGroups.get(row.group); existing.row = row; existing.pattern = pattern; existing.index = index; continue;
     }
-    const shot = new TouhouShot(player, row, pattern, index, context);
+    const shot = player.shotFactory?player.shotFactory(player,row,pattern,index,context):new TouhouShot(player, row, pattern, index, context);
+    if(!shot||typeof shot.update!=='function'||typeof shot.collisions!=='function'||typeof shot.draw!=='function'||typeof shot.destroy!=='function')throw new TypeError('Shot factory must return an update/collisions/draw/destroy owner');
     // Original active list prepends, so newer shots update and collide first.
     player.shots.unshift(shot);
     if (row.type === 2) player.laserGroups.set(row.group, shot);
     context.onEvent?.('shot', { shot });
   }
+}
+
+/** Default main and focused/unfocused option emission. A custom shoot strategy
+ * may call this before or after emitting its own weapons. */
+export function fireTouhouPlayerWeapons(player,frame,secondary,context){
+  fireTouhouPattern(player,player.powerLevel,frame,secondary,context);
+  fireTouhouPattern(player,(player.focused?2:1)*(player.weaponLevels+1)+player.powerLevel,frame,secondary,context);
 }

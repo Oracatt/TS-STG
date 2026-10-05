@@ -35,6 +35,7 @@ export class TouhouSpell {
     this.records = records; this.fallbackRecords = fallbackRecords; this.difficulty = difficulty; this.stage = stage;
     this.mode = mode; this.viewIndex = viewIndex; this.playback = playback;
     this.flags = 0; this.age = new TouhouTimer(); this.frames = 0; this.lastFrames = 0;
+    this.clockPaused = false; this.generation = 0;
     this.bonus = this.initialBonus = this.duration = 0; this.spellIndex = 0; this.name = '';
     this.position = { x: 0, y: 0, z: 0 }; this.info = []; this.retiredInfo = []; this.effect = null; this.visuals = [];
     this.background = null; this.captureIndex = 0; this.startTime = 0; this.encodedTime = 0; this.result = null;
@@ -50,6 +51,7 @@ export class TouhouSpell {
     boss = null, background = null, portrait = null } = {}, context = this.context) {
     if (!Number.isInteger(this.difficulty) || this.difficulty < 0 || this.difficulty > 4) throw new RangeError('Original spell difficulty must be 0–4');
     if (this.active) throw new Error('Finish the current spell before beginning another');
+    this.generation++; this.clockPaused = false;
     this.age.set(0); this.spellIndex = id; this.name = String(name); this.result = null;
     this.flags = ((this.flags | 3 | 0x200) & ~0x98) >>> 0;
     this.flags = (this.flags & ~0x100) | (reversed ? 0x100 : 0);
@@ -92,16 +94,19 @@ export class TouhouSpell {
   notifyPlayerHit(context = this.context) { return this.fail('hit', context); }
   notifyPlayerMiss(context = this.context) { return this.fail('miss', context); }
   scaleDamage(amount) { return this.suppressesBombDamage ? idiv(amount, 30) : amount | 0; }
+  advanceClock(context) {
+    this.frames = (this.frames + 1) >>> 0;
+    if (this.age.current >= 60 && !(this.flags & 0x200)) context.setStageVisible?.(false);
+    if (this.age.current >= 300 && !(this.flags & 8)) {
+      const numerator = isub(this.initialBonus, idiv(this.initialBonus, 3)), denominator = isub(this.duration, 300);
+      if (!denominator || (numerator === -2147483648 && denominator === -1)) throw new RangeError('Original spell bonus integer division trap');
+      this.bonus = isub(this.bonus, idiv(numerator, denominator)); this.bonus = isub(this.bonus, this.bonus % 10);
+    }
+    this.age.tick(context.timerRate ?? 1);
+  }
   update(context = this.context) {
     if (this.active) {
-      this.frames = (this.frames + 1) >>> 0;
-      if (this.age.current >= 60 && !(this.flags & 0x200)) context.setStageVisible?.(false);
-      if (this.age.current >= 300 && !(this.flags & 8)) {
-        const numerator = isub(this.initialBonus, idiv(this.initialBonus, 3)), denominator = isub(this.duration, 300);
-        if (!denominator || (numerator === -2147483648 && denominator === -1)) throw new RangeError('Original spell bonus integer division trap');
-        this.bonus = isub(this.bonus, idiv(numerator, denominator)); this.bonus = isub(this.bonus, this.bonus % 10);
-      }
-      this.age.tick(context.timerRate ?? 1);
+      if (!this.clockPaused) this.advanceClock(context);
       if (this.age.current >= 120) {
         const y = this.player?.y ?? 0, reversed = !!(this.flags & 0x100);
         if (this.flags & 4) {

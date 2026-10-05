@@ -6,14 +6,17 @@ export const TOUHOU_INITIAL_CREDITS = Object.freeze([5, 5, 5, 5, 0, 0]);
 export const TOUHOU_NAME_CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=.,!?@:;[]()_/{}|~^#$%&*   ';
 const childScripts = [[], [0x78, 0x7e, 0x84, 0x87, 0x89], [0x79, 0x7f, 0x8a], [0x7a, 0x80], [0x7b, 0x81], [0x7c]];
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value | 0));
-const stages = ['test   ', 'Stage 1', 'Stage 2', 'Stage 3', 'Stage 4', 'Stage 5', 'Stage 6', 'Extra  ', 'Clear  ', 'ExClear'];
+const stageLabel=entry=>entry.stageKind==='extra'?(entry.cleared?'ExClear':'Extra  '):entry.cleared?'Clear  ':`Stage ${entry.stage??'-'}`;
 
 /** pause_system/resume.cpp: player entity state/timer intentionally survive. */
 export function continueTouhouGame(player, session, context = {}) {
-  player.lives = 2; player.lifeFragments = 0;
-  player.maxBombs = clamp(player.maxBombs ?? 7, 0, 7); player.bombs = Math.min(3, player.maxBombs); player.bombFragments = 0;
-  player.power = 0; player.startingPower = clamp(player.startingPower ?? 100, 100, 400);
-  player.power = Math.min(400, Math.imul(player.startingPower, 4)); player.refreshPower?.();
+  // Source replenishment is a policy, not a rewrite of the character's caps.
+  // Custom profiles keep their rules across Continue; callers can replace this
+  // whole policy when their replenishment differs from the original 2/3/4.
+  player.lives = Math.min(2, player.maxLives ?? player.rules?.maxLives ?? 7); player.lifeFragments = 0;
+  player.bombs = Math.min(3, player.maxBombs ?? player.rules?.maxBombs ?? 7); player.bombFragments = 0;
+  player.power = Math.min(player.maxPower ?? player.rules?.maxPower ?? 400, (player.startingPower ?? player.rules?.startingPower ?? 100) * 4);
+  player.refreshPower?.();
   session.continues = clamp(((session.continues ?? 0) + 1) | 0, 0, 9);
   session.credits = ((session.credits ?? 0) - 1) | 0; player.score = 0;
   context.onStock?.({ lives: player.lives, lifeFragments: 0, bombs: player.bombs, bombFragments: 0, power: player.power });
@@ -21,13 +24,14 @@ export function continueTouhouGame(player, session, context = {}) {
 }
 
 /** Ten original records, ties insert before the existing equal score. */
-export function insertTouhouHighScore(records, player, session, { timestamp = 0, actualFrames = 0, targetFrames = 1 } = {}) {
+export function insertTouhouHighScore(records, player, session, { timestamp = 0, actualFrames = 0, targetFrames = 1,completed=false } = {}) {
   if (!Array.isArray(records) || records.length !== 10) throw new RangeError('Original ranking requires ten records');
   const score = player.score ?? 0; let index = 0;
   while (index < 10 && records[index].score > score) index++;
   if (index >= 10) return -1;
   records.splice(index, 0, { score, continues: clamp(session.continues ?? 0, 0, 9), stage: session.stage ?? 1,
-    name: '        ', timestamp, slowdown: sub(100, mul(f32(actualFrames / targetFrames), 100)) });
+    name: '        ', timestamp, slowdown: sub(100, mul(f32(actualFrames / targetFrames), 100)),
+    ...(session.stageKind?{stageKind:session.stageKind}:{}),...(completed?{cleared:true}:{}) });
   records.length = 10; return index;
 }
 
@@ -36,10 +40,14 @@ export class TouhouGameOver {
   constructor({ bank, font = null, player, session = {}, sound, onContinue, onExit, onRestart, onScene,
     onReplay, onOptions, onManual, onOpen, onStock, onSaveRanking, drawBackground,
     rankings = null, savedName = '        ', timestamp = 0, actualFrames = 0, targetFrames = 1,
-    completed = false, restart = false, initialMask = 0, music = 'game-over' } = {}) {
+    completed = false, restart = false, initialMask = 0, music = 'game-over',
+    continuePolicy=continueTouhouGame,canContinue=null,formatStage=stageLabel } = {}) {
     if (!bank || !player) throw new TypeError('TouhouGameOver requires front ANM bank and player');
+    if(continuePolicy!==null&&typeof continuePolicy!=='function')throw new TypeError('Continue policy must be a function or null');
+    if(canContinue!==null&&typeof canContinue!=='function'&&typeof canContinue!=='boolean')throw new TypeError('canContinue must be a function, boolean or null');
+    if(typeof formatStage!=='function')throw new TypeError('Ranking stage formatter must be a function');
     Object.assign(this, { bank, font, player, session, sound, onContinue, onExit, onRestart, onScene, onReplay,
-      onOptions, onManual, onStock, onSaveRanking, drawBackground, rankings, savedName, timestamp, actualFrames, targetFrames, completed, restart });
+      onOptions, onManual, onStock, onSaveRanking, drawBackground, rankings, savedName, timestamp, actualFrames, targetFrames, completed, restart,continuePolicy,canContinue,formatStage });
     session.difficulty ??= 1; session.stage ??= 1; session.mode ??= 0; session.continues = clamp(session.continues ?? 0, 0, 9);
     session.credits ??= TOUHOU_INITIAL_CREDITS[session.difficulty] ?? 0; session.highScore ??= 0;
     this.buttons = new TouhouButtons(); this.buttons.update(initialMask); this.active = true; this.phase = completed ? 3 : 2;
@@ -50,6 +58,11 @@ export class TouhouGameOver {
     sound?.(14); onOpen?.({ music: session.mode === 2 ? null : music, pauseMusic: session.mode !== 2, savedInput: 1, clockScale: 1 });
   }
   phaseTo(phase) { this.phase = phase; this.age = 0; }
+  allowsContinue(){
+    if(!this.continuePolicy)return false;
+    if(this.canContinue!==null)return typeof this.canContinue==='function'?!!this.canContinue(this.player,this.session,this):this.canContinue;
+    return !this.completed&&this.session.mode===0&&this.session.stageKind!=='extra'&&this.session.credits>0;
+  }
   child(script) { const find = vm => { for (const child of vm?.children ?? []) { if (child.scriptId === script) return child; const result = find(child); if (result) return result; } return null; }; return find(this.panel); }
   signalChoice(choice, label) { for (const script of childScripts[choice]) this.child(script)?.interrupt(label, true); }
   select(index) { for (let i = 0; i < 6; i++) { index = (index + 6) % 6; if (!this.excluded.has(index)) { this.selection = index; return; } index++; } }
@@ -58,8 +71,9 @@ export class TouhouGameOver {
     this.panel?.destroy(); this.excluded.clear();
     const practice = this.completed || this.session.mode !== 0;
     this.panel = this.bank.create(practice ? 0x94 : 0x93); this.panelVisible = true;
-    if (practice) { this.excluded.add(0); this.excluded.add(3); }
-    else { if (this.session.continues > 0) this.excluded.add(2); if (this.session.credits < 1) this.excluded.add(0); }
+    if (practice) this.excluded.add(3);
+    else if (this.session.continues > 0) this.excluded.add(2);
+    if(!this.allowsContinue())this.excluded.add(0);
     for (const [choice, callback] of [[1, this.onExit ?? this.onScene], [2, this.onReplay], [3, this.onManual], [4, this.onOptions], [5, this.onRestart ?? this.onScene]]) if (!callback) this.excluded.add(choice);
     this.select(selection ?? (practice && !this.completed ? 5 : this.excluded.has(0) ? 1 : 0));
     this.panel.interruptNow(3, true); this.panel.interrupt(this.selection + 7, true);
@@ -70,9 +84,7 @@ export class TouhouGameOver {
     // Original high-score update compares the low word only when high word is zero.
     if (this.session.highScore <= 0xffffffff && (this.session.highScore >>> 0) < ((this.player.score ?? 0) >>> 0)) this.session.highScore = this.player.score;
     if (this.session.mode === 0 && this.rankings) {
-      const stage = this.session.stage; if (stage === 7 && this.completed) this.session.stage = 9;
       this.rank = insertTouhouHighScore(this.rankings, this.player, this.session, this);
-      this.session.stage = stage;
       if (this.rank >= 0) { this.panelVisible = false; this.phaseTo(15); return; }
     }
     this.resultMenu();
@@ -83,13 +95,14 @@ export class TouhouGameOver {
     this.phaseTo(choice === 2 ? 10 : choice === 3 ? 14 : choice === 4 ? 16 : 18);
   }
   finish() {
-    const choice = this.selection; this.active = false; this.panel?.destroy(); this.bank.collect();
+    const choice = this.selection;
+    if(choice===0&&!this.allowsContinue()){this.resultMenu();return;}
+    this.active = false; this.panel?.destroy(); this.bank.collect();
     if (choice === 0) {
-      if (this.completed) this.onScene?.(10, false);
-      else if (this.session.stage === 7) this.onScene?.(14, false);
-      else continueTouhouGame(this.player, this.session, this);
+      this.continuePolicy(this.player,this.session,{onStock:this.onStock});
+      this.onContinue?.({player:this.player,session:this.session});
     } else if (choice === 1) { this.onScene?.(4, true); this.onExit?.(); }
-    else if (choice === 5) { this.onScene?.(this.session.mode !== 0 || this.session.difficulty === 4 ? 10 : 24, false); this.onRestart?.(); }
+    else if (choice === 5) { this.onScene?.(this.session.mode !== 0 || this.session.stageKind === 'extra' ? 10 : 24, false); this.onRestart?.(); }
   }
   nameInput(confirm, cancel) {
     const b = this.buttons, length = TOUHOU_NAME_CHARACTERS.length;
@@ -145,7 +158,7 @@ export class TouhouGameOver {
         const entry = this.rankings[i], date = entry.timestamp ? new Date(entry.timestamp * 1000) : null;
         const stamp = date ? `${String(date.getFullYear() % 100).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}` : '--/--/--';
         const name = i === this.rank ? this.playerName : entry.name;
-        write(`${String(i + 1).padStart(2, ' ')} ${name} ${String(entry.score).padStart(9, ' ')}${entry.continues ?? 0} ${stamp} ${date ? stages[entry.stage] : 'Stage -'}`, 48, 96 + i * 18, i === this.rank ? 0xffffff00 : 0xff808080);
+        write(`${String(i + 1).padStart(2, ' ')} ${name} ${String(entry.score).padStart(9, ' ')}${entry.continues ?? 0} ${stamp} ${date ? this.formatStage(entry) : 'Stage -'}`, 48, 96 + i * 18, i === this.rank ? 0xffffff00 : 0xff808080);
       }
       write('_', 75 + (this.nameLength === 8 ? 7 : this.nameLength) * 9, 96 + this.rank * 18, 0xffffff00);
       for (let i = 0; i < TOUHOU_NAME_CHARACTERS.length; i++) {

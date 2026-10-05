@@ -2,18 +2,31 @@
 import { touhouGroupedScore } from './font.js';
 import { mul } from './math.js';
 import { invalidTouhouSpellTime } from './spell.js';
+import {TOUHOU_PLAYER_RULES} from './player-rules.js';
 
 const screenView={x:0,y:0,scale:1,screenScale:1.5};
 // Layer 22 uses the playfield-centered viewport; HUD numbers use the full screen.
 const noticeView={x:336,y:24,scale:1,screenScale:1.5};
 const visibleTree=(vm,visible)=>{vm.visible=visible;for(const child of vm.children??[])visibleTree(child,visible);};
+const whole=(value,name,minimum=0)=>{if(!Number.isSafeInteger(value)||value<minimum)throw new RangeError(`${name} must be an integer >= ${minimum}`);return value;};
+const label=(explicit,fallback,name)=>{const script=explicit===undefined?fallback:explicit;if(script!==null)whole(script,name);return script;};
 
 export class TouhouHud {
-  constructor({bank,textBank=null,font,character=0,difficulty=1,lives=2,bombs=2,maximumLives=7,maximumBombs=7}={}) {
-    this.bank=bank;this.textBank=textBank;this.font=font;this.roots=[bank.create(0,{secondary:true}),bank.create(100),bank.create(difficulty+75),bank.create(character+101)];
+  constructor({bank,textBank=null,font,character=0,difficulty=1,lives=2,bombs=2,rules={},maximumLives,maximumBombs,
+    maxPower,powerPerLevel,lifeFragmentThreshold,bombFragmentThreshold,characterScript,difficultyScript}={}) {
+    const r={...TOUHOU_PLAYER_RULES,...rules};
+    this.maximumLives=whole(maximumLives??r.maxLives,'maximumLives');this.maximumBombs=whole(maximumBombs??r.maxBombs,'maximumBombs');
+    this.maxPower=whole(maxPower??r.maxPower,'maxPower',1);this.powerPerLevel=whole(powerPerLevel??r.powerPerLevel,'powerPerLevel',1);
+    this.lifeFragmentThreshold=whole(lifeFragmentThreshold??r.lifeFragmentThreshold,'lifeFragmentThreshold',1);
+    this.bombFragmentThreshold=whole(bombFragmentThreshold??r.bombFragmentThreshold,'bombFragmentThreshold',1);
+    const difficultyLabel=label(difficultyScript,Number.isInteger(difficulty)&&difficulty>=0&&difficulty<=5?difficulty+75:null,'difficultyScript');
+    const characterLabel=label(characterScript,character===0||character===1?character+101:null,'characterScript');
+    this.bank=bank;this.textBank=textBank;this.font=font;this.roots=[bank.create(0,{secondary:true}),bank.create(100)];
+    if(difficultyLabel!==null)this.roots.push(bank.create(difficultyLabel));
+    if(characterLabel!==null)this.roots.push(bank.create(characterLabel));
     this.lifeIcons=Array.from({length:7},(_,i)=>bank.create(i+32,{secondary:true}));
     this.bombIcons=Array.from({length:7},(_,i)=>bank.create(i+40,{secondary:true}));
-    this.maximumLives=maximumLives;this.maximumBombs=maximumBombs;this.lastLife='';this.lastBomb='';
+    this.lastLife='';this.lastBomb='';this.lifeStock=null;this.bombStock=null;
     this.notices=[null,null];this.scoreDigits=[];this.timeAnimations=[];this.timeNotice=null;
     this.setLives(lives,0);this.setBombs(bombs,0);
   }
@@ -78,17 +91,19 @@ export class TouhouHud {
     const encoded=time.encodedTime,invalid=invalidTouhouSpellTime(encoded);
     row(invalid?999:(Math.trunc(encoded/100)%1000+934)%1000,invalid?99:(encoded%100+67)%100,160,((alpha<<24)|0x808080)>>>0);
   }
-  icons(entries,full,fragments,maximum) {
-    if(!Number.isInteger(maximum)||maximum<0||maximum>7||full>maximum||full< -1||fragments<0||fragments>=3)
-      throw new RangeError('Original HUD icon state outside seven slots / three fragments');
-    for(const vm of entries)vm.x=mul(7-maximum,28);
-    let i=0;for(;i<full;i++)entries[i].interrupt(2);
-    if(i<maximum)entries[i++].interrupt(fragments+7);
-    for(;i<maximum;i++)entries[i].interrupt(3);
+  icons(entries,full,fragments,maximum,threshold) {
+    whole(maximum,'maximum stock');whole(full,'stock',-1);whole(fragments,'fragments');whole(threshold,'fragment threshold',1);
+    const slots=Math.min(maximum,7),shown=Math.min(full,slots);
+    for(const vm of entries)vm.x=mul(7-slots,28);
+    let i=0;for(;i<shown;i++)entries[i].interrupt(2);
+    // Source artwork contains only thirds. Other thresholds use an empty next
+    // icon and their exact numeric fraction rather than a misleading picture.
+    if(i<slots)entries[i++].interrupt((threshold===3&&fragments<3?fragments:0)+7);
+    for(;i<slots;i++)entries[i].interrupt(3);
     for(;i<7;i++)entries[i].interrupt(5);
   }
-  setLives(full,fragments=0) {const key=`${full}:${fragments}:${this.maximumLives}`;if(key!==this.lastLife){this.icons(this.lifeIcons,full,fragments,this.maximumLives);this.lastLife=key;}}
-  setBombs(full,fragments=0) {const key=`${full}:${fragments}:${this.maximumBombs}`;if(key!==this.lastBomb){this.icons(this.bombIcons,full,fragments,this.maximumBombs);this.lastBomb=key;}}
+  setLives(full,fragments=0) {const key=`${full}:${fragments}:${this.maximumLives}:${this.lifeFragmentThreshold}`;if(key!==this.lastLife){this.icons(this.lifeIcons,full,fragments,this.maximumLives,this.lifeFragmentThreshold);this.lastLife=key;}this.lifeStock={full,fragments};}
+  setBombs(full,fragments=0) {const key=`${full}:${fragments}:${this.maximumBombs}:${this.bombFragmentThreshold}`;if(key!==this.lastBomb){this.icons(this.bombIcons,full,fragments,this.maximumBombs,this.bombFragmentThreshold);this.lastBomb=key;}this.bombStock={full,fragments};}
   update(state={}) {
     this.setLives(state.lives??2,state.lifeFragments??0);this.setBombs(state.bombs??2,state.bombFragments??0);
     for(const vm of [...this.roots,...this.lifeIcons,...this.bombIcons])vm.update();
@@ -104,12 +119,20 @@ export class TouhouHud {
     const put=(text,x,y,options={})=>this.font.draw(draw,text,{x,y,font:10,drawPriority:75,color:tint(0xff000000),shadowColor:tint(0xffffffff),...options});
     put(touhouGroupedScore(state.highScore??0,state.highScoreDigit??0),620,42,{alignX:2,color:tint(0xff707070),shadowColor:tint(0x80ffffff)});
     put(touhouGroupedScore(state.score??0,state.continues??0),620,64,{alignX:2,color:tint(0xff001080),shadowColor:tint(0xd0ffffff)});
-    put(String(state.lifeFragments??0).padStart(3,' '),576,120,{scaleX:.6});put('/3',597,120,{scaleX:.6});
-    put(String(state.bombFragments??0).padStart(3,' '),576,158,{scaleX:.6});put('/3',597,158,{scaleX:.6});
-    const power=Math.max(0,Math.min(400,state.power??100)),color=tint(0xff800000),shadowColor=tint(0x80ffd0d0);
-    put(`${Math.floor(power/100)}.`,540,182,{color,shadowColor});
-    put(String(power%100).padStart(2,'0'),560,189,{scaleX:.6,color,shadowColor});
-    put('/4.',574,182,{color,shadowColor});put('00',606,189,{scaleX:.6,color,shadowColor});
+    put(String(state.lifeFragments??0).padStart(3,' '),576,120,{scaleX:.6});put(`/${this.lifeFragmentThreshold}`,597,120,{scaleX:.6});
+    put(String(state.bombFragments??0).padStart(3,' '),576,158,{scaleX:.6});put(`/${this.bombFragmentThreshold}`,597,158,{scaleX:.6});
+    const life=state.lives??this.lifeStock.full,bomb=state.bombs??this.bombStock.full;
+    if(this.maximumLives>7||life>7)put(`${life}/${this.maximumLives}`,558,120,{alignX:2,scaleX:.6});
+    if(this.maximumBombs>7||bomb>7)put(`${bomb}/${this.maximumBombs}`,558,158,{alignX:2,scaleX:.6});
+    const power=Math.max(0,Math.min(this.maxPower,state.power??100)),color=tint(0xff800000),shadowColor=tint(0x80ffd0d0);
+    const parts=value=>[Math.floor(value/this.powerPerLevel),String(Math.floor((value%this.powerPerLevel)*100/this.powerPerLevel)).padStart(2,'0')];
+    const value=parts(power),maximum=parts(this.maxPower);
+    if(maximum[0]>9){put(`${value[0]}.${value[1]}/${maximum[0]}.${maximum[1]}`,620,182,{alignX:2,scaleX:.75,color,shadowColor});}
+    else{
+      put(`${value[0]}.`,540,182,{color,shadowColor});
+      put(value[1],560,189,{scaleX:.6,color,shadowColor});
+      put(`/${maximum[0]}.`,574,182,{color,shadowColor});put(maximum[1],606,189,{scaleX:.6,color,shadowColor});
+    }
     // Source field44 is the title-specific resource. It is deliberately absent
     // from the gameplay model; do not fabricate it as a generic point value.
     return draw;
