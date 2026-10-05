@@ -232,8 +232,16 @@ export class RushBattle {
       cancelCircle:(...args)=>this.playerAdapter.cancelBullets(...args),
       clearEnemies:()=>this.world.clear(e=>e.group==='actor')});
   }
-  beginPhase(index,{withEntry=false}={}) {
+  stopAttackCharges() {
     for(const charge of this.phaseCharges??[])charge.stop();this.phaseCharges=[];
+    if(!this.portrait)return;
+    // Source phase_script clears the old ECL tasks before running the next
+    // phase. Its detached ANMs keep their tails, but later repeat/release
+    // instructions and sounds must no longer run, including during BossDead.
+    for(const charge of this.presentation.charges){charge.effect.kill('phaseEnd');charge.display?.stop();}
+  }
+  beginPhase(index,{withEntry=false}={}) {
+    this.stopAttackCharges();
     if(index>=this.phases.length){this.finished=true;this.boss.alive=false;return;}
     this.phaseIndex=index;this.phase=this.phases[index];this.phaseFrame=0;this.phaseResult=null;this.state={};this.transition=0;this.dying=null;
     this.phaseEntry=null;this.phaseTimeline=null;this.phaseTiming=null;this.patternFrame=0;this.escaping=null;this.escaped=false;
@@ -285,6 +293,7 @@ export class RushBattle {
   }
   endPhase(reason) {
     if(this.transition||this.dying||this.escaping||this.finished)return;
+    this.stopAttackCharges();
     const p=this.phase;
     // Original mode2 ECL514 replaces any selected card's success target with
     // BossDead and its timeout target with BossEscapeSpell. A practiced card
@@ -295,7 +304,6 @@ export class RushBattle {
         this.boss.invulnerable=true;this.boss.checking=false;this.boss.primaryFlags=156;
         Object.assign(this.boss,{moving:false,vx:0,vy:0,fx:0,fy:0});
         this.world.clear(e=>e.group==='actor');this.finalCleanerPhase=this.phaseIndex;
-        for(const charge of this.phaseCharges??[])charge.stop();this.phaseCharges=[];
         const sequence=new TouhouBossDefeat({x:this.boss.x,y:this.playerYOffset-this.boss.y,
           delayFrames:p.deathDelay??60,rng:this.defeatRng,
           sound:(id,x)=>this.touhouResources.audio?.request(id,x),
@@ -312,9 +320,7 @@ export class RushBattle {
   }
   settlePhase(reason,{quiet=false}={}) {
     const p=this.phase;
-    // Ending the ECL-like preparation also cancels any future release birth;
-    // already spawned particles keep their independent animation lifetime.
-    for(const charge of this.phaseCharges??[])charge.stop();this.phaseCharges=[];
+    this.stopAttackCharges();
     const result=this.phaseResult??this.playerAdapter.endPhase({reason});
     const captured=!!result?.captured,bonus=result?.bonus??0;
     this.presentation.endPhase();
@@ -334,10 +340,6 @@ export class RushBattle {
       onMove:position=>{this.boss.x=position.x;this.boss.y=f(this.playerYOffset-position.y);},
       onEscape:()=>{this.escaping=null;this.escaped=true;this.finished=true;this.boss.alive=false;this.boss.visible=false;}});
     this.settlePhase(reason,{quiet:true});this.world.clear(e=>e.group==='actor');
-    // These content charge events belong to the terminated attack script.
-    // Their detached ANM tails may finish, but no late release or sound should
-    // be scheduled while the remaining projectiles continue moving.
-    for(const charge of this.presentation.charges){charge.effect.kill('escape');charge.display?.stop();}
     for(const charge of this.presentation.shared?.charges??[])charge.stop();
     Object.assign(this.boss,{hp:100000,maxHp:100000,invulnerable:true,checking:false,primaryFlags:156,
       moving:false,vx:0,vy:0,fx:0,fy:0});

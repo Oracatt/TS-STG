@@ -71,6 +71,8 @@ charge cue 的 `options` 可直接交给公共 `beginCharge()`。该 owner 自�
 
 聚能的可选 `clock` 绑定 `timeline.frame - cue.frame`，创建当帧也更新演出时不会把释放提前一帧。每阶段记录其聚能对象，阶段结束时调用 `stop()` 取消未来释放，已经生成的 ANM 正常退场；停止后的聚能不再读取旧阶段时钟，允许上层替换或重置阶段。
 
+这里要区分新阶段的准备和旧阶段残留：Sunny 第一符击破后，下一非符在同一帧创建68，是上表所列的原作行为；不能把它当作通用击破特效删掉。旧攻击的 `maple` 触发实体则必须随攻击停止。`enemy_damage.cpp::phase_script` 先清旧脚本，`enemy_adapter.cpp::clear_scripts` 同时清异步任务并重置主脚本，因此旧脚本尚未执行的聚能重复、释放和声音不会继续产生。Demo 的 `stopAttackCharges()` 同时停止准备时钟事件及这些内容触发实体，覆盖普通击破、超时和最终击破的死亡等待；已经生成的 ANM 继续收尾，不被强行抹掉。
+
 阶段总时钟与弹幕局部时钟分开。准备等待通常计入阶段时限，不能等第一发才开始倒计时。Artia 5/9/11 的映射来源额外在120帧移动及剧情后执行 `ins_513/514` 重置时限，私有配置以 `source.phaseClockStartFrame: 120` 标出此区别；这个具体脚本事实不变成公共库中的 Boss 特判。Demo 时限数值仍沿用当前内容配置，这份文档不声称复现完整 ECL VM。
 
 练习进入单卡跳过普通 `BossN` 包装，因此本配置返回 `null`。普通非符→符卡也不添加这套新非符准备或重设保护计时，符卡即刻从共用血环段界继续。独立尾卡、连续符卡和各卡内部的重复攻击不属于这10个非符包装，不从此表推断它们的时间。
@@ -82,5 +84,7 @@ charge cue 的 `options` 可直接交给公共 `beginCharge()`。该 owner 自�
 - 接入后的场景验证应同时观察新阶段首帧、保护结束、血环首次可见与实际首个生成弹体；只检查时钟对象或只把 HUD 提前显示，不能证明节奏正确。
 - [`rushboss-phase-rhythm.test.js`](../tests/rushboss-phase-rhythm.test.js)：40组实际首发、真实伤害批次切换、血环恢复、提前击破时聚能退场和 revision6 跨阶段录像。
 - [`verify-rushboss-phase-rhythm.mjs`](../tools/verify-rushboss-phase-rhythm.mjs)：9个原生关键帧场景，保留下一非符真实弹幕，检查两个后端的状态和图像一致。
+- [`rushboss-charge-retirement.test.js`](../tests/rushboss-charge-retirement.test.js)：旧攻击聚能的击破/超时/最终死亡等待取消、未生成重复的取消及已有粒子自然收尾。
+- [`verify-rushboss-charge-retirement.mjs`](../tools/verify-rushboss-charge-retirement.mjs)：Sunny 第一符提前击破后第1、60、100帧，验证旧攻击不迟发、新非符仍按原作聚能，并比较双后端状态和截图。
 
 这些检查是源码对照和本引擎行为验证；没有运行原作可执行文件，不构成原作全过程逐像素一致的声明。

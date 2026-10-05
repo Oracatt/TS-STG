@@ -119,7 +119,7 @@ test('current replays preserve a timeout handoff and the following source prepar
   try{
     tick(app,210);assert.equal(app.battle.phaseIndex,2);assert.ok(app.battle.phaseTimeline.attackStarted);assert.ok(app.battle.statistics.spawned>0);
     const expected=app.application.game.snapshot(),data=app.exportReplay();
-    assert.equal(RUSH_PORTRAIT_REPLAY_REVISION,15);assert.equal(data.config.revision,15);
+    assert.equal(RUSH_PORTRAIT_REPLAY_REVISION,16);assert.equal(data.config.revision,16);
     const old=structuredClone(data);old.config.revision=14;assert.throws(()=>app.playReplay(old),/different game revision/);
     app.playReplay(data);tick(app,data.frames);assert.equal(app.playback.desync,null);assert.equal(app.playback.finished,true);
     assert.deepEqual(app.application.game.snapshot(),expected);
