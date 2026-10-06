@@ -6,15 +6,15 @@ import {TouhouGameplayCompositor,TouhouRenderQueue,TouhouBulletField,TouhouSpell
 import {assertRenderScopes} from './fixtures/render-scopes.js';
 
 function drawState(commands){
-  let target=null,clip=null,blend=null;const result=[];
+  let target=null,clip=null,blend=null,pass=0;const result=[];
   for(const command of commands){
-    if(command[0]==='targetBegin')target=command[1];
+    if(command[0]==='targetBegin'){target=command[1];pass++;}
     else if(command[0]==='targetEnd')target=null;
     else if(command[0]==='scissor')clip=command.slice(1);
     else if(command[0]==='scissorEnd')clip=null;
     else if(command[0]==='blendFactors')blend=command.slice(1);
     else if(command[0]==='blendEnd')blend=null;
-    else if(command[0]==='rect'||command[0]==='sprite')result.push({command,target,clip,blend});
+    else if(command[0]==='rect'||command[0]==='sprite'||command[0]==='spriteRegion')result.push({command,target,clip,blend,pass});
   }
   return result;
 }
@@ -39,6 +39,61 @@ test('original composition captures p13 rings, warps before p16 aura, then separ
   for(const item of state.filter(item=>item.command[0]==='sprite'))
     assert.deepEqual(item.blend,['one','zero','add','one','zero','add'],'surface composition must preserve source alpha rather than fade it repeatedly');
   assert.equal(queue.entries.length,0);
+});
+
+test('third surface copy inherits gameplay shake with a 12-unit sampling margin while later frame and HUD remain fixed',()=>{
+  for(const {scale,viewport,width,height} of [
+    {scale:1.5,viewport:{x:48,y:24,width:576,height:672},width:960,height:720},
+    {scale:2,viewport:{x:100,y:60,width:768,height:896},width:1400,height:1000},
+  ]){
+    const queue=new TouhouRenderQueue(),draw=new DrawList(),offset={x:4,y:-2};
+    const compositor=new TouhouGameplayCompositor({renderTarget:71,compositeTarget:72,scale,viewport,width,height});
+    for(const [priority,texture] of [[30,101],[50,102],[68,103],[84,104],[81,105]])
+      queue.enqueuePriority(priority,target=>target.sprite(texture,120,230,32,32));
+    compositor.draw(draw,queue,{cameraOffset:offset});
+    assertRenderScopes(draw.commands);
+    const states=drawState(draw.commands),regions=states.filter(item=>item.command[0]==='spriteRegion');
+    assert.equal(regions.length,1,'only the third copy inherits the gameplay camera');
+    const copy=regions[0],margin=12*scale;
+    assert.equal(copy.pass,4);assert.equal(copy.target,72);
+    assert.deepEqual(copy.clip,[viewport.x,viewport.y,viewport.width,viewport.height]);
+    assert.deepEqual(copy.command,['spriteRegion',71,viewport.x-margin,viewport.y-margin,
+      viewport.width+2*margin,viewport.height+2*margin,
+      viewport.x+viewport.width/2+offset.x*scale,viewport.y+viewport.height/2+offset.y*scale,
+      viewport.width+2*margin,viewport.height+2*margin,0,0xffffffff],
+    'copy existing output pixels 1:1; do not apply the source ANM resolution scale again');
+    assert.deepEqual(copy.blend,['one','zero','add','one','zero','add']);
+    const fullCopies=states.filter(item=>item.command[0]==='sprite'&&[71,72].includes(item.command[1]));
+    assert.deepEqual(fullCopies.map(item=>[item.pass,item.target,item.command[1]]),[[2,72,71],[3,71,72],[4,72,71],[4,null,72]]);
+    for(const item of fullCopies){
+      assert.deepEqual(item.command.slice(2,6),[width/2,height/2,width,height]);
+      assert.equal(item.clip,null,'base and final copies retain their fixed placement');
+    }
+    const marker=texture=>states.find(item=>item.command[0]==='sprite'&&item.command[1]===texture);
+    assert.deepEqual(marker(101).command.slice(2,4),[120+offset.x*scale,230+offset.y*scale]);
+    assert.ok(states.indexOf(marker(101))<states.indexOf(copy),'earlier quads already contain their individual camera displacement');
+    assert.deepEqual(marker(102).command.slice(2,4),[120+offset.x*scale,230+offset.y*scale]);
+    assert.ok(states.indexOf(marker(102))>states.indexOf(copy),'post-copy effects receive only their own drawing offset');
+    for(const texture of [103,104]){
+      assert.deepEqual(marker(texture).command.slice(2,4),[120,230]);
+      assert.equal(marker(texture).target,null);assert.equal(marker(texture).clip,null);
+    }
+    assert.deepEqual(marker(105).command.slice(2,4),[120,230],'camera5 resets the spell-name drawing offset');
+    assert.deepEqual(marker(105).clip,[viewport.x,viewport.y,viewport.width,viewport.height]);
+  }
+});
+
+test('zero shake preserves the original full command stream without a regional surface copy',()=>{
+  const compose=cameraOffset=>{
+    const queue=new TouhouRenderQueue(),draw=new DrawList();
+    for(const priority of [13,30,50,68,84])queue.enqueuePriority(priority,target=>target.rect(priority,0,1,1,0xffffffff));
+    new TouhouGameplayCompositor({renderTarget:71,compositeTarget:72}).draw(draw,queue,{cameraOffset,
+      drawBackground:target=>target.rect(3,0,1,1,0xffffffff),
+      drawDistortion:target=>target.sprite(99,100,120,40,50)});
+    assertRenderScopes(draw.commands);return draw.commands;
+  };
+  const unshifted=compose();assert.deepEqual(compose({x:0,y:0}),unshifted);
+  assert.equal(unshifted.some(command=>command[0]==='spriteRegion'),false);
 });
 
 test('embedded bullet bodies use the BulletInf owner, while registered children and cancellation keep their callbacks',()=>{

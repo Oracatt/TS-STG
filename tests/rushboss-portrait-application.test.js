@@ -125,7 +125,7 @@ test('saved replay restores every effective session option after a fresh launch 
 
 test('replays before the source phase timeline are rejected before replacing the current game',{skip:!available},()=>{
   const f=setup({startBoss:0}),{app}=f;tick(app,120);const data=app.saveReplay(),current=app.application.game;
-  assert.equal(data.config.revision,17);const old=structuredClone(data);old.config.revision=16;
+  assert.equal(data.config.revision,18);const old=structuredClone(data);old.config.revision=17;
   assert.throws(()=>app.playReplay(old),/different game revision/);assert.equal(app.application.game,current);
   app.profile.replays=[{label:'earlier build',data:old}];app.application.openMenu();tick(app,132);
   app.application.menu.openUtilityPage(4);const list=app.application.menu.external.list;

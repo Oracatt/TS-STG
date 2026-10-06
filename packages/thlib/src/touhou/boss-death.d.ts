@@ -15,6 +15,9 @@ export interface TouhouBossDeathOptions {
   onBurst?: ((death: TouhouBossDeath) => void) | null;
   /** Visual RNG stream, kept independent from gameplay and ANM randomness. */
   rng?: Pick<TouhouRNG, 'next'>;
+  /** Optional fixed-frame clock for the screen-shake callback. Repeated updates
+   * in its birth frame never sample early; ANM roots retain their own updates. */
+  clock?: (() => number) | null;
 }
 /** Common Boss-only inversion plus particle burst; independent of enemy lifetime. */
 export class TouhouBossDeath {
@@ -22,6 +25,7 @@ export class TouhouBossDeath {
   bank: AnmBank; position: { x: number; y: number; z: number }; follow: TouhouBossDeathOptions['follow'];
   delayFrames: number; age: number; burst: boolean; alive: boolean; roots: AnmInstance[];
   cameraShake: TouhouScreenShake | null; readonly cameraOffset: { x: number; y: number };
+  clock: (() => number) | null;
   sound: TouhouBossDeathOptions['sound']; shake: TouhouBossDeathOptions['shake']; onBurst: TouhouBossDeathOptions['onBurst'];
   update(): this; draw(draw: DrawList, view?: AnmView): DrawList; destroy(): void; snapshot(): Record<string, unknown>;
 }

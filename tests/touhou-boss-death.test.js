@@ -83,7 +83,52 @@ test('source mode1 shake advances before choosing independent signed axes and re
   assert.equal(shake.alive, false); assert.deepEqual([shake.x, shake.y], [0, 0]);
 });
 
-test('shake offsets source quad paths once; projected type8, colored fans, screen HUD, scissors and target copies remain fixed', () => {
+test('immediate and delayed Boss explosions first sample shake on the update after birth and expire at age30', () => {
+  for (const delayFrames of [0, 60]) {
+    const effect = bank('effect'); let samples = 0;
+    const death = new TouhouBossDeath(effect, { delayFrames, rng: { next: () => { samples++; return 1; } } });
+    for (let frame = 0; frame < delayFrames; frame++) death.update();
+    assert.equal(death.burst, true);
+    assert.deepEqual([death.cameraShake.age, death.cameraOffset.x, death.cameraOffset.y, samples], [0, 0, 0, 0],
+      `delay ${delayFrames}: registering the shake during the enemy update does not run its earlier screen callback`);
+    death.update();
+    assert.equal(death.cameraShake.age, 1); assert.equal(death.cameraShake.amplitude, Math.fround(11.6));
+    assert.deepEqual([death.cameraOffset.x, death.cameraOffset.y, samples], [Math.fround(11.6), Math.fround(11.6), 2]);
+    for (let age = 2; age < 30; age++) death.update();
+    assert.equal(death.cameraShake.age, 29); assert.equal(death.cameraShake.alive, true);
+    death.update();
+    assert.deepEqual([death.cameraShake.age, death.cameraShake.alive, death.cameraOffset.x, death.cameraOffset.y, samples], [30, false, 0, 0, 58]);
+    assert.equal(death.alive, true, 'ending camera motion must not remove the longer ANM explosion tail');
+    death.update(); assert.equal(samples, 58, 'an expired shake consumes no further visual randomness');
+    death.destroy(); effect.dispose();
+  }
+});
+
+test('presentation clock skips the birth-frame shake sample and pauses its frame, offset and visual RNG together', () => {
+  const banks = { effect: bank('effect'), front: bank('front'), ascii_960: bank('ascii_960') }; let samples = 0;
+  const owner = new TouhouBossPresentation({ banks, manageSpell: false, manageHud: false,
+    visualRng: { next: () => { samples++; return 1; } } });
+  const death = owner.beginDeath({ delayFrames: 0 });
+  owner.update();
+  assert.deepEqual([owner.frame, death.cameraShake.age, samples], [1, 0, 0], 'same-frame presentation update does not advance the newly registered shake');
+  assert.deepEqual([owner.cameraOffset.x, owner.cameraOffset.y], [0, 0]);
+  for (let age = 1; age <= 30; age++) {
+    if (age === 1 || age === 2 || age === 30) {
+      const state = JSON.stringify(death.snapshot()), frame = owner.frame, before = samples;
+      for (let paused = 0; paused < 3; paused++) owner.update({ paused: true });
+      assert.equal(JSON.stringify(death.snapshot()), state); assert.equal(owner.frame, frame); assert.equal(samples, before);
+    }
+    owner.update(); assert.equal(death.cameraShake.age, age);
+    if (age === 1) {
+      assert.equal(death.cameraShake.amplitude, Math.fround(11.6));
+      assert.deepEqual([owner.cameraOffset.x, owner.cameraOffset.y, samples], [Math.fround(11.6), Math.fround(11.6), 2]);
+    }
+  }
+  assert.deepEqual([death.cameraShake.alive, owner.cameraOffset.x, owner.cameraOffset.y, samples], [false, 0, 0, 58]);
+  owner.destroy(); for (const value of Object.values(banks)) value.dispose();
+});
+
+test('individual shake offsets preserve type8 and fan geometry before the third copy moves the composed image', () => {
   const compositor = new TouhouGameplayCompositor({ renderTarget: 71, compositeTarget: 72 }), queue = new TouhouRenderQueue(), draw = new DrawList();
   const vertices = [[20, 30, 0, 0, 0xffffffff]], matrix = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
   const frozen = JSON.stringify({ vertices, matrix });
@@ -96,13 +141,16 @@ test('shake offsets source quad paths once; projected type8, colored fans, scree
     drawDistortion: target => target.sprite(15, 100, 120, 40, 50) });
   assert.equal(JSON.stringify({ vertices, matrix }), frozen);
   assert.deepEqual(draw.commands.filter(command => command[0] === 'rect' && command[3] === 1).map(command => command.slice(1, 3)),
-    [[9, 97], [5, 100], [19, 97], [36, 97], [56, 97], [63, 100], [65, 100], [68, 100], [87, 97], [84, 100], [98, 100]]);
+    [[9, 97], [5, 100], [19, 97], [36, 97], [56, 97], [63, 100], [65, 100], [68, 100], [81, 100], [84, 100], [98, 100]]);
   assert.deepEqual(draw.commands.find(command => command[0] === 'mesh' && command[1] === 11)[2], vertices);
   assert.deepEqual(draw.commands.find(command => command[0] === 'mesh' && command[1] === 14)[2][0], [26, 27, 0, 0, 0xffffffff]);
   assert.deepEqual(draw.commands.find(command => command[0] === 'mesh' && command[1] === 0)[2][0], vertices[0]);
   const projected = draw.commands.find(command => command[0] === 'mesh3d')[4];
   assert.deepEqual(projected, matrix);
   assert.deepEqual(draw.commands.find(command => command[0] === 'statefulQuad').slice(6, 8), [342, 21]);
+  // These fixed full-surface base copies and source geometry do not imply a
+  // fixed final background: priority48 moves their captured pixels as a unit.
   for (const command of draw.commands.filter(command => command[0] === 'sprite')) assert.deepEqual(command.slice(2, 4), command[1] === 15 ? [100, 120] : [480, 360]);
+  assert.deepEqual(draw.commands.find(command => command[0] === 'spriteRegion').slice(1, 10), [71, 30, 6, 612, 708, 342, 357, 612, 708]);
   for (const command of draw.commands.filter(command => command[0] === 'scissor')) assert.ok(command[1] === 24 || command[1] === 48);
 });

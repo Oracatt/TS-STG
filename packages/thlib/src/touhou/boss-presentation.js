@@ -226,7 +226,8 @@ export class TouhouBossPresentation {
     this.checkAlive();
     for (const charge of this.charges) charge.stop();
     const death = new TouhouBossDeath(this.banks.effect, { x: this.boss?.x ?? 0, y: this.boss?.y ?? 128,
-      z: this.boss?.z ?? 0, follow: this.boss, sound: this.context.sound, shake: this.context.shake, rng: this.visualRng, ...options });
+      z: this.boss?.z ?? 0, follow: this.boss, sound: this.context.sound, shake: this.context.shake, rng: this.visualRng,
+      clock: () => this.frame, ...options });
     this.deaths.push(death); return death;
   }
   get hasDeathEffects() { return this.deaths.some(death => death.alive); }

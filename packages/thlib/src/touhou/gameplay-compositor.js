@@ -11,8 +11,8 @@ import {TOUHOU_OWNER_PRIORITIES} from './render-order.js';
 import {add,mul} from './math.js';
 
 // Host-independent camera translation. Work on only newly emitted commands,
-// copy mutable geometry, and leave scissors/target copies at fixed viewport
-// coordinates. This corresponds to camera0/1/3/5's source screen-shake offsets;
+// copy mutable geometry, and leave scissors at fixed viewport coordinates.
+// This corresponds to camera0/1/3/5's source screen-shake offsets;
 // camera2/4 and full-screen HUD callbacks remain stationary.
 function translateCommands(commands,start,x,y){
   const vertices=values=>values.map(value=>[add(value[0],x),add(value[1],y),...value.slice(2)]);
@@ -29,7 +29,8 @@ function translateCommands(commands,start,x,y){
     // source submit_animation_quad and receive its camera offset. Type8 uses
     // projected_draw::p441f00's world matrix without that offset; colored fans
     // (including inversion26..30) and pretransformed strips likewise use only
-    // viewport placement. Do not translate those native mesh/mesh3d commands.
+    // viewport placement. Their pixels can still move in the third surface
+    // composition below; do not also translate their mesh/mesh3d commands.
     else if(type==='mesh'&&command[1]!==0&&command[2].length===4&&command[3].length===6)command[2]=vertices(command[2]);
     else continue;
     commands[i]=command;
@@ -57,6 +58,22 @@ export class TouhouGameplayCompositor {
     draw.sampler(texture,'point','clamp','clamp').blendFactors('one','zero','add','one','zero','add');
     draw.sprite(texture,this.width/2,this.height/2,this.width,this.height).blendEnd();
   }
+  _copyPlayfield(draw,texture,cameraOffset){
+    this._copy(draw,texture);
+    if(!cameraOffset||(!cameraOffset.x&&!cameraOffset.y))return;
+    // Source composite_third (priority48) draws text4/5/6 without resetting
+    // the camera0 offset left by the bullet owner at priority41. This moves
+    // the captured scene, including 3D background pixels, a second time.
+    // Those source sprites include 12 game units of sampling margin. Our
+    // surfaces are already at output resolution, so sample them 1:1; the
+    // final source composition crops to the playfield and keeps the frame.
+    const v=this.viewport,margin=mul(12,this.scale);
+    const x=v.x-margin,y=v.y-margin,width=v.width+2*margin,height=v.height+2*margin;
+    this._clipped(draw,v,()=>this._offset(draw,cameraOffset,()=>{
+      draw.sampler(texture,'point','clamp','clamp').blendFactors('one','zero','add','one','zero','add');
+      draw.spriteRegion(texture,x,y,width,height,x+width/2,y+height/2,width,height).blendEnd();
+    }));
+  }
   _opaqueCapture(draw){
     // graphics_callbacks.cpp composite_mask (priority 14): preserve RGB,
     // replace alpha with 255 before Boss strips sample this surface. Source
@@ -70,12 +87,14 @@ export class TouhouGameplayCompositor {
     if(minimumPriority>maximumPriority)return;
     // Scheduler ranges at camera switches. Full-screen callbacks interleaved
     // with the playfield HUD must not inherit a previous scissor rectangle.
-    for(const [low,high,rectangle]of [[-Infinity,9,null],[10,46,this.cameraViewport],
-      [47,62,this.viewport],[63,79,null],[80,83,this.viewport],[84,Infinity,null]]){
+    // Layers32/33 (and secondary49/50) use camera5 for clipping, then reset
+    // the drawing offset. Their spell-name HUD must not inherit camera shake.
+    for(const [low,high,rectangle,shake=true]of [[-Infinity,9,null],[10,46,this.cameraViewport],
+      [47,62,this.viewport],[63,79,null],[80,83,this.viewport,false],[84,Infinity,null]]){
       const minimum=Math.max(low,minimumPriority),maximum=Math.min(high,maximumPriority);
       if(minimum>maximum)continue;
       const flush=()=>queue.flush(draw,{minimumPriority:minimum,maximumPriority:maximum});
-      if(rectangle)this._clipped(draw,rectangle,()=>this._offset(draw,cameraOffset,flush));else flush();
+      if(rectangle)this._clipped(draw,rectangle,()=>shake?this._offset(draw,cameraOffset,flush):flush());else flush();
     }
   }
   draw(draw,queue,{drawBackground,drawDistortion,cameraOffset}={}){
@@ -100,7 +119,7 @@ export class TouhouGameplayCompositor {
     this._flush(draw,queue,14,24,cameraOffset);draw.targetEnd();
     draw.targetBegin(a,this.clearColor);this._copy(draw,b);
     this._flush(draw,queue,25,46,cameraOffset);draw.targetEnd();
-    draw.targetBegin(b,this.clearColor);this._copy(draw,a);
+    draw.targetBegin(b,this.clearColor);this._copyPlayfield(draw,a,cameraOffset);
     this._flush(draw,queue,47,65,cameraOffset);draw.targetEnd();
     draw.clear(this.clearColor);this._copy(draw,b);this._flush(draw,queue,66,Infinity,cameraOffset);return draw;
   }

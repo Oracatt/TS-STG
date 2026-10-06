@@ -84,7 +84,7 @@ charge cue 的 `options` 可直接交给公共 `beginCharge()`。该 owner 自�
 - [`touhou-boss-phase-timeline.test.js`](../tests/touhou-boss-phase-timeline.test.js)：门控边界、第0帧回调、同帧次序、reset、重复派发及非法时间。
 - [`rushboss-phase-timing-source.test.js`](../tests/rushboss-phase-timing-source.test.js)：10阶段四难度数据、练习跳过规则及本地只读 ECL 的逐行来源。
 - 接入后的场景验证应同时观察新阶段首帧、保护结束、血环首次可见与实际首个生成弹体；只检查时钟对象或只把 HUD 提前显示，不能证明节奏正确。
-- [`rushboss-phase-rhythm.test.js`](../tests/rushboss-phase-rhythm.test.js)：40组实际首发、真实伤害批次切换、血环恢复、提前击破时聚能退场和跨阶段录像。游戏回放修订为17，移除准备事件改变了时钟快照校验值，旧修订标为不可播放。
+- [`rushboss-phase-rhythm.test.js`](../tests/rushboss-phase-rhythm.test.js)：40组实际首发、真实伤害批次切换、血环恢复、提前击破时聚能退场和跨阶段录像。移除准备事件及修正爆炸震屏时序后，游戏回放修订为18；时钟和视觉状态校验值发生变化，旧修订标为不可播放。
 - [`verify-rushboss-phase-rhythm.mjs`](../tools/verify-rushboss-phase-rhythm.mjs)：9个原生关键帧场景，保留下一非符真实弹幕，检查两个后端的状态和图像一致。
 - [`rushboss-charge-retirement.test.js`](../tests/rushboss-charge-retirement.test.js)：旧攻击聚能的击破/超时/最终死亡等待取消、未生成重复的取消及已有粒子自然收尾。
 - [`verify-rushboss-charge-retirement.mjs`](../tools/verify-rushboss-charge-retirement.mjs)：Sunny 第一符提前击破后检查旧攻击停止、蓝紫准备省略、绿色攻击聚能及释放时间，并比较双后端状态和截图。

@@ -10,6 +10,7 @@ export class TouhouGameplayCompositor {
  renderTarget:number|null;compositeTarget:number|null;viewport:TouhouCompositorViewport;cameraViewport:TouhouCompositorViewport;
  width:number;height:number;scale:number;clearColor:number;
  draw(draw:DrawList,queue:LayeredDrawQueue,options?:{drawBackground?:(draw:DrawList)=>void;drawDistortion?:(draw:DrawList,backgroundTexture:number)=>void;
- /** Original game-unit camera0/1/3/5 displacement. The frame and screen HUD stay fixed. */
+ /** Original game-unit camera displacement, including the third surface copy
+  * when both render targets are provided. The frame and screen HUD stay fixed. */
  cameraOffset?:{x:number;y:number}}):DrawList;
 }
