@@ -11,6 +11,11 @@ test('new nonspells select the common clock with private source timings and meas
   for (const [boss, rows] of Object.entries(expected)) for (const [number, attackStartFrame] of Object.entries(rows)) {
     const template = RUSH_BOSS_PHASE_TIMING_PROFILES[boss][number]; count++;
     assert.ok(Object.isFrozen(template));
+    assert.equal(template.cues.some(cue=>[68,79].includes(cue.script)),false,'the demo omits blue/magenta handoff effects');
+    assert.ok(template.cues.every(cue=>cue.frame>=template.source.phaseClockStartFrame+120),
+      'the removed preparation must not retain an early charge or release sound cue');
+    assert.deepEqual(template.cues.map(cue=>[cue.script,cue.sound]),boss==='artia'?[]:[[72,54],[89,6]],
+      'only the explicit attack charge and release remain');
     for (let difficulty = 0; difficulty < 4; difficulty++) {
       const entry = rushBossPhaseTiming(boss, Number(number), difficulty);
       assert.equal(entry.attackStartFrame, attackStartFrame);
@@ -26,7 +31,7 @@ test('new nonspells select the common clock with private source timings and meas
 });
 
 const reference = process.env.TOUHOU20_REFERENCE ?? path.resolve('../Touhou20Reconstruction');
-test('preparation cues and first-emission sites match the original ECL', {
+test('retained attack cues and first-emission sites match the original ECL', {
   skip: !fs.existsSync(path.join(reference, 'scripts/recovered/ecl/st03bs.ecl.txt')),
 }, () => {
   const sources = new Map();
@@ -38,8 +43,8 @@ test('preparation cues and first-emission sites match the original ECL', {
       assert.equal(line(cue.sourceLine), `ins_307(1, ${cue.script});`, `${source.file}:${cue.sourceLine}`);
       assert.equal(line(cue.sourceLine + 1), `ins_516(${cue.sound});`);
       if (cue.type === 'charge') {
-        // Boss5 inserts a stage-specific message after the sound. That message
-        // does not delay the original script; the next actual wait remains90.
+        // Keep the source wait for retained attack charges. The separate
+        // blue/magenta preparation has deliberately been omitted by the demo.
         const following = lines.slice(cue.sourceLine + 1, cue.sourceLine + 5).join('\n');
         assert.ok(following.includes(`ins_23(${cue.options.releaseFrame});`));
       }

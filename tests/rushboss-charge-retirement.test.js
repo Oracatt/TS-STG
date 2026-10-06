@@ -15,7 +15,7 @@ function fixture(spellIndex=1){
   return{battle,sounds,dispose(){battle.dispose();resources.dispose();}};
 }
 
-for(const reason of ['defeated','timeout'])test(`a ${reason} spell retires its old charge while the next nonspell keeps its source preparation`,()=>{
+for(const reason of ['defeated','timeout'])test(`a ${reason} spell retires its old charge and waits for the next nonspell's retained attack charge`,()=>{
   const f=fixture(),b=f.battle;
   try{
     tick(b,5);
@@ -24,15 +24,20 @@ for(const reason of ['defeated','timeout'])test(`a ${reason} spell retires its o
     b.endPhase(reason);
     assert.equal(b.phaseIndex,2);assert.equal(old.effect.alive,false);assert.equal(old.display.stopped,true);
     assert.ok(particles.some(vm=>vm.alive),'phase termination leaves already spawned ANMs alive');
-    const next=b.phaseCharges[0];
-    assert.deepEqual(next.roots.map(vm=>vm.scriptId),[68],'the next nonspell explicitly starts its own original preparation');
-    assert.equal(next.stopped,false);f.sounds.length=0;
+    assert.equal(b.phaseCharges.length,0,'handoff no longer creates a blue charge');f.sounds.length=0;
     b.update();assert.ok(particles.some(vm=>vm.alive),'existing particles continue their normal animation');
     tick(b,79);
     assert.equal(old.display.released,false,'the old spell must not emit its pending release in the following phase');
     assert.ok(!f.sounds.includes('se_enep02'),'a canceled charge must not play its release sound');
-    assert.equal(next.released,false);tick(b,10);assert.equal(next.released,true,'the new preparation still releases at its own frame90');
-    tick(b,110);
+    tick(b,39);assert.equal(b.phaseFrame,119);assert.equal(b.phaseCharges.length,0);
+    b.update();const next=b.phaseCharges[0];
+    assert.equal(b.phaseFrame,120);assert.deepEqual(next.roots.map(vm=>vm.scriptId),[72]);
+    assert.equal(next.stopped,false);assert.equal(next.released,false);
+    tick(b,59);assert.equal(next.released,false);
+    b.update();assert.equal(b.phaseFrame,180);assert.equal(next.released,true,'the attack charge retains its frame180 release');
+    assert.ok(next.roots.some(vm=>vm.scriptId===89));
+    assert.equal(b.presentation.shared.charges.some(charge=>charge.color==='blue'||charge.releaseColor==='magenta'),false);
+    tick(b,20);
     assert.equal(old.display.alive,false);assert.ok(particles.every(vm=>!vm.alive),'detached tails retire naturally');
   }finally{f.dispose();}
 });

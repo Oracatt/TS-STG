@@ -42,6 +42,8 @@ node tools/import-rushboss-dialogue.mjs D:\c++\TouhouRushBoss-main
 
 Boss 演出使用公共 `TouhouBossPresentation`：800粒子的黑雾出场、常驻光环99/108、开卡6→4/5双圈、13号 SpellCardAttack、原作字体和倒计时、七色攻击聚能/释放、死亡反色和冰雾预置体、17×17背景扭曲。每条激光的起点直接使用公共 `createTouhouLaserOrigin`（bullet58–73、绘制优先级39），与 `TouhouLaserField` 使用同一初始化；保留原始脉动和旋转。三个 Boss 的实际精灵、对白右侧立绘及开卡 cut-in 使用 Rush 原图与业务动画。
 
+Demo 按用户要求省略符卡击破或超时换段后的蓝紫准备聚能及其音效，保留攻击前的绿色聚能、原有阶段等待和发弹时间。此选择只在 Demo 阶段配置中实现，thlib 的聚能预置体保持完整。详见 [阶段切换节奏](../../docs/rushboss-phase-rhythm.md)。
+
 普通对白的 reveal 事件触发黑雾，在第101帧露出本体、第102帧启用光环/扭曲；即使提前跳完对白也要等待显形后才开战。显式跳过对白与符卡练习使用可见的 `flyIn`。名字下的星星和分段血条直接使用公共 `TouhouBossPhasePlan` 与 `TouhouBossHud` 的默认规则，按阶段实际 HP 计算，不读取 Rush `lifeBar` 比例。非符与下一张符卡共用血环，连续独立符卡各自一条血环；练习仅显示所选符卡，无后续星。生存符只隐藏血环，保留倒计时。入口改变了战斗开始帧，输入录像格式的游戏修订升为2，旧修订保留在列表并标为不可播放。
 
 Rush 的直线及曲线激光沿用公共材质/判定，并按原 Rush `BLEND_STATE_BRIGHTEN` 使用 RGB `SRC_ALPHA / ONE`、Alpha `ONE / ONE` 的叠加。混合状态在每束绘制后恢复；`createRushPortraitGame(host,{laserBlend:'alpha'})` 或单束 `laserBlend` 可覆盖业务皮肤，不改变公共 thlib 激光动画的默认混合。源码依据为 Rush `EnemyBulletDeriver.h` 的 `highLight`、`GameScene.cpp` 的高亮队列，以及 VirtualLib `Renderer.cpp` 的混合因子。

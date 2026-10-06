@@ -52,7 +52,7 @@ test('a real capped player damage batch enters the next nonspell immediately, th
     assert.equal(b.results.length,1);assert.equal(b.transition,0);assert.equal(b.phaseFrame,0);assert.equal(b.patternFrame,0);
     assert.equal(b.phaseTimeline.frame,0);assert.equal(b.boss.hp,b.boss.maxHp);
     assert.equal(b.boss.damageInvulnerability.current,119,'the same damage pass consumes the first protection tick');
-    assert.equal(panel.animations.length,0);assert.ok(created.some(v=>v.script===68&&v.phase===2&&v.frame===0));
+    assert.equal(panel.animations.length,0);assert.equal(b.phaseCharges.length,0,'handoff does not start a blue preparation charge');
     const priorFraction=panel.fraction,spawned=b.statistics.spawned;
     for(let offset=1;offset<=118;offset++){
       b.update();assert.equal(panel.animations.length,0);assert.equal(b.statistics.spawned,spawned);
@@ -65,6 +65,8 @@ test('a real capped player damage batch enters the next nonspell immediately, th
     b.update();assert.ok(created.some(v=>v.script===72&&v.phase===2&&v.frame===120));
     tick(b,59);assert.equal(b.phaseFrame,179);assert.equal(b.statistics.spawned,spawned);assert.equal(panel.fraction,1);
     b.update();assert.equal(b.phaseFrame,180);assert.ok(b.statistics.spawned>spawned);
+    assert.ok(created.some(v=>v.script===89&&v.phase===2&&v.frame===180),'the retained attack charge releases with the first bullets');
+    assert.equal(created.some(v=>[68,79].includes(v.script)&&v.phase===2),false,'the blue/magenta handoff animation is omitted');
     assert.equal(b.presentation.charges.length,0,'only public source charge cues own this opening');
   }finally{b.dispose();resources.dispose();}
 });
@@ -119,8 +121,8 @@ test('current replays preserve a timeout handoff and the following source prepar
   try{
     tick(app,210);assert.equal(app.battle.phaseIndex,2);assert.ok(app.battle.phaseTimeline.attackStarted);assert.ok(app.battle.statistics.spawned>0);
     const expected=app.application.game.snapshot(),data=app.exportReplay();
-    assert.equal(RUSH_PORTRAIT_REPLAY_REVISION,16);assert.equal(data.config.revision,16);
-    const old=structuredClone(data);old.config.revision=14;assert.throws(()=>app.playReplay(old),/different game revision/);
+    assert.equal(RUSH_PORTRAIT_REPLAY_REVISION,17);assert.equal(data.config.revision,17);
+    const old=structuredClone(data);old.config.revision=16;assert.throws(()=>app.playReplay(old),/different game revision/);
     app.playReplay(data);tick(app,data.frames);assert.equal(app.playback.desync,null);assert.equal(app.playback.finished,true);
     assert.deepEqual(app.application.game.snapshot(),expected);
   }finally{app.destroy();resources.dispose();}

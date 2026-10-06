@@ -4,6 +4,8 @@
 
 本次对齐的是**符卡击破后进入新非符血组**的准备、血环出现与第一发弹幕的先后关系。普通非符转符卡继续使用同一组剩余血环；血环贴图采样的修复与血环是否归一化是两件独立的事。单卡练习仍使用独立满环。见 [血环说明](touhou-boss-hud.md) 和 [血量映射](rushboss-source-health.md)。
 
+按用户要求，Demo 省略换段准备中的蓝色聚能68、品红释放79及其配套音效。原有等待、移动、伤害保护和首发时间保持不变，攻击前的绿色72→黄色89聚能仍然保留。公共 thlib 的七色聚能预置体不受此 Demo 选择影响。以下原作表格记录的是来源行为，不代表 Demo 仍播放蓝紫准备特效。
+
 ## 原作如何切换
 
 只读参考根目录为 `D:/AIWorkspace/Touhou20Reconstruction`。
@@ -46,7 +48,7 @@
 
 六面的 `Boss2/Boss4` 在90＋30准备后直接生成弹幕，血环开始恢复的同时攻击即可开始，不应额外强制等待血环填满。`Boss3/Boss5` 则先有120帧移动、锦上京专属剧情，再开始90＋30准备。本 Demo 保留这120帧移动时间，只使用 Rush 自己的对话，省略锦上京剧情；240是**省略这段剧情等待后的映射值**，不是原作完整剧情的固定总耗时。
 
-完整源行记录在配置中，包括聚能 ANM、音效、攻击协程调用与首个弹体生成指令。此处“第一发”指创建弹体或激光，并不等同于弹雾结束或判定开启。
+配置记录保留的攻击聚能 ANM、音效、攻击协程调用与首个弹体生成指令的源行。此处“第一发”指创建弹体或激光，并不等同于弹雾结束或判定开启。
 
 ## 接入约定
 
@@ -71,7 +73,7 @@ charge cue 的 `options` 可直接交给公共 `beginCharge()`。该 owner 自�
 
 聚能的可选 `clock` 绑定 `timeline.frame - cue.frame`，创建当帧也更新演出时不会把释放提前一帧。每阶段记录其聚能对象，阶段结束时调用 `stop()` 取消未来释放，已经生成的 ANM 正常退场；停止后的聚能不再读取旧阶段时钟，允许上层替换或重置阶段。
 
-这里要区分新阶段的准备和旧阶段残留：Sunny 第一符击破后，下一非符在同一帧创建68，是上表所列的原作行为；不能把它当作通用击破特效删掉。旧攻击的 `maple` 触发实体则必须随攻击停止。`enemy_damage.cpp::phase_script` 先清旧脚本，`enemy_adapter.cpp::clear_scripts` 同时清异步任务并重置主脚本，因此旧脚本尚未执行的聚能重复、释放和声音不会继续产生。Demo 的 `stopAttackCharges()` 同时停止准备时钟事件及这些内容触发实体，覆盖普通击破、超时和最终击破的死亡等待；已经生成的 ANM 继续收尾，不被强行抹掉。
+这里要区分新阶段的准备和旧阶段残留：Sunny 第一符击破后同帧创建68的来源是下一非符准备脚本。Demo 按用户要求不再创建它；后续第120帧的攻击聚能仍按原时钟启动。旧攻击的 `maple` 触发实体则必须随攻击停止。`enemy_damage.cpp::phase_script` 先清旧脚本，`enemy_adapter.cpp::clear_scripts` 同时清异步任务并重置主脚本，因此旧脚本尚未执行的聚能重复、释放和声音不会继续产生。Demo 的 `stopAttackCharges()` 同时停止准备时钟事件及这些内容触发实体，覆盖普通击破、超时和最终击破的死亡等待；已经生成的 ANM 继续收尾，不被强行抹掉。
 
 阶段总时钟与弹幕局部时钟分开。准备等待通常计入阶段时限，不能等第一发才开始倒计时。Artia 5/9/11 的映射来源额外在120帧移动及剧情后执行 `ins_513/514` 重置时限，私有配置以 `source.phaseClockStartFrame: 120` 标出此区别；这个具体脚本事实不变成公共库中的 Boss 特判。Demo 时限数值仍沿用当前内容配置，这份文档不声称复现完整 ECL VM。
 
@@ -82,9 +84,9 @@ charge cue 的 `options` 可直接交给公共 `beginCharge()`。该 owner 自�
 - [`touhou-boss-phase-timeline.test.js`](../tests/touhou-boss-phase-timeline.test.js)：门控边界、第0帧回调、同帧次序、reset、重复派发及非法时间。
 - [`rushboss-phase-timing-source.test.js`](../tests/rushboss-phase-timing-source.test.js)：10阶段四难度数据、练习跳过规则及本地只读 ECL 的逐行来源。
 - 接入后的场景验证应同时观察新阶段首帧、保护结束、血环首次可见与实际首个生成弹体；只检查时钟对象或只把 HUD 提前显示，不能证明节奏正确。
-- [`rushboss-phase-rhythm.test.js`](../tests/rushboss-phase-rhythm.test.js)：40组实际首发、真实伤害批次切换、血环恢复、提前击破时聚能退场和 revision6 跨阶段录像。
+- [`rushboss-phase-rhythm.test.js`](../tests/rushboss-phase-rhythm.test.js)：40组实际首发、真实伤害批次切换、血环恢复、提前击破时聚能退场和跨阶段录像。游戏回放修订为17，移除准备事件改变了时钟快照校验值，旧修订标为不可播放。
 - [`verify-rushboss-phase-rhythm.mjs`](../tools/verify-rushboss-phase-rhythm.mjs)：9个原生关键帧场景，保留下一非符真实弹幕，检查两个后端的状态和图像一致。
 - [`rushboss-charge-retirement.test.js`](../tests/rushboss-charge-retirement.test.js)：旧攻击聚能的击破/超时/最终死亡等待取消、未生成重复的取消及已有粒子自然收尾。
-- [`verify-rushboss-charge-retirement.mjs`](../tools/verify-rushboss-charge-retirement.mjs)：Sunny 第一符提前击破后第1、60、100帧，验证旧攻击不迟发、新非符仍按原作聚能，并比较双后端状态和截图。
+- [`verify-rushboss-charge-retirement.mjs`](../tools/verify-rushboss-charge-retirement.mjs)：Sunny 第一符提前击破后检查旧攻击停止、蓝紫准备省略、绿色攻击聚能及释放时间，并比较双后端状态和截图。
 
 这些检查是源码对照和本引擎行为验证；没有运行原作可执行文件，不构成原作全过程逐像素一致的声明。
