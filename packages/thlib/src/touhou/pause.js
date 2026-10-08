@@ -2,12 +2,13 @@
 // The six choices and confirmation delays use original front.anm scripts.
 import {Keys} from '../index.js';
 import {TouhouButtons} from './menu.js';
+import {TouhouRenderQueue} from './render-queue.js';
 
 const childrenByChoice=[[],[0x78,0x7e,0x84,0x87,0x89],[0x79,0x7f,0x8a],[0x7a,0x80],[0x7b,0x81],[0x7c]];
 export class TouhouPause {
   constructor({bank,sound,onResume,onExit,onRestart,onReplay,onOptions,onManual,restart=false,continues=0,initialMask=0,drawBackground,capture}={}){
     Object.assign(this,{bank,sound,onResume,onExit,onRestart,onReplay,onOptions,onManual,restart,continues,drawBackground,capture});this.capture?.capture();
-    this.buttons=new TouhouButtons();this.buttons.update(initialMask);this.active=true;this.phase=0;this.age=1;this.selection=0;this.savedSelection=0;this.count=6;this.panelVisible=true;this.external=null;
+    this.buttons=new TouhouButtons();this.buttons.update(initialMask);this.active=true;this.phase=0;this.age=1;this.selection=0;this.savedSelection=0;this.count=6;this.panelVisible=true;this.external=null;this.renderQueue=new TouhouRenderQueue();
     this.excluded=new Set();for(const [choice,callback]of[[1,onExit],[2,onReplay],[3,onManual],[4,onOptions],[5,onRestart]])if(!callback)this.excluded.add(choice);
     if(restart){this.excluded.add(2);this.excluded.add(3);}if(continues>0)this.excluded.add(2);
     this.panel=bank.create(restart?0x91:0x90,{secondary:true});this.panel.interrupt(3,true);this.sound?.(14);
@@ -71,7 +72,9 @@ export class TouhouPause {
     if(!this.active)return draw;
     // Hosts without pixel services can supply an explicit presentation fallback.
     if(this.capture)this.capture.draw(draw);else if(this.drawBackground)this.drawBackground(draw,this);else draw.rect(48,24,576,672,0x00000080);
-    if(this.panelVisible)this.panel.draw(draw,{x:0,y:0,scale:1,screenScale:1.5});
+    // Secondary ANM layers use callback priorities, not their raw layer IDs.
+    const queue=this.renderQueue.reset();
+    if(this.panelVisible)this.panel.draw(queue,{x:0,y:0,scale:1,screenScale:1.5});queue.flush(draw);
     this.external?.draw?.(draw);return draw;
   }
   snapshot(){return{active:this.active,phase:this.phase,age:this.age,selection:this.selection,count:this.count,excluded:[...this.excluded],panelVisible:this.panelVisible};}

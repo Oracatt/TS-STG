@@ -1,5 +1,6 @@
 import { Keys } from '../index.js';
 import { TouhouButtons } from './menu.js';
+import { TouhouRenderQueue } from './render-queue.js';
 import { f32, sub, mul } from './math.js';
 
 export const TOUHOU_INITIAL_CREDITS = Object.freeze([5, 5, 5, 5, 0, 0]);
@@ -51,7 +52,7 @@ export class TouhouGameOver {
     session.difficulty ??= 1; session.stage ??= 1; session.mode ??= 0; session.continues = clamp(session.continues ?? 0, 0, 9);
     session.credits ??= TOUHOU_INITIAL_CREDITS[session.difficulty] ?? 0; session.highScore ??= 0;
     this.buttons = new TouhouButtons(); this.buttons.update(initialMask); this.active = true; this.phase = completed ? 3 : 2;
-    this.age = 0; this.selection = 0; this.panel = null; this.panelVisible = true; this.excluded = new Set(); this.external = null;
+    this.age = 0; this.selection = 0; this.panel = null; this.panelVisible = true; this.excluded = new Set(); this.external = null; this.renderQueue = new TouhouRenderQueue();
     this.rank = -1; this.nameCursor = 0; this.playerName = String(savedName).slice(0, 8).padEnd(8, ' '); this.nameLength = this.playerName.trimEnd().length;
     if (this.playerName !== '        ') this.nameCursor = TOUHOU_NAME_CHARACTERS.length - 1;
     if (restart) { this.active = false; onScene?.(4, true); onExit?.(); return; }
@@ -159,7 +160,9 @@ export class TouhouGameOver {
   draw(draw) {
     if (!this.active) return draw;
     this.drawBackground?.(draw, this);
-    if (this.panelVisible) this.panel?.draw(draw, { x: 0, y: 0, scale: 1, screenScale: 1.5 });
+    // Keep this panel's registered ANM ordering separate from font/external UI.
+    const queue = this.renderQueue.reset();
+    if (this.panelVisible) this.panel?.draw(queue, { x: 0, y: 0, scale: 1, screenScale: 1.5 }); queue.flush(draw);
     const write = (text, x, y, color = 0xffffffff) => this.font?.draw(draw, text, { x, y, font: 0, color });
     if (this.phase === 15) {
       write('            Score Ranking!!', 48, 64);
