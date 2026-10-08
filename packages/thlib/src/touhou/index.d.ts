@@ -59,5 +59,6 @@ export * from './title-background.js';
 export * from './world.js';
 export * from './phase-sequence.js';
 export * from './player-rules.js';
+export * from './point-value.js';
 export * from './player-profile.js';
 export * from './anm-render.js';

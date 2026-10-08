@@ -33,7 +33,7 @@ export const TOUHOU_VIEWPORT=Object.freeze({x:48,y:24,width:576,height:672});
 export class TouhouGame {
   constructor({banks,font,sht,styles,character=0,difficulty=1,power,stage=null,
     renderTarget=null,compositeTarget=null,renderBackground,onSound,onStopSound,onEvent,onExit,onRestart,onReplay,onOptions,onManual,pauseBackground,pauseCapture,itemsFactory,
-    seed=1,rng=new TouhouRNG(seed),visualRng=new TouhouRNG(seed),spellOptions={},spellContext={},session={},gameOverOptions={},
+    seed=1,rng=new TouhouRNG(seed),visualRng=new TouhouRNG(seed),spellOptions={},spellContext={},session={},gameOverOptions={},pauseOptions={},
     view=TOUHOU_GAME_VIEW,viewport=TOUHOU_VIEWPORT,disposeBanks=false,onDestroy,bossPresentationOptions={},onBossDefeated=null,
     world,bounds,systemOptions={},factories={},onSpellTimeout=finishTimedOutSpell}={}) {
     if(onBossDefeated!==null&&typeof onBossDefeated!=='function')throw new TypeError('onBossDefeated must be a function or null');
@@ -45,7 +45,7 @@ export class TouhouGame {
     const create=(name,Type,options)=>this.createSystem(name,Type,options);
     Object.assign(this,{banks,font,difficulty,stage,renderTarget,renderBackground,onSound,onStopSound,onEvent,onExit,onRestart,onReplay,onOptions,onManual,pauseBackground,pauseCapture});
     this.rng=rng;this.visualRng=visualRng;this.view=view;this.viewport=viewport;this.disposeBanks=disposeBanks;this.onDestroy=onDestroy;this.destroyed=false;
-    this.session={difficulty,stage:1,mode:0,continues:0,...session};this.gameOverOptions=gameOverOptions;this.pendingGameOver=false;
+    this.session={difficulty,stage:1,mode:0,continues:0,...session};this.gameOverOptions=gameOverOptions;this.pauseOptions=pauseOptions;this.pendingGameOver=false;
     this.player=create('player',TouhouPlayer,{character,sht,bank:character===0?banks.pl00:character===1?banks.pl01:undefined,effectBank:banks.effect,power,rng,world:this.world});
     this.player.score??=0;this.player.lifeFragments??=0;this.player.bombFragments??=0;
     this.bullets=create('bullets',TouhouBulletField,{bank:banks.bullet,styles,random:rng,visualRandom:visualRng,world:this.world});
@@ -288,9 +288,10 @@ export class TouhouGame {
     if(this.destroyed)return;
     this.buttons.update(mask);
     if(!this.paused&&(this.buttons.pressed&Keys.PAUSE)&&this.frame>29){
-      this.paused=true;this.pauseVisual=new TouhouPause({bank:this.banks.front,initialMask:mask,continues:this.player.continues??0,
-        sound:id=>this.onSound?.(id,0),onResume:()=>{this.paused=false;},onExit:this.onExit,onRestart:this.onRestart,
-        onReplay:this.onReplay,onOptions:this.onOptions,onManual:this.onManual,drawBackground:this.pauseBackground,capture:this.pauseCapture});return;
+      this.paused=true;this.pauseVisual=new TouhouPause({continues:this.player.continues??0,
+        sound:id=>this.onSound?.(id,0),onExit:this.onExit,onRestart:this.onRestart,
+        onReplay:this.onReplay,onOptions:this.onOptions,onManual:this.onManual,drawBackground:this.pauseBackground,...this.pauseOptions,
+        bank:this.banks.front,initialMask:mask,capture:this.pauseCapture,onResume:()=>{this.paused=false;this.pauseOptions.onResume?.();}});return;
     }
     if(this.paused){this.pauseVisual.update(mask);if(this.pauseVisual instanceof TouhouGameOver)this.pauseCapture?.update();if(!this.pauseVisual.active)this.paused=false;return;}
     // Existing source helper actors run before projectile movement. A defeat

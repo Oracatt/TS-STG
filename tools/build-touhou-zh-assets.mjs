@@ -60,8 +60,8 @@ const cells=[
   cell('fragments','front',7,'data/front/front00.png',rect(576,108,80,36),'碎片'),
   cell('bombs','front',8,'data/front/front00.png',rect(656,0,176,36),'Spell Card'),
   cell('power','front',11,'data/front/front00.png',rect(664,108,144,36),'灵力'),
-  cell('point-value','front',186,'data/front/front00.png',rect(704,72,128,36),'最大得点'),
-  cell('graze','front',187,'data/front/front00.png',rect(704,36,128,36),'Graze'),
+  cell('point-value','front',186,'data/front/front00.png',rect(664,72,168,36),'最大得点',{displayHeight:36}),
+  cell('graze','front',187,'data/front/front00.png',rect(704,36,128,36),'Graze',{displayHeight:36}),
   cell('spell-time','front',56,'data/front/front00.png',rect(672,608,128,64),'击破时间 / 实际时间'),
   cell('reimu-name','front',73,'data/title/title_pl00c.png',rect(383,80,222,58),'博丽 灵梦'),
   cell('marisa-name','front',74,'data/title/title_pl01c.png',rect(363,80,275,58),'雾雨 魔理沙'),
@@ -142,11 +142,15 @@ export function appendTouhouChineseAssets({files,manifest,source=assetRoot}={}){
         for(const r of spec.baseRegions)copyRect(input,{...r,x:old.x+r.x,y:old.y+r.y},spec.image,r.x,r.y);}
       const atlas=packCells(specs),entryIndex=bank.entries.length,file=`locales/zh-CN/textures/${name}.png`,mappings=[];
       for(const {spec,x,y}of atlas.placements)for(const sprite of spec.sprites){const old=bank.sprites[sprite];assert.ok(old&&!old.excluded&&old.width>0&&old.height>0,`Missing semantic sprite ${name}:${sprite}`);
-        const scale=Math.min(old.width*(old.scaleX??1)/spec.image.width,old.height*(old.scaleY??1)/spec.image.height);
+        // These two appended labels originally used much narrower LuaSTG
+        // artwork. Match the shared 36-pixel label height rather than shrinking
+        // the original TH16 lettering to that unrelated source width.
+        if(spec.displayHeight!==undefined)assert.ok(name==='front'&&[186,187].includes(sprite)&&Number.isFinite(spec.displayHeight)&&spec.displayHeight>0,'Only supplementary HUD labels may select their shared display height');
+        const scale=spec.displayHeight===undefined?Math.min(old.width*(old.scaleX??1)/spec.image.width,old.height*(old.scaleY??1)/spec.image.height):spec.displayHeight/spec.image.height;
         bank.sprites[sprite]={...old,entry:entryIndex,x,y,width:spec.image.width,height:spec.image.height,scaleX:scale,scaleY:scale};
         mappings.push({archive:name,sprite,key:spec.key,label:spec.label,source:spec.baseSource?{...spec.baseSource,kind:'base-English-mask'}:{file:`tools/assets/touhou-zh/${spec.file}`,sha256:spec.sha256,originalFile:spec.source.file,originalPngSha256:spec.source.pngSha256,originalRect:spec.source.rect,originalDestination:spec.source.destination},
                 sourceRect:spec.baseSource?.rect??rect(0,0,spec.image.width,spec.image.height),destination:rect(x,y,spec.image.width,spec.image.height),paddingX:2,paddingY:2,
-          baseRegions:spec.baseRegions,geometry:{originalWidth:old.width,originalHeight:old.height,originalScaleX:old.scaleX??1,originalScaleY:old.scaleY??1,scaleX:scale,scaleY:scale},operation:'Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged.'});
+          baseRegions:spec.baseRegions,geometry:{originalWidth:old.width,originalHeight:old.height,originalScaleX:old.scaleX??1,originalScaleY:old.scaleY??1,scaleX:scale,scaleY:scale,displayHeight:spec.displayHeight},operation:`Exact source RGBA copy with own-edge gutters; uniform ${spec.displayHeight===undefined?'contain scale':'shared HUD label height'}; source ANM scripts unchanged.`});
         if(spec.untranslated)locale.untranslated.push({archive:name,sprite,reason:spec.untranslated,fallback:spec.label});
       }
       bank.entries.push({index:entryIndex,offset:0,length:0,name:`<zh-CN-common-${name}>`,width:atlas.width,height:atlas.height,format:1,x:0,y:0,memoryPriority:10,lowResScale:1,hasData:1,originalWidth:atlas.width,originalHeight:atlas.height,spriteBase:0,scriptBase:0,spriteCount:mappings.length,scriptCount:0,texture:{kind:'png',path:file,width:atlas.width,height:atlas.height,sha256:sha(atlas.bytes)}});

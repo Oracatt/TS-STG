@@ -12,6 +12,9 @@ export const TOUHOU_PLAYER_RULES = Object.freeze({
   deathbombFrames:8, hitInvulnerability:6, deathInvulnerability:180, respawnInvulnerability:280,
   deathPowerLoss:Object.freeze([40,40,50,60,80]), deathDropCount:7,
   pointValueMinimum:10000, pointValueMaximum:1000000,
+  // The recovered no-stone reference remains the compatibility default.
+  // TOUHOU_POINT_VALUE_PROFILES.classic opts into portable point-value growth.
+  pointValueGrazeStep:0, pointValueGrazeGain:0, pointItemDivisor:2,
 });
 
 export function resolveTouhouPlayerRules(...profiles){
@@ -29,7 +32,7 @@ export function resolveTouhouPlayerRules(...profiles){
       throw new RangeError(`${key} must be a finite ${fractions.has(key)?'number':'nonnegative integer'}`);
     }
   }
-  for(const key of ['maxPower','powerPerLevel','startingPower','lifeFragmentThreshold','bombFragmentThreshold'])if(rules[key]===0)throw new RangeError(`${key} must be positive`);
+  for(const key of ['maxPower','powerPerLevel','startingPower','lifeFragmentThreshold','bombFragmentThreshold','pointItemDivisor'])if(rules[key]===0)throw new RangeError(`${key} must be positive`);
   if(rules.minimumPower>rules.maxPower)rules.minimumPower=rules.maxPower;
   if(rules.pointValueMinimum>rules.pointValueMaximum)throw new RangeError('Invalid point value range');
   if(overrides.bombStockLimit===undefined)rules.bombStockLimit=Math.max(rules.bombStockLimit,rules.maxBombs,rules.respawnBombs);

@@ -25709,7 +25709,7 @@
       "archives": {
         "front": {
           "file": "locales/zh-CN/anm/front.json",
-          "sha256": "9ff44d834666eabf0c852e3d84c01095da7b1b7b0eaa93d80b5eaf4c27d20459",
+          "sha256": "b18c94f9ea419d28e105244bb3242eb31e7b4902c7e41bece6a6e44fb1db1fb1",
           "sourceSha256": "fd48b69fe97d5f585701de1c2b20c3248600043629a98a49425416c492560c31",
           "scripts": 332,
           "sprites": 129,
@@ -25741,7 +25741,7 @@
       "textures": [
         {
           "file": "locales/zh-CN/textures/front.png",
-          "sha256": "7bfbdac0218e94389481db2991b94b23501c56d9391b6781e2a677f4daa7bab8",
+          "sha256": "9bd7c4843baa37538e28bfaca28c36fa1f919cfdcff2be09c65d3ddb543425ce",
           "width": 1024,
           "height": 1024,
           "operation": "Independent Chinese common UI cells; exact source pixels and two-pixel own-edge gutters",
@@ -26690,6 +26690,54 @@
             },
             {
               "archive": "front",
+              "sprite": 186,
+              "key": "point-value",
+              "label": "最大得点",
+              "source": {
+                "file": "tools/assets/touhou-zh/point-value.png",
+                "sha256": "ff40d3a568b3ed202260e226857b2a47e9a081bd63b09dd747fb99e558730446",
+                "originalFile": "data/front/front00.png",
+                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+                "originalRect": {
+                  "x": 664,
+                  "y": 72,
+                  "width": 168,
+                  "height": 36
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 168,
+                  "height": 36
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 168,
+                "height": 36
+              },
+              "destination": {
+                "x": 408,
+                "y": 886,
+                "width": 168,
+                "height": 36
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 120,
+                "originalHeight": 32,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1,
+                "displayHeight": 36
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform shared HUD label height; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
               "sprite": 4,
               "key": "high-score",
               "label": "最高得分",
@@ -26718,7 +26766,7 @@
                 "height": 36
               },
               "destination": {
-                "x": 408,
+                "x": 580,
                 "y": 886,
                 "width": 144,
                 "height": 36
@@ -26765,7 +26813,7 @@
                 "height": 36
               },
               "destination": {
-                "x": 556,
+                "x": 728,
                 "y": 886,
                 "width": 144,
                 "height": 36
@@ -26812,7 +26860,7 @@
                 "height": 36
               },
               "destination": {
-                "x": 704,
+                "x": 876,
                 "y": 886,
                 "width": 144,
                 "height": 36
@@ -26859,8 +26907,8 @@
                 "height": 36
               },
               "destination": {
-                "x": 852,
-                "y": 886,
+                "x": 2,
+                "y": 948,
                 "width": 144,
                 "height": 36
               },
@@ -26906,7 +26954,7 @@
                 "height": 36
               },
               "destination": {
-                "x": 2,
+                "x": 150,
                 "y": 948,
                 "width": 128,
                 "height": 36
@@ -26918,57 +26966,11 @@
                 "originalHeight": 32,
                 "originalScaleX": 1,
                 "originalScaleY": 1,
-                "scaleX": 0.578125,
-                "scaleY": 0.578125
+                "scaleX": 1,
+                "scaleY": 1,
+                "displayHeight": 36
               },
-              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
-            },
-            {
-              "archive": "front",
-              "sprite": 186,
-              "key": "point-value",
-              "label": "最大得点",
-              "source": {
-                "file": "tools/assets/touhou-zh/point-value.png",
-                "sha256": "e936897599e5abbfa236adb18b1d61d84b178233baa4550609eb965994e9d3bb",
-                "originalFile": "data/front/front00.png",
-                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
-                "originalRect": {
-                  "x": 704,
-                  "y": 72,
-                  "width": 128,
-                  "height": 36
-                },
-                "originalDestination": {
-                  "x": 0,
-                  "y": 0,
-                  "width": 128,
-                  "height": 36
-                }
-              },
-              "sourceRect": {
-                "x": 0,
-                "y": 0,
-                "width": 128,
-                "height": 36
-              },
-              "destination": {
-                "x": 134,
-                "y": 948,
-                "width": 128,
-                "height": 36
-              },
-              "paddingX": 2,
-              "paddingY": 2,
-              "geometry": {
-                "originalWidth": 120,
-                "originalHeight": 32,
-                "originalScaleX": 1,
-                "originalScaleY": 1,
-                "scaleX": 0.8888888888888888,
-                "scaleY": 0.8888888888888888
-              },
-              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform shared HUD label height; source ANM scripts unchanged."
             },
             {
               "archive": "front",
@@ -27000,7 +27002,7 @@
                 "height": 36
               },
               "destination": {
-                "x": 266,
+                "x": 282,
                 "y": 948,
                 "width": 80,
                 "height": 36

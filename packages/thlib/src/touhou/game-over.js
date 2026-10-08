@@ -2,6 +2,7 @@ import { Keys } from '../index.js';
 import { TouhouButtons } from './menu.js';
 import { TouhouRenderQueue } from './render-queue.js';
 import { f32, sub, mul } from './math.js';
+import { hiddenTouhouMenuChoices, drawTouhouMenuPanel } from './menu-choices.js';
 
 export const TOUHOU_INITIAL_CREDITS = Object.freeze([5, 5, 5, 5, 0, 0]);
 export const TOUHOU_NAME_CHARACTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-=.,!?@:;[]()_/{}|~^#$%&*   ';
@@ -42,7 +43,8 @@ export class TouhouGameOver {
     onReplay, onOptions, onManual, onOpen, onStock, onSaveRanking, drawBackground,
     rankings = null, savedName = '        ', timestamp = 0, actualFrames = 0, targetFrames = 1,
     completed = false, restart = false, initialMask = 0, music = 'game-over', musicPlayer = null,
-    continuePolicy=continueTouhouGame,canContinue=null,formatStage=stageLabel } = {}) {
+    continuePolicy=continueTouhouGame,canContinue=null,formatStage=stageLabel,hiddenChoices=[] } = {}) {
+    this.hiddenChoices=hiddenTouhouMenuChoices(hiddenChoices);
     if (!bank || !player) throw new TypeError('TouhouGameOver requires front ANM bank and player');
     if(continuePolicy!==null&&typeof continuePolicy!=='function')throw new TypeError('Continue policy must be a function or null');
     if(canContinue!==null&&typeof canContinue!=='function'&&typeof canContinue!=='boolean')throw new TypeError('canContinue must be a function, boolean or null');
@@ -81,6 +83,7 @@ export class TouhouGameOver {
     else if (this.session.continues > 0) this.excluded.add(2);
     if(!this.allowsContinue())this.excluded.add(0);
     for (const [choice, callback] of [[1, this.onExit ?? this.onScene], [2, this.onReplay], [3, this.onManual], [4, this.onOptions], [5, this.onRestart ?? this.onScene]]) if (!callback) this.excluded.add(choice);
+    for (const choice of this.hiddenChoices) this.excluded.add(choice);
     this.select(selection ?? (practice && !this.completed ? 5 : this.excluded.has(0) ? 1 : 0));
     this.panel.interruptNow(3, true); this.panel.interrupt(this.selection + 7, true);
     for (const choice of this.excluded) this.signalChoice(choice, 5);
@@ -143,7 +146,10 @@ export class TouhouGameOver {
       if (moved) { this.panel.interrupt(this.selection + 7, true); this.sound?.(10); }
       if (confirm && !this.excluded.has(this.selection)) this.confirmChoice();
       if (retryPressed && !this.excluded.has(5)) { this.select(5); this.confirmChoice(); }
-      if (b.pressed & Keys.PAUSE) { this.select(0); this.panel.interrupt(1, true); this.phaseTo(18); }
+      // Escape's original fallback is Continue -> Exit. Hiding that fallback
+      // must not make it close on an external page without invoking the page.
+      const escapeHidden=this.hiddenChoices.has(0)||(this.hiddenChoices.size>0&&this.excluded.has(0)&&this.excluded.has(1));
+      if ((b.pressed & Keys.PAUSE) && !escapeHidden) { this.select(0); this.panel.interrupt(1, true); this.phaseTo(18); }
       if (exitPressed && !this.excluded.has(1)) { this.select(1); this.confirmChoice(); }
     } else if (this.phase === 15) { if (this.age >= 10) this.nameInput(confirm, cancel); }
     else if ([10, 14, 16].includes(this.phase)) {
@@ -162,7 +168,7 @@ export class TouhouGameOver {
     this.drawBackground?.(draw, this);
     // Keep this panel's registered ANM ordering separate from font/external UI.
     const queue = this.renderQueue.reset();
-    if (this.panelVisible) this.panel?.draw(queue, { x: 0, y: 0, scale: 1, screenScale: 1.5 }); queue.flush(draw);
+    if (this.panelVisible) drawTouhouMenuPanel(this.panel, queue, { x: 0, y: 0, scale: 1, screenScale: 1.5 }, this.hiddenChoices); queue.flush(draw);
     const write = (text, x, y, color = 0xffffffff) => this.font?.draw(draw, text, { x, y, font: 0, color });
     if (this.phase === 15) {
       write('            Score Ranking!!', 48, 64);

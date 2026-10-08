@@ -33,6 +33,8 @@ export class TouhouSpell {
     fallbackRecords = {}, difficulty = 1, stage = 1, mode = 0, viewIndex = 0, playback = false, presentation = {} } = {}) {
     this.player = player; this.textBank = textBank; this.effectBank = effectBank; this.font = font; this.context = context;
     this.records = records; this.fallbackRecords = fallbackRecords; this.difficulty = difficulty; this.stage = stage;
+    // card_system/lifecycle.cpp selects a game-session viewport here, not a
+    // player character. A single-playfield game keeps index0 for both players.
     this.mode = mode; this.viewIndex = viewIndex; this.playback = playback;
     this.flags = 0; this.age = new TouhouTimer(); this.frames = 0; this.lastFrames = 0;
     this.clockPaused = false; this.generation = 0;

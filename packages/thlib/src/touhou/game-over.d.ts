@@ -3,6 +3,7 @@ import type {AnmBank,AnmInstance} from './anm.js';
 import type {TouhouPlayer} from './player.js';
 import type {TouhouBitmapFont} from './font.js';
 import type {TouhouMusic} from './music.js';
+import type {TouhouMenuChoice} from './menu-choices.js';
 export const TOUHOU_INITIAL_CREDITS:readonly number[];export const TOUHOU_NAME_CHARACTERS:string;
 export interface TouhouContinueSession{difficulty?:number;stage?:number;stageKind?:'normal'|'extra';mode?:number;continues?:number;credits?:number;highScore?:number;}
 export interface TouhouScoreRecord{score:number;name:string;continues?:number;stage?:number;stageKind?:'normal'|'extra';cleared?:boolean;timestamp?:number;slowdown?:number;}
@@ -25,6 +26,8 @@ export interface TouhouGameOverOptions{bank:AnmBank;font?:TouhouBitmapFont|null;
   onStock?:(data:{lives:number;lifeFragments:number;bombs:number;bombFragments:number;power:number})=>void;
   onReplay?:(context:{gameOver:TouhouGameOver;close:()=>void})=>TouhouGameOverPage|void;
   onOptions?:TouhouGameOverOptions['onReplay'];onManual?:TouhouGameOverOptions['onReplay'];
+  /** Omit these rows and close their gaps; default [] preserves the original menu. */
+  hiddenChoices?:readonly TouhouMenuChoice[];
   onSaveRanking?:(data:{records:TouhouScoreRecord[];rank:number;name:string})=>void;
   drawBackground?:(draw:DrawList,gameOver:TouhouGameOver)=>void;rankings?:TouhouScoreRecord[]|null;savedName?:string;timestamp?:number;actualFrames?:number;targetFrames?:number;
   completed?:boolean;restart?:boolean;initialMask?:number;

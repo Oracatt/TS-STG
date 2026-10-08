@@ -8,6 +8,7 @@ import {touhouCircleCollision} from './bullet-collision.js';
 import {TOUHOU_PLAYER_PROFILES} from './player-profile.js';
 import {resolveTouhouPlayerRules} from './player-rules.js';
 import {resolveTouhouWorld} from './world.js';
+import {addTouhouPointValueForGraze} from './point-value.js';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const fixed = value => trunc32(mul(value, 128));
@@ -387,7 +388,9 @@ export class TouhouPlayer {
     this.hit(context); return 1;
   }
   addGraze(context = {}, position = this, color = 0) {
-    this.graze = clamp(this.graze + 1, 0, 99999999); const delay = this.rng.next() % 4;
+    const previousGraze=this.graze;
+    this.graze = clamp(this.graze + 1, 0, 99999999);addTouhouPointValueForGraze(this,previousGraze);
+    const delay = this.rng.next() % 4;
     context.enqueueGraze?.({ x: position.x, y: position.y, color: ((color & 0xffffff) | 0xff000000) >>> 0, delay });
     context.sound?.(42, position.x); context.onEvent?.('graze', { player: this, delay });
   }
@@ -408,6 +411,7 @@ export class TouhouPlayer {
   }
   snapshot() {
     return { character: this.character, frame: this.frame, state: this.state, time: this.timer.current,
+      score:this.score,pointValue:this.pointValue,pointItems:this.pointItems,graze:this.graze,
       x: this.x, y: this.y, fixedX: this.fixedX, fixedY: this.fixedY, focused: this.focused,
       power: this.power, lives: this.lives, bombs: this.bombs, invulnerability: this.invulnerability.current,
       animationScript: this.animationScript, shootTime: this.shootTimer.current, secondaryShootTime: this.secondaryShootTimer.current,

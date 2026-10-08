@@ -40,6 +40,10 @@ presentation.draw(renderQueue); // 与自机/敌机一起按原始 ANM 优先级
 
 同属 layer32 的动画保留原作注册顺序：`ascii_960` 0 的符卡名底板、`text` 22 的文字、`ascii_960` 1 的 Bonus/History 底板。`spellContext.createNameAnimation` 每次调用必须新建一个 ANM 实例，不能返回先前注册的实例；可缓存字图像素，公共 `TouhouTextRenderer` 正是缓存字图后为每张符卡新建标题动画。只调整 `info` 数组顺序不会改变跨 bank 的注册顺序。
 
+`spellOptions.viewIndex` 是原作 `card_system/lifecycle.cpp` 的游戏会话视口编号，**不是自机编号**。单场地游戏中，灵梦、魔理沙都应保持默认 `0`，由 `card_system/start.cpp` 的 `22 + view_index` 选中 `text:22`。中文只需在名字工厂传 `codePage:936`，不要据自机改脚本或另画固定位置文字。`text:23` 在当前原始表中是 layer34 的静态模板，不能作为魔理沙的符卡标题皮肤。
+
+`text:22` 的原始标题表面为 768×40，右上锚点；raw 位置从 `(384,768)` 移到 `(384,0)`，其缩放在30帧内从4收至1，60帧开始上移。花纹底板从 `(384,784)` 移到 `(384,16)`，缩放在60帧内从2收至1；这两个原始轨迹并非每帧完全相同。两者使用同一 `infoView` 和 layer32 队列，保留进入时的缩放/位移、稳定后的16 raw单位差与退出动画；无需延迟名字到右上角才显示。队列统一负责游戏区域裁切，不应给标题单独加不同的屏幕坐标或裁切矩形。
+
 Bonus/History 数值继承 `text_renderer/text.cpp` 构造器的 `align_x=1,align_y=1`（左/上对齐）；`card_system/draw.cpp` 只切换字体和绘制层。默认坐标 `(266,37)`、`(360,37)` 是数值起点，不是右边界；这样数字接在标签后面，失败时的 `$` 同样遵循左对齐。
 
 RushBoss Demo 的 `shared-presentation.js` 适配坐标和开卡/结束事件。Boss 映射为 `(rush.x,224-rush.y)`；竖屏共享自机保持其原始向下 Y 坐标。通用演出 ANM 使用独立 bank，不消耗玩家动画随机流。业务仍负责分数和阶段切换，公共 `addScore` 回调为空以避免重复计分。

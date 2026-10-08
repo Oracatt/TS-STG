@@ -52,6 +52,8 @@ export interface TouhouGameOptions {
  itemsFactory?:(player:TouhouPlayer,banks:Record<string,AnmBank>)=>TouhouItems;
  spellOptions?:ConstructorParameters<typeof TouhouSpell>[0];spellContext?:TouhouSpellContext&TouhouEnemyContext;
  session?:TouhouContinueSession;gameOverOptions?:Partial<TouhouGameOverOptions>;
+ /** Shared pause-menu customization. onResume runs after the game unpauses. */
+ pauseOptions?:Partial<Omit<TouhouPauseOptions,'bank'|'initialMask'|'capture'>>;
  pauseCapture?:TouhouPauseCapture;
  view?:typeof TOUHOU_GAME_VIEW;viewport?:typeof TOUHOU_VIEWPORT;disposeBanks?:boolean;onDestroy?:(game:TouhouGame)=>void;
  bossPresentationOptions?:Pick<TouhouBossPresentationOptions,'profile'|'auraScripts'|'auraView'|'distortion'|'screenView'>;

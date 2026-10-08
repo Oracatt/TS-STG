@@ -54,6 +54,13 @@ counter that occasionally emits an ordinary type-2 point item. It has normal fal
 and pickup behavior. The old `CANCEL_POINT` / `cancelPoint` aliases are retained for
 compatibility and do not represent a small automatically collected cancellation point.
 
+Ordinary point rewards and graze-driven point-value growth are selected through
+the player's shared [point-value rules](touhou-point-value.md). The opt-in
+`classic` preset gives full displayed point value above the collection line and
+increases it by10 per10 grazes; the default `reference` preset retains the
+earlier recovered no-stone reward arithmetic. Neither choice changes type15,
+enemy drop geometry or phase cancellation into a green-point system.
+
 Source references: `gameplay/enemy_drop.cpp`, `gameplay/enemy_drop_adapter.cpp`,
 `gameplay/enemy_damage.cpp`, `gameplay/enemy_reads.cpp`, `gameplay/enemy_opcode_state.cpp`,
 `gameplay/enemy_shot_adapter.cpp`, `item_system/spawn.cpp`, `item_system/frame.cpp`,

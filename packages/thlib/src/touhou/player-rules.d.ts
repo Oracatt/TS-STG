@@ -9,6 +9,10 @@ export interface TouhouPlayerRules {
   deathbombFrames:number;hitInvulnerability:number;deathInvulnerability:number;respawnInvulnerability:number;
   deathPowerLoss:readonly number[];deathDropCount:number;
   pointValueMinimum:number;pointValueMaximum:number;
+  /** Zero step or gain disables graze-driven point-value growth. Both use integer units. */
+  pointValueGrazeStep:number;pointValueGrazeGain:number;
+  /** Divide pointValue by this positive integer for a full-value ordinary point item. */
+  pointItemDivisor:number;
 }
 export const TOUHOU_PLAYER_RULES:Readonly<TouhouPlayerRules>;
 export function resolveTouhouPlayerRules(...profiles:Array<Partial<TouhouPlayerRules>|undefined>):Readonly<TouhouPlayerRules>;

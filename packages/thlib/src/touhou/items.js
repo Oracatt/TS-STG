@@ -1,6 +1,7 @@
 import { f32, PI, add, sub, mul, div, polar, atan2, cos, sin, wrapAngle, trunc32, TouhouTimer, TouhouRNG } from './math.js';
 import {TOUHOU_PLAYER_RULES} from './player-rules.js';
 import {resolveTouhouWorld} from './world.js';
+import {clampTouhouPointValue,touhouPointItemValue} from './point-value.js';
 
 // source_reconstruction/item_system/{spawn,frame,rewards,environment}.cpp.
 // IDs 9..13 and their magic-stone reward counters are deliberately outside this module.
@@ -20,7 +21,8 @@ const itemType=type=>typeof type==='string'?(aliases[type]??(/^\d+$/.test(type)?
 const supportedType=type=>Number.isInteger(type)&&(type>=1&&type<=8||type===14||type===15);
 const rulesFor=player=>player.rules??TOUHOU_PLAYER_RULES;
 
-/** Original common collectible controller. Score uses the original stored units (display score / 10). */
+/** Shared collectibles with recovered motion and selected point-value rules.
+ * Score uses the original stored units (display score / 10). */
 export class TouhouItems {
   constructor({ player, bank = null, effectBank = null, rng = null, difficulty = 1, context = {},world,bounds,definitions=[],capacity=512 } = {}) {
     if (!player) throw new TypeError('TouhouItems requires a player');
@@ -219,7 +221,7 @@ export class TouhouItems {
     } else p.lifeFragments = 0;
   }
   collect(item, context = this.context) {
-    const p = this.player,r=rulesFor(p); p.power = clamp(p.power, 0, p.maxPower); p.pointValue = clamp(p.pointValue, r.pointValueMinimum, r.pointValueMaximum);
+    const p = this.player,r=rulesFor(p); p.power = clamp(p.power, 0, p.maxPower); p.pointValue = clampTouhouPointValue(p.pointValue,r);
     let amount = 0;
     const definition=item.definition===undefined?this.definitions.get(item.type):item.definition;
     if(definition){amount=definition.collect(item,p,context,this)??0;context.onEvent?.('itemCollect',{item,player:p,amount});return amount;}
@@ -234,8 +236,9 @@ export class TouhouItems {
       }
       this.addScore(amount, item, context);
     } else if (item.type === 2 || item.type === 15) {
-      // The common profile has no stones: the original special-item counter is zero.
-      const value = idiv(p.pointValue, 2), full = item.y <= p.collectLine || item.state === 3, reduced = idiv(imul(value, 9), 10);
+      // The reference profile retains base/2 after removing stone rewards;
+      // classic gives the displayed pointValue before this same height falloff.
+      const value = touhouPointItemValue(p), full = item.y <= p.collectLine || item.state === 3, reduced = idiv(imul(value, 9), 10);
       amount = roundedPoints(full ? value : isub(reduced, idiv(imul(reduced, trunc32(sub(item.y, p.collectLine))), 450)));
       this.floatingScore(item, amount, full ? 0xffffff00 : 0xffffffff, context); this.addScore(amount, item, context);
       p.pointItems = clamp(iadd(p.pointItems, 1), 0, 1000000);

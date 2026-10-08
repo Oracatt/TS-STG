@@ -33,7 +33,7 @@ function assertRows(input,sourceRect,output,destination,label){
 test('Chinese sources are audited generic UI cells with stable semantic rectangles',()=>{
   // This review snapshot pins all 41 source rectangles and original PNG/cell
   // hashes independently of the importer. It changes only after source review.
-  assert.equal(hash(Buffer.from(JSON.stringify(source))),'1619a85635265bf3ba541901ba0dc039a49aec234cd1d3f673bbbf6111db3ca8');
+  assert.equal(hash(Buffer.from(JSON.stringify(source))),'dec0e7ff679bceae7352a0cf134c0891b2763bf6fcd4559844630a39db51ec4c');
   assert.equal(source.source.packageSha256,'3707f3bd3e935d2ebb001e0bbd1b1db2ecd00ecf41116571c98a74ae786ce4b0');
   assert.equal(source.source.databaseSha256,'3593e515c01f42664233e800d25495d41afe25a7c864a865f247ad3f941f0edc');
   assert.equal(source.cells.length,41);
@@ -49,9 +49,12 @@ test('Chinese sources are audited generic UI cells with stable semantic rectangl
   for(const [key,rect]of [
     ['high-score',{x:512,y:0,width:144,height:36}],['score',{x:512,y:36,width:144,height:36}],
     ['lives',{x:512,y:72,width:144,height:36}],['fragments',{x:576,y:108,width:80,height:36}],
-    ['power',{x:664,y:108,width:144,height:36}],['point-value',{x:704,y:72,width:128,height:36}],
+    ['power',{x:664,y:108,width:144,height:36}],['point-value',{x:664,y:72,width:168,height:36}],
     ['graze',{x:704,y:36,width:128,height:36}],['spell-time',{x:672,y:608,width:128,height:64}],
   ])assert.deepEqual(source.cells.find(cell=>cell.key===key).source.rect,rect,'HUD rows use the actual 36-pixel source cadence');
+  for(const key of ['point-value','graze'])assert.equal(source.cells.find(cell=>cell.key===key).displayHeight,36,'New common labels match the existing status-lettering height');
+  const point=image(readFileSync(join(sourceRoot,'point-value.png')));
+  assert.ok(Array.from({length:40*36},(_,i)=>{const x=i%40,y=Math.floor(i/40),p=(y*point.width+x)*4;return point.rgba[p+3]>128&&point.rgba[p+2]>point.rgba[p]+20;}).filter(Boolean).length>80,'The source blue point-item icon is included left of the maximum-value lettering');
   assert.ok(!source.cells.some(cell=>cell.source.file==='data/ascii/pause.png'&&cell.source.rect.y===512),'Return to Waypoint cannot become Options');
 });
 
@@ -114,12 +117,14 @@ test('fallback cells preserve only the reviewed English regions and explicitly d
   assert.match(locale.retained[0].reason,/終/);
 });
 
-test('translated geometry uses one contain scale and preserves original pivot/rotation/IDs',()=>{
+test('translated geometry uses one uniform scale and preserves original pivot/rotation/IDs',()=>{
   for(const mapping of mappings){
     const original=originalBanks[mapping.archive].sprites[mapping.sprite],sprite=localizedBanks[mapping.archive].sprites[mapping.sprite],d=mapping.destination;
-    const scale=Math.min(original.width*(original.scaleX??1)/d.width,original.height*(original.scaleY??1)/d.height);
+    const height=mapping.geometry.displayHeight;
+    const scale=height===undefined?Math.min(original.width*(original.scaleX??1)/d.width,original.height*(original.scaleY??1)/d.height):height/d.height;
     assert.equal(sprite.scaleX,scale);assert.equal(sprite.scaleY,scale);assert.ok(Number.isFinite(scale)&&scale>0);
-    assert.ok(sprite.width*scale<=original.width*(original.scaleX??1)+1e-9&&sprite.height*scale<=original.height*(original.scaleY??1)+1e-9);
+    if(height===undefined)assert.ok(sprite.width*scale<=original.width*(original.scaleX??1)+1e-9&&sprite.height*scale<=original.height*(original.scaleY??1)+1e-9);
+    else{assert.equal(mapping.archive,'front');assert.ok([186,187].includes(mapping.sprite));assert.equal(sprite.height*scale,36);assert.equal(scale,1);}
     for(const key of ['index','storedId','pivotX','pivotY','rotation'])assert.equal(sprite[key],original[key]);
     const texture=locale.textures.find(texture=>texture.spriteMappings.includes(mapping));
     assert.ok(d.x>=2&&d.y>=2&&d.x+d.width+2<=texture.width&&d.y+d.height+2<=texture.height);

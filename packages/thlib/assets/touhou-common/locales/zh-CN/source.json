@@ -249,30 +249,31 @@
       ],
       "file": "point-value.png",
       "rect": {
-        "x": 704,
+        "x": 664,
         "y": 72,
-        "width": 128,
+        "width": 168,
         "height": 36
       },
       "label": "最大得点",
-      "width": 128,
+      "displayHeight": 36,
+      "width": 168,
       "height": 36,
-      "sha256": "e936897599e5abbfa236adb18b1d61d84b178233baa4550609eb965994e9d3bb",
+      "sha256": "ff40d3a568b3ed202260e226857b2a47e9a081bd63b09dd747fb99e558730446",
       "source": {
         "file": "data/front/front00.png",
         "pngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
         "width": 1024,
         "height": 1024,
         "rect": {
-          "x": 704,
+          "x": 664,
           "y": 72,
-          "width": 128,
+          "width": 168,
           "height": 36
         },
         "destination": {
           "x": 0,
           "y": 0,
-          "width": 128,
+          "width": 168,
           "height": 36
         }
       },
@@ -292,6 +293,7 @@
         "height": 36
       },
       "label": "Graze",
+      "displayHeight": 36,
       "width": 128,
       "height": 36,
       "sha256": "e6e252cf5165f34ad13f86a31f3590db86cb063866918a3b106b60f7ed50890b",

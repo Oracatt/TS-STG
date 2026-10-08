@@ -3,14 +3,17 @@
 import {Keys} from '../index.js';
 import {TouhouButtons} from './menu.js';
 import {TouhouRenderQueue} from './render-queue.js';
+import {hiddenTouhouMenuChoices,drawTouhouMenuPanel} from './menu-choices.js';
 
 const childrenByChoice=[[],[0x78,0x7e,0x84,0x87,0x89],[0x79,0x7f,0x8a],[0x7a,0x80],[0x7b,0x81],[0x7c]];
 export class TouhouPause {
-  constructor({bank,sound,onResume,onExit,onRestart,onReplay,onOptions,onManual,restart=false,continues=0,initialMask=0,drawBackground,capture}={}){
+  constructor({bank,sound,onResume,onExit,onRestart,onReplay,onOptions,onManual,restart=false,continues=0,initialMask=0,drawBackground,capture,hiddenChoices=[]}={}){
+    this.hiddenChoices=hiddenTouhouMenuChoices(hiddenChoices);
     Object.assign(this,{bank,sound,onResume,onExit,onRestart,onReplay,onOptions,onManual,restart,continues,drawBackground,capture});this.capture?.capture();
     this.buttons=new TouhouButtons();this.buttons.update(initialMask);this.active=true;this.phase=0;this.age=1;this.selection=0;this.savedSelection=0;this.count=6;this.panelVisible=true;this.external=null;this.renderQueue=new TouhouRenderQueue();
     this.excluded=new Set();for(const [choice,callback]of[[1,onExit],[2,onReplay],[3,onManual],[4,onOptions],[5,onRestart]])if(!callback)this.excluded.add(choice);
     if(restart){this.excluded.add(2);this.excluded.add(3);}if(continues>0)this.excluded.add(2);
+    for(const choice of this.hiddenChoices)this.excluded.add(choice);
     this.panel=bank.create(restart?0x91:0x90,{secondary:true});this.panel.interrupt(3,true);this.sound?.(14);
   }
   phaseTo(phase){this.phase=phase;this.age=0;if(phase===18)this.capture?.hide();}
@@ -35,7 +38,7 @@ export class TouhouPause {
     if(!this.active)return;
     this.buttons.update(mask);const b=this.buttons,confirm=!!(b.pressed&(Keys.SHOOT|Keys.CONFIRM)),cancel=!!(b.pressed&(Keys.BOMB|Keys.CANCEL|Keys.PAUSE));
     switch(this.phase){
-      case 0:if(this.age>=10){this.phaseTo(6);this.selection=0;this.selectPanel();this.disableChoices();}break;
+      case 0:if(this.age>=10){this.phaseTo(6);this.selection=0;if(this.excluded.has(0))this.move(1);this.selectPanel();this.disableChoices();}break;
       case 6:{
         let moved=false;if(b.repeat(Keys.UP))moved=this.move(-1)||moved;if(b.repeat(Keys.DOWN))moved=this.move(1)||moved;
         if(moved){this.selectPanel();this.disableChoices();this.sound?.(10);}
@@ -74,7 +77,7 @@ export class TouhouPause {
     if(this.capture)this.capture.draw(draw);else if(this.drawBackground)this.drawBackground(draw,this);else draw.rect(48,24,576,672,0x00000080);
     // Secondary ANM layers use callback priorities, not their raw layer IDs.
     const queue=this.renderQueue.reset();
-    if(this.panelVisible)this.panel.draw(queue,{x:0,y:0,scale:1,screenScale:1.5});queue.flush(draw);
+    if(this.panelVisible)drawTouhouMenuPanel(this.panel,queue,{x:0,y:0,scale:1,screenScale:1.5},this.hiddenChoices);queue.flush(draw);
     this.external?.draw?.(draw);return draw;
   }
   snapshot(){return{active:this.active,phase:this.phase,age:this.age,selection:this.selection,count:this.count,excluded:[...this.excluded],panelVisible:this.panelVisible};}
