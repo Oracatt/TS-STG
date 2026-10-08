@@ -194,3 +194,66 @@ test('per-step entrance overrides are validated and explicit null preserves imme
     assert.throws(()=>invalid.advance(),/entrance/);
   }finally{for(const owner of owners)owner.dispose();f.resources.dispose();}
 });
+
+test('a later portrait delay keeps the previous native body/tail and business step, while a first delay invokes no portrait hook',()=>{
+  for(const exiting of [false,true])for(const finishWaiting of [false,true]){
+    const f=fixture(),seen=[],first={speaker:'left',text:'Previous',portraits:{left:{present:true,emotion:'NOTICE'}}},
+      tail={speaker:'left',text:'Previous exit',portraits:{left:{present:false}}},
+      next={speaker:'right',boxMode:2,text:'Next',emotion:'ANGRY',portraits:hidden,
+        entrance:{portraitFrame:10,speakerFrame:10,textFrame:60,inputFrame:94}};
+    const dialogue=new TouhouDialogue({resources:f.resources,exit:'beforeBoss',steps:exiting?[first,tail,next]:[first,next],
+      drawPortrait:(_draw,step)=>{seen.push(step);return false;}});
+    const source=f.resources.createBank('pl00'),root=source.create(66),body=find(root,62);root.interruptNow(17,true);root.interruptNow(2,true);
+    try{
+      tick(dialogue,20);tick(source,20);
+      if(exiting){dialogue.advance();root.interrupt(1,true);tick(dialogue,5);tick(source,5);}
+      const previous=dialogue.current,face=find(dialogue.portrait,64).spriteIndex;dialogue.advance();
+      for(let frame=0;frame<=(finishWaiting?34:10);frame++){
+        if(frame){dialogue.update();source.update();}
+        if(finishWaiting&&frame===5){dialogue.finish();if(!exiting)root.interrupt(1,true);}
+        const draw=new DrawList(),sourceDraw=new DrawList();dialogue.draw(draw);source.draw(sourceDraw,{x:0,y:0,scale:1,screenScale:1.5});
+        const ids=new Set([...dialogue.portraitBank.textures.values()]);
+        assert.equal(draw.commands.filter(command=>command[0]==='statefulQuad'&&ids.has(command[1])).length,
+          sourceDraw.commands.filter(command=>command[0]==='statefulQuad').length,
+          `Existing ${exiting?'exit tail':'body'} must paint exactly its surviving source ANM before/at delayed creation frame ${frame}`);
+        sameMotion(dialogue.portraitMotion,body,`Existing ${exiting?'exit tail':'body'} waiting frame ${frame}`);
+        assert.equal(seen.at(-1),finishWaiting||frame<10?previous:next,'The callback keeps the last presented business step through a waiting-step finish, or until the next portrait stage');
+        const actualFace=find(dialogue.portrait,64),sourceFace=find(root,64);
+        assert.equal(!!actualFace,!!sourceFace,'The independent expression retires on the source ANM clock');
+        if(actualFace)assert.equal(actualFace.spriteIndex,face,'A delayed step must not apply its emotion before the portrait stage');
+        assert.equal(dialogue.box,null,'The previous text stays cleared during the wait');
+      }
+    }finally{dialogue.dispose();source.dispose();f.resources.dispose();}
+  }
+  const f=fixture(),seen=[],first={speaker:'left',text:'First',portraits:{left:{present:true}},
+    entrance:{portraitFrame:10,speakerFrame:10,textFrame:60,inputFrame:94}},
+    dialogue=new TouhouDialogue({resources:f.resources,steps:[first],drawPortrait:(_draw,step)=>{seen.push(step);return false;}});
+  try{
+    for(let frame=0;frame<10;frame++){
+      const draw=new DrawList();dialogue.draw(draw);assert.equal(draw.commands.length,0);
+      assert.equal(dialogue.portrait,undefined);assert.deepEqual(seen,[],'A first delayed entry has no previous portrait hook to paint');dialogue.update();
+    }
+    const draw=new DrawList();dialogue.draw(draw);assert.ok(dialogue.portrait);assert.ok(draw.commands.length>0);assert.deepEqual(seen,[first]);
+  }finally{dialogue.dispose();f.resources.dispose();}
+  const earlyFixture=fixture(),earlySeen=[],early=new TouhouDialogue({resources:earlyFixture.resources,exit:'beforeBoss',steps:[first],
+    drawPortrait:(_draw,step)=>{earlySeen.push(step);return false;}});
+  try{
+    tick(early,5);early.finish();
+    for(let frame=0;frame<30;frame++){
+      const draw=new DrawList();early.draw(draw);assert.equal(draw.commands.length,0);
+      assert.equal(early.portrait,undefined);assert.deepEqual(earlySeen,[],'Closing a first delayed entry must not invoke a portrait hook that never entered');early.update();
+    }
+  }finally{early.dispose();earlyFixture.resources.dispose();}
+  const customFixture=fixture(),customSteps=[],customFirst={speaker:'left',text:'Previous custom',portraits:{left:{present:true}}},
+    customNext={speaker:'right',text:'Next custom',portraits:{left:{present:false}},entrance:{portraitFrame:10,speakerFrame:10,textFrame:60,inputFrame:94}},
+    custom=new TouhouDialogue({resources:customFixture.resources,steps:[customFirst,customNext],
+      createPortrait:()=>({draw:(draw,step)=>{customSteps.push(step);draw.push(['previous-custom-body']);}})});
+  try{
+    custom.advance();
+    for(let frame=0;frame<10;frame++){
+      const draw=new DrawList();custom.draw(draw);assert.ok(draw.commands.some(command=>command[0]==='previous-custom-body'));
+      assert.equal(customSteps.at(-1),customFirst,'Factory-owned portraits also retain the last presented business step');custom.update();
+    }
+    const draw=new DrawList();custom.draw(draw);assert.equal(draw.commands.some(command=>command[0]==='previous-custom-body'),false,'Explicit absence takes effect when its portrait cue runs');
+  }finally{custom.dispose();customFixture.resources.dispose();}
+});

@@ -80,7 +80,7 @@ export class TouhouDialogue {
       throw new RangeError('Player portrait layout requires finite x/y and positive height');
     Object.assign(this,{resources,steps,character,codePage,onEvent,onComplete,onExitHandoff,drawPortrait,charsPerFrame,skipMask,skipHoldFrames,maxLineBytes,speakerNames,textColor});
     this.entranceTiming=entranceTiming(entrance);this.stepEntranceTiming=null;this.entranceState=null;
-    this.exitTiming=exitTiming(exit);this.exitState=null;this.displayStep=null;
+    this.exitTiming=exitTiming(exit);this.exitState=null;this.displayStep=null;this.portraitStep=null;
     this.front=resources.createBank('front');this.textBank=resources.createBank('text');this.portraitBank=this.playerProfile&&!createPortrait?resources.createBank(this.playerProfile.bank):null;
     this.buttons=new TouhouButtons();this.queue=new TouhouRenderQueue();this.age=0;this.index=-1;this.current=null;this.complete=false;this.disposed=false;
     this.startDelay=Math.max(0,startDelayFrames|0);this.page=0;this.cold=0;this.auto=0;this.textAge=0;this.shownCharacters=0;
@@ -139,6 +139,7 @@ export class TouhouDialogue {
     }
   }
   _createPortraits(step){
+    this.portraitStep=step;
     for(const side of ['left','right'])this._setPortraitPresence(side,step.portraits?.[side]?.present);
     for(const side of ['left','right'])if(step.portraits?.[side]?.present&&!this.customPortraits[side]&&this.createPortrait){
       const portrait=this.createPortrait(side,step,this);
@@ -264,15 +265,19 @@ export class TouhouDialogue {
     this.portrait.draw(queue,sourceView);
   }
   draw(draw,view={x:336,y:24,scale:1.5,screenScale:1}){
-    if(!this.active||this.startDelay||this.entranceState&&!this.entranceState.portraits)return;
+    const waitingPortraits=this.entranceState&&!this.entranceState.portraits;
+    if(!this.active||this.startDelay||(waitingPortraits||this.exiting)&&!this.portraitStep)return;
+    // A later MSG wait gates the new portrait cues, not a body/tail already
+    // on screen. Keep its previous business skin until the new cues run.
+    const step=this.exiting||waitingPortraits?this.portraitStep:this.current;
     const queue=this.queue.reset(),screenView=this.portraitView(view);let keepDefault=!this.drawPortrait;
     if(this.drawPortrait)queue.enqueue(this.rightPortraitMotion?.layer??35,target=>{
-      keepDefault=this.drawPortrait(target,this.exiting?this.displayStep:this.current,this,screenView)===false;
+      keepDefault=this.drawPortrait(target,step,this,screenView)===false;
     },{order:this.rightPortraitMotion?.renderOrder??Infinity});
     if(keepDefault)this._drawDefaultPortrait(queue,view);
     for(const [side,portrait]of Object.entries(this.customPortraits)){
       if(this.portraitPresence[side]===false&&!portrait.setPresent)continue;
-      queue.enqueue(this.portraitState(side)?.layer??35,target=>portrait.draw(target,this.exiting?this.displayStep:this.current,this,screenView));
+      queue.enqueue(this.portraitState(side)?.layer??35,target=>portrait.draw(target,step,this,screenView));
     }
     this.front.draw(queue,screenView);this.textBank.draw(queue,screenView);queue.flush(draw);
   }

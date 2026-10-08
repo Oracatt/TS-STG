@@ -66,6 +66,8 @@ const dialogue = new TouhouDialogue({
 
 构造参数的入口配置仍仅作用于第一步；每个步骤另可用自己的 `entrance` 指定相同时序，显式 null 禁用该步入口。使用入口的步骤以 `inputFrame` 接管其 `coldFrames`，不在开放输入后再叠加业务冷却；自动推进时长保持调用方的数据。中途带入口的步骤会先删除旧气泡、清掉旧文字，直到新的 `textFrame` 才建立新气泡。`portrait`、`emotion` 事件随立绘阶段执行，`active` 随说话阶段执行，`text` 及其他事件随文字阶段执行；同一阶段保持原事件顺序。自定义事件可声明 `entranceStage: 'portraits' | 'speaker' | 'text'`，选择需要的阶段。载荷与回调参数保持原样。没有步骤时立即完成，不凭空播放入口。`snapshot().entrance` 提供 `frame`、`portraits`、`speaker`、`text`、`inputReady`；没有入口配置时，不增加该字段。
 
+等待后续步骤的 `portraitFrame` 时，已显示的立绘及其退出尾动画继续绘制，并向立绘绘制回调传递上一已呈现步骤，直到新的立绘阶段才切换业务步骤与表情。等待中调用 `finish()` 的退出动画同样沿用该已呈现步骤。首次入口在到达立绘阶段前没有旧立绘可绘制，即使此时结束对话也不会提前调用立绘绘制回调。
+
 默认 `entrance: null` 继续即时显示，兼容原有调用。显式设置的 `startDelayFrames` 是入口时序开始前的附加等待，不会由预置自动移除。竖屏 Demo 在战后明确使用 `entrance: 'afterBoss', startDelayFrames: 0`，保留 Rush 的台词、人物与表情，替换其额外的 50 帧开场等待；历史宽屏调用与导入数据仍保留旧时序。战前调用也不受这项可选预置影响。
 
 退场也由公共对话持有。`exit: 'beforeBoss'` 对应原作战前 MSG：最后一句推进后，同帧向双方立绘身体、独立表情和根动画递归发送 interrupt 1，随后等待 30 帧再调用 `onComplete`。这 30 帧内 `active`、`alive` 为真，`exiting` 为真；继续调用 `update()` 和 `draw()`，立绘按原 ANM 滑出、变暗和淡出，确认键和跳过键不能提前结束尾动画。剧情步骤中的终止事件仍在退场开始时按原顺序执行一次，不会因延迟完成而重放。
