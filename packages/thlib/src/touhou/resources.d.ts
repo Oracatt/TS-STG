@@ -6,8 +6,16 @@ import type {TouhouBitmapFont} from './font.js';
 import type {TouhouAudio,TouhouAudioManifest} from './audio.js';
 import type {TouhouPlayerProfile} from './player.js';
 export interface TouhouPlayerResourceProfile {bank:string;profile?:TouhouPlayerProfile;sht?:TouhouSht;}
+export interface TouhouResourceArchiveDescriptor{file:string;sha256:string;sourceSha256?:string;scripts?:number;sprites?:number;textures?:number;surfaces?:number;[key:string]:unknown;}
+export interface TouhouResourceLocaleDescriptor{archives:Record<string,TouhouResourceArchiveDescriptor>;[key:string]:unknown;}
+export interface TouhouResourceManifest{
+ format:'ts-stg-touhou-common-v1';archives:Record<string,TouhouResourceArchiveDescriptor>;
+ locales?:Record<string,TouhouResourceLocaleDescriptor>;audio?:string;[key:string]:unknown;
+}
 export interface TouhouResourceOptions {
  basePath?:string;environment?:AnmEnvironment;audioVolume?:number;
+ /** Base Japanese resources use ja. Other locales must be declared in manifest.locales; missing localized banks fall back to the base pack. */
+ locale?:string;
  /** Required manifest banks; defaults to the source pack. All additional manifest archives load too. */
  bankNames?:readonly string[];
  /** Decoded banks with already-resolved texture paths, also usable without a host. */
@@ -29,10 +37,11 @@ export interface TouhouResourceHost extends Partial<TouhouBitmapTextHost> {
 }
 export interface TouhouResources {
  readonly disposed:boolean;
+ readonly locale:string;
  basePath:string;shots:TouhouSht[]&{pl00:TouhouSht;pl01:TouhouSht}&Record<string,TouhouSht>;styles:TouhouBulletStyle[];
  players:Record<string,TouhouPlayerResourceProfile>;
  banks:Record<string,AnmBank|null>;data:Record<string,AnmData>;
- manifest:any;audioManifest:TouhouAudioManifest|null;font:TouhouBitmapFont|null;audio:TouhouAudio|null;
+ manifest:TouhouResourceManifest|null;audioManifest:TouhouAudioManifest|null;font:TouhouBitmapFont|null;audio:TouhouAudio|null;
  createBank(name:string):AnmBank;registerBank(name:string,data:AnmData):AnmBank;dispose():void;
  createNameAnimation(text:string,options?:{script?:number;interrupt?:number;color?:number;shadowColor?:number;codePage?:number},bank?:AnmBank):AnmInstance;
  writeAnimationText(vm:AnmInstance,text:string,options?:TouhouAnimationTextOptions):AnmInstance;

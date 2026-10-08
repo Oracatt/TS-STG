@@ -1,0 +1,53 @@
+{
+  "format": "ts-stg-original-hud-labels-v1",
+  "source": {
+    "title": "LuaSTG THlib-Evo (RyannLib resource replacement)",
+    "commit": "863c7c19d4c8873f09be42fdc4fc25ee68422fd8",
+    "url": "https://github.com/KaleiAlma/THlib-Evo/blob/863c7c19d4c8873f09be42fdc4fc25ee68422fd8/packages/thlib-resources/THlib/UI/hint.png",
+    "geometryUrl": "https://github.com/KaleiAlma/THlib-Evo/blob/863c7c19d4c8873f09be42fdc4fc25ee68422fd8/packages/thlib-scripts/THlib/UI/UI.lua",
+    "pngSha256": "b9430aae9045af26b933b48b4cb7cc9a5194a0b917cab0b84d16dc8e30e2c5f3",
+    "width": 512,
+    "height": 256
+  },
+  "texture": {
+    "width": 128,
+    "height": 128,
+    "sha256": "ba9a633d1efaebd5066aee56a42d22d9276b59101682c1710ce0cc099fd902c2"
+  },
+  "operation": "Copy only the two original source rectangles. Each interior RGBA byte remains identical; two-pixel gutters extrude its own edge. No generated artwork, color key, recoloring or resizing.",
+  "rights": "Original upstream resource, not engine MIT artwork. Upstream ryannlibcredits.txt: Non-commercial/personal use. Chinese localization uses the separately supplied TH16 Chinese patch, not this image.",
+  "labels": [
+    {
+      "key": "pointValue",
+      "sourceSprite": "hint.point",
+      "sourceRect": {
+        "x": 160,
+        "y": 12,
+        "width": 120,
+        "height": 32
+      },
+      "rect": {
+        "x": 2,
+        "y": 2,
+        "width": 120,
+        "height": 32
+      }
+    },
+    {
+      "key": "graze",
+      "sourceSprite": "hint.graze",
+      "sourceRect": {
+        "x": 86,
+        "y": 12,
+        "width": 74,
+        "height": 32
+      },
+      "rect": {
+        "x": 2,
+        "y": 38,
+        "width": 74,
+        "height": 32
+      }
+    }
+  ]
+}

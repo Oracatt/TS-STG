@@ -61,11 +61,11 @@
     },
     "front": {
       "file": "anm/front.json",
-      "sha256": "68a580bd9b7ef8a04a661244e15985abdf11061af47fd1971641418f36e5349d",
+      "sha256": "c8edf2cbd2f963e957d6b3b7d5491ddcc0a3c83ddc8b9d96d70b6a17e87d9d12",
       "sourceSha256": "fd48b69fe97d5f585701de1c2b20c3248600043629a98a49425416c492560c31",
-      "scripts": 330,
-      "sprites": 127,
-      "textures": 10,
+      "scripts": 332,
+      "sprites": 129,
+      "textures": 11,
       "surfaces": 0
     },
     "text": {
@@ -22478,6 +22478,57 @@
       ]
     },
     {
+      "file": "textures/front/hud-labels.png",
+      "sha256": "ba9a633d1efaebd5066aee56a42d22d9276b59101682c1710ce0cc099fd902c2",
+      "source": {
+        "title": "LuaSTG THlib-Evo (RyannLib resource replacement)",
+        "commit": "863c7c19d4c8873f09be42fdc4fc25ee68422fd8",
+        "url": "https://github.com/KaleiAlma/THlib-Evo/blob/863c7c19d4c8873f09be42fdc4fc25ee68422fd8/packages/thlib-resources/THlib/UI/hint.png",
+        "geometryUrl": "https://github.com/KaleiAlma/THlib-Evo/blob/863c7c19d4c8873f09be42fdc4fc25ee68422fd8/packages/thlib-scripts/THlib/UI/UI.lua",
+        "pngSha256": "b9430aae9045af26b933b48b4cb7cc9a5194a0b917cab0b84d16dc8e30e2c5f3",
+        "width": 512,
+        "height": 256
+      },
+      "operation": "Selected original HUD label RGBA copied exactly into isolated cells with two-pixel own-edge gutters",
+      "originalHudLabels": true,
+      "spriteMappings": [
+        {
+          "sprite": 186,
+          "source": {
+            "x": 160,
+            "y": 12,
+            "width": 120,
+            "height": 32
+          },
+          "destination": {
+            "x": 2,
+            "y": 2,
+            "width": 120,
+            "height": 32
+          },
+          "paddingX": 2,
+          "paddingY": 2
+        },
+        {
+          "sprite": 187,
+          "source": {
+            "x": 86,
+            "y": 12,
+            "width": 74,
+            "height": 32
+          },
+          "destination": {
+            "x": 2,
+            "y": 38,
+            "width": 74,
+            "height": 32
+          },
+          "paddingX": 2,
+          "paddingY": 2
+        }
+      ]
+    },
+    {
       "file": "textures/title/entry-4.png",
       "sha256": "5e98147f0e51813402e4e86fc6ceb5e64d336b7ba2f072b68dad3363f804862d",
       "source": {
@@ -25157,6 +25208,36 @@
       "pixels": "Source RGBA copied exactly. Ordinary UI gutters extrude each cell's own edge; procedural ring X gutters retain source wrap neighbours for bilinear sampling. Repeated axes retain their complete original texture period."
     },
     {
+      "archive": "front",
+      "entry": 12,
+      "operation": "append-original-hud-labels",
+      "provenance": "hud-labels.json",
+      "source": {
+        "title": "LuaSTG THlib-Evo (RyannLib resource replacement)",
+        "commit": "863c7c19d4c8873f09be42fdc4fc25ee68422fd8",
+        "url": "https://github.com/KaleiAlma/THlib-Evo/blob/863c7c19d4c8873f09be42fdc4fc25ee68422fd8/packages/thlib-resources/THlib/UI/hint.png",
+        "geometryUrl": "https://github.com/KaleiAlma/THlib-Evo/blob/863c7c19d4c8873f09be42fdc4fc25ee68422fd8/packages/thlib-scripts/THlib/UI/UI.lua",
+        "pngSha256": "b9430aae9045af26b933b48b4cb7cc9a5194a0b917cab0b84d16dc8e30e2c5f3",
+        "width": 512,
+        "height": 256
+      },
+      "labels": [
+        {
+          "key": "pointValue",
+          "script": 378,
+          "sprite": 186,
+          "sourceSprite": "hint.point"
+        },
+        {
+          "key": "graze",
+          "script": 379,
+          "sprite": 187,
+          "sourceSprite": "hint.graze"
+        }
+      ],
+      "timing": "Shared front:12 fade and secondary HUD layer; only sprite ID and row anchor adapted. Original source bank records are unchanged."
+    },
+    {
       "archive": "title",
       "script": 0,
       "offset": 36,
@@ -25591,15 +25672,2706 @@
       "Specific Bosses, names, portraits/cut-ins, title logo/background/illustration and copyright artwork, stages/backgrounds and game-specific loading illustrations"
     ]
   },
+  "hudLabels": "hud-labels.json",
   "counts": {
     "archives": 10,
-    "textures": 94,
+    "textures": 95,
     "sounds": 51,
-    "scripts": 1342,
-    "sprites": 2256,
+    "scripts": 1344,
+    "sprites": 2258,
     "shotRows": [
       72,
       32
     ]
+  },
+  "locales": {
+    "zh-CN": {
+      "format": "ts-stg-touhou-locale-v1",
+      "language": "zh-CN",
+      "source": {
+        "package": "【喵玉×THB】东方天空璋汉化补丁[支持Steam版].rar",
+        "packageSha256": "3707f3bd3e935d2ebb001e0bbd1b1db2ecd00ecf41116571c98a74ae786ce4b0",
+        "database": "th16.sdb",
+        "databaseSha256": "3593e515c01f42664233e800d25495d41afe25a7c864a865f247ad3f941f0edc",
+        "documentationDate": "2017-11-17",
+        "originalGameVersion": "1.00a",
+        "originalAuthors": "Team Shanghai Alice / ZUN",
+        "translationAuthors": "喵玉汉化组 & THB学园",
+        "imageEditors": [
+          "hgs1220",
+          "黄金琪露诺",
+          "鸠子",
+          "莱亚"
+        ],
+        "license": "Original game and fan translation resources; not MIT. No new redistribution grant is implied.",
+        "acquisition": "User supplied local translation patch; original SQLite PNG blobs extracted without executing package code."
+      },
+      "archives": {
+        "front": {
+          "file": "locales/zh-CN/anm/front.json",
+          "sha256": "9ff44d834666eabf0c852e3d84c01095da7b1b7b0eaa93d80b5eaf4c27d20459",
+          "sourceSha256": "fd48b69fe97d5f585701de1c2b20c3248600043629a98a49425416c492560c31",
+          "scripts": 332,
+          "sprites": 129,
+          "textures": 12,
+          "surfaces": 0,
+          "baseSha256": "c8edf2cbd2f963e957d6b3b7d5491ddcc0a3c83ddc8b9d96d70b6a17e87d9d12"
+        },
+        "ascii_960": {
+          "file": "locales/zh-CN/anm/ascii_960.json",
+          "sha256": "458859ec7ed1cda823f8317e423693e95700a00532f2e679060032946617d865",
+          "sourceSha256": "36d194bc0c1727c5db4a2ed9dfd5d4d496c09ab9a3d28ad912604d08858f0331",
+          "scripts": 18,
+          "sprites": 915,
+          "textures": 8,
+          "surfaces": 0,
+          "baseSha256": "09ce865591e21b6b21a6a81ff0634bc48f0f3b435454718ed65b4ff6a9831d37"
+        },
+        "title": {
+          "file": "locales/zh-CN/anm/title.json",
+          "sha256": "9fef52b9425bd71855813a2f338ca25de62465d33c1ec25536582b7d8ad73223",
+          "sourceSha256": "be9acb552bec98d55cd28cc0e648bb7dd3c6136aa0817952e0026d657e58e643",
+          "scripts": 44,
+          "sprites": 28,
+          "textures": 19,
+          "surfaces": 0,
+          "baseSha256": "3a0422da7a0658eba1eeeb0970ae3d030f5e089ab41aeff644189b695b005e81"
+        }
+      },
+      "textures": [
+        {
+          "file": "locales/zh-CN/textures/front.png",
+          "sha256": "7bfbdac0218e94389481db2991b94b23501c56d9391b6781e2a677f4daa7bab8",
+          "width": 1024,
+          "height": 1024,
+          "operation": "Independent Chinese common UI cells; exact source pixels and two-pixel own-edge gutters",
+          "spriteMappings": [
+            {
+              "archive": "front",
+              "sprite": 95,
+              "key": "confirm",
+              "label": "真的可以吗？",
+              "source": {
+                "file": "tools/assets/touhou-zh/confirm.png",
+                "sha256": "79a92b98eeca364c040855f12a1039f95ba2a1c9be17a4e164d7d355f5db15f7",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 576,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 2,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 97,
+              "key": "no",
+              "label": "算了",
+              "source": {
+                "file": "tools/assets/touhou-zh/no.png",
+                "sha256": "ba5a59419b1a8d5c989e18873a3bfa3aecf02c15caf969d68e0a87407cc5a122",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 704,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 70,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 93,
+              "key": "option-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/front/entry-3.png",
+                "pngSha256": "b157237a245e25be419c7f4094d8cfa8eac435bab63c1055993adc76891fdf9a",
+                "sprite": 93,
+                "rect": {
+                  "x": 2,
+                  "y": 546,
+                  "width": 512,
+                  "height": 64
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 40,
+                    "width": 512,
+                    "height": 24
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 546,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 138,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 85,
+              "key": "pause-0",
+              "label": "解除游戏暂停",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-0.png",
+                "sha256": "c5b49192209fadcf32f157e6419d5355bd88d5a6af2a69f05f29421ef729e84c",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 206,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 86,
+              "key": "pause-1",
+              "label": "结束游戏",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-1.png",
+                "sha256": "698b34d35d84201040028dd48a87e32577e3e1ac25795c13247278f907bbcf54",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 64,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 274,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 87,
+              "key": "pause-2",
+              "label": "保存录像后结束游戏",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-2.png",
+                "sha256": "e7738e41c3cf3e32167cc4e4c029cb3f8a945ae575bbdc5bdd622dd5ecc26642",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 128,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 342,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 88,
+              "key": "pause-3",
+              "label": "操作说明",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-3.png",
+                "sha256": "5591e3179fe65b871a8cb282669eeef4cfa1f796c92b834777aaa90c0ec48b88",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 192,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 410,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 89,
+              "key": "pause-4",
+              "label": "从头重新开始",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-4.png",
+                "sha256": "eb1fdf997bb7c5e9a68f88b0e6a09f7a33fe2ebe6e2577e24325abd72a7705cf",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 256,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 478,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 90,
+              "key": "pause-5",
+              "label": "继续游戏",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-5.png",
+                "sha256": "80547a93dd0d103b713d4965d6dccb712b7dda8ac82ae792fb2a176a54bb064e",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 320,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 546,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 91,
+              "key": "pause-6",
+              "label": "保存游戏录像",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-6.png",
+                "sha256": "885fa6b5093eda23b2c646381412342426d2a7a44e6e7e1f61595093091b926c",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 384,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 614,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 92,
+              "key": "pause-7",
+              "label": "再次播放录像",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-7.png",
+                "sha256": "75b050eb3dc428dbdfd7b05d8c6121f7ec824f819b24dab1dda7f113d1b7810a",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 448,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 682,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 96,
+              "key": "yes",
+              "label": "好的",
+              "source": {
+                "file": "tools/assets/touhou-zh/yes.png",
+                "sha256": "785e3426dcb0aeae0c1c46788231beb7798ffd82df01f71ac0218ecbe8d4ce76",
+                "originalFile": "data/ascii/pause.png",
+                "originalPngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+                "originalRect": {
+                  "x": 0,
+                  "y": 640,
+                  "width": 512,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 750,
+                "width": 512,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 98,
+              "key": "pause-title-0",
+              "label": "游戏暂停",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-title-0.png",
+                "sha256": "3cbbe2a52b5ac88247b912387fa41b324dfce2cf4b6c8d16d66daae12a0e9965",
+                "originalFile": "data/ascii/pause_title.png",
+                "originalPngSha256": "675a79621c4218b9eb0b10d03cb047dcff2a160c853a9456c03e384fccc2fa9f",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 192,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 192,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 192,
+                "height": 64
+              },
+              "destination": {
+                "x": 518,
+                "y": 750,
+                "width": 192,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 192,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 99,
+              "key": "pause-title-1",
+              "label": "满身疮痍",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-title-1.png",
+                "sha256": "a519c4bfbdce046c0057bfab9faeaf762f47b5996e6caa7dd7f3f52bba88a5e6",
+                "originalFile": "data/ascii/pause_title.png",
+                "originalPngSha256": "675a79621c4218b9eb0b10d03cb047dcff2a160c853a9456c03e384fccc2fa9f",
+                "originalRect": {
+                  "x": 0,
+                  "y": 64,
+                  "width": 192,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 192,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 192,
+                "height": 64
+              },
+              "destination": {
+                "x": 714,
+                "y": 750,
+                "width": 192,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 192,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 100,
+              "key": "pause-title-2",
+              "label": "播放完毕",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-title-2.png",
+                "sha256": "f09370cbe7c9c2b2ac8eaa44c9ad35d5475ff6421ad918c84884dc1bf408fd4e",
+                "originalFile": "data/ascii/pause_title.png",
+                "originalPngSha256": "675a79621c4218b9eb0b10d03cb047dcff2a160c853a9456c03e384fccc2fa9f",
+                "originalRect": {
+                  "x": 0,
+                  "y": 128,
+                  "width": 192,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 192,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 192,
+                "height": 64
+              },
+              "destination": {
+                "x": 2,
+                "y": 818,
+                "width": 192,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 192,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 101,
+              "key": "pause-title-3",
+              "label": "攻略失败",
+              "source": {
+                "file": "tools/assets/touhou-zh/pause-title-3.png",
+                "sha256": "ed27a2100daf7cca2132b46993bb80f4250ae6affc8c28fc6ec731723827011f",
+                "originalFile": "data/ascii/pause_title.png",
+                "originalPngSha256": "675a79621c4218b9eb0b10d03cb047dcff2a160c853a9456c03e384fccc2fa9f",
+                "originalRect": {
+                  "x": 0,
+                  "y": 192,
+                  "width": 192,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 192,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 192,
+                "height": 64
+              },
+              "destination": {
+                "x": 198,
+                "y": 818,
+                "width": 192,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 192,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 56,
+              "key": "spell-time",
+              "label": "击破时间 / 实际时间",
+              "source": {
+                "file": "tools/assets/touhou-zh/spell-time.png",
+                "sha256": "fbd941cf5e4013fc34f193269f2c9c135c95e92fba7e4c69510901ee50e6792c",
+                "originalFile": "data/front/front00.png",
+                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+                "originalRect": {
+                  "x": 672,
+                  "y": 608,
+                  "width": 128,
+                  "height": 64
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 128,
+                  "height": 64
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 128,
+                "height": 64
+              },
+              "destination": {
+                "x": 394,
+                "y": 818,
+                "width": 128,
+                "height": 64
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 128,
+                "originalHeight": 64,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 74,
+              "key": "marisa-name",
+              "label": "雾雨 魔理沙",
+              "source": {
+                "file": "tools/assets/touhou-zh/marisa-name.png",
+                "sha256": "0db8ad86cfe4bd71e1eed6146440cd84dd9ec7b0cc1e1b05976e35271a265f56",
+                "originalFile": "data/title/title_pl01c.png",
+                "originalPngSha256": "59c90f2275b09e6581d42e0aa86ba90e89c8d2e4a4adbd56cc856a2612cc58b1",
+                "originalRect": {
+                  "x": 363,
+                  "y": 80,
+                  "width": 275,
+                  "height": 58
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 275,
+                  "height": 58
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 275,
+                "height": 58
+              },
+              "destination": {
+                "x": 526,
+                "y": 818,
+                "width": 275,
+                "height": 58
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 160,
+                "originalHeight": 32,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 0.5517241379310345,
+                "scaleY": 0.5517241379310345
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 73,
+              "key": "reimu-name",
+              "label": "博丽 灵梦",
+              "source": {
+                "file": "tools/assets/touhou-zh/reimu-name.png",
+                "sha256": "c95fdb6b94756537ac4126fcefb10b8d27169c77803ab9f32b47245c72b67d84",
+                "originalFile": "data/title/title_pl00c.png",
+                "originalPngSha256": "b1c72bf9c5a91937e471a9d1041718edcc7c88d99e6201cce87854f7a0236b6b",
+                "originalRect": {
+                  "x": 383,
+                  "y": 80,
+                  "width": 222,
+                  "height": 58
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 222,
+                  "height": 58
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 222,
+                "height": 58
+              },
+              "destination": {
+                "x": 2,
+                "y": 886,
+                "width": 222,
+                "height": 58
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 160,
+                "originalHeight": 32,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 0.5517241379310345,
+                "scaleY": 0.5517241379310345
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 8,
+              "key": "bombs",
+              "label": "Spell Card",
+              "source": {
+                "file": "tools/assets/touhou-zh/bombs.png",
+                "sha256": "c5c707ecad6b552077d1f983d9f4dee188f41f8a3c046f13ff88674944f28b29",
+                "originalFile": "data/front/front00.png",
+                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+                "originalRect": {
+                  "x": 656,
+                  "y": 0,
+                  "width": 176,
+                  "height": 36
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 176,
+                  "height": 36
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 176,
+                "height": 36
+              },
+              "destination": {
+                "x": 228,
+                "y": 886,
+                "width": 176,
+                "height": 36
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 176,
+                "originalHeight": 36,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 4,
+              "key": "high-score",
+              "label": "最高得分",
+              "source": {
+                "file": "tools/assets/touhou-zh/high-score.png",
+                "sha256": "d40da4f473745743497f0f54c4ef044909d331c287179c0ae669db1f26b60d3c",
+                "originalFile": "data/front/front00.png",
+                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+                "originalRect": {
+                  "x": 512,
+                  "y": 0,
+                  "width": 144,
+                  "height": 36
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 144,
+                  "height": 36
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 144,
+                "height": 36
+              },
+              "destination": {
+                "x": 408,
+                "y": 886,
+                "width": 144,
+                "height": 36
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 144,
+                "originalHeight": 36,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 6,
+              "key": "lives",
+              "label": "剩余人数",
+              "source": {
+                "file": "tools/assets/touhou-zh/lives.png",
+                "sha256": "690ad90716fcd924f8e10eb1797f119e2f203bbb6c3ceec132e30df5fa00e6e3",
+                "originalFile": "data/front/front00.png",
+                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+                "originalRect": {
+                  "x": 512,
+                  "y": 72,
+                  "width": 144,
+                  "height": 36
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 144,
+                  "height": 36
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 144,
+                "height": 36
+              },
+              "destination": {
+                "x": 556,
+                "y": 886,
+                "width": 144,
+                "height": 36
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 144,
+                "originalHeight": 36,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 11,
+              "key": "power",
+              "label": "灵力",
+              "source": {
+                "file": "tools/assets/touhou-zh/power.png",
+                "sha256": "b0d1af92698762a03613ada7f5ba68babf4502724667875f20f12b0b5f8d9a8e",
+                "originalFile": "data/front/front00.png",
+                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+                "originalRect": {
+                  "x": 664,
+                  "y": 108,
+                  "width": 144,
+                  "height": 36
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 144,
+                  "height": 36
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 144,
+                "height": 36
+              },
+              "destination": {
+                "x": 704,
+                "y": 886,
+                "width": 144,
+                "height": 36
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 144,
+                "originalHeight": 36,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 5,
+              "key": "score",
+              "label": "得分",
+              "source": {
+                "file": "tools/assets/touhou-zh/score.png",
+                "sha256": "b68bc32d13a660d5a3423c253877d38721efa63d390ad4aca84b7214c4ee9f2c",
+                "originalFile": "data/front/front00.png",
+                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+                "originalRect": {
+                  "x": 512,
+                  "y": 36,
+                  "width": 144,
+                  "height": 36
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 144,
+                  "height": 36
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 144,
+                "height": 36
+              },
+              "destination": {
+                "x": 852,
+                "y": 886,
+                "width": 144,
+                "height": 36
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 144,
+                "originalHeight": 36,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 187,
+              "key": "graze",
+              "label": "Graze",
+              "source": {
+                "file": "tools/assets/touhou-zh/graze.png",
+                "sha256": "e6e252cf5165f34ad13f86a31f3590db86cb063866918a3b106b60f7ed50890b",
+                "originalFile": "data/front/front00.png",
+                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+                "originalRect": {
+                  "x": 704,
+                  "y": 36,
+                  "width": 128,
+                  "height": 36
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 128,
+                  "height": 36
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 128,
+                "height": 36
+              },
+              "destination": {
+                "x": 2,
+                "y": 948,
+                "width": 128,
+                "height": 36
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 74,
+                "originalHeight": 32,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 0.578125,
+                "scaleY": 0.578125
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 186,
+              "key": "point-value",
+              "label": "最大得点",
+              "source": {
+                "file": "tools/assets/touhou-zh/point-value.png",
+                "sha256": "e936897599e5abbfa236adb18b1d61d84b178233baa4550609eb965994e9d3bb",
+                "originalFile": "data/front/front00.png",
+                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+                "originalRect": {
+                  "x": 704,
+                  "y": 72,
+                  "width": 128,
+                  "height": 36
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 128,
+                  "height": 36
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 128,
+                "height": 36
+              },
+              "destination": {
+                "x": 134,
+                "y": 948,
+                "width": 128,
+                "height": 36
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 120,
+                "originalHeight": 32,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 0.8888888888888888,
+                "scaleY": 0.8888888888888888
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "front",
+              "sprite": 7,
+              "key": "fragments",
+              "label": "碎片",
+              "source": {
+                "file": "tools/assets/touhou-zh/fragments.png",
+                "sha256": "662e7fa19bc9bcd9f8ae6f8ce2e3405cda30428419f09ca20b16a2c20dcef825",
+                "originalFile": "data/front/front00.png",
+                "originalPngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+                "originalRect": {
+                  "x": 576,
+                  "y": 108,
+                  "width": 80,
+                  "height": 36
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 80,
+                  "height": 36
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 80,
+                "height": 36
+              },
+              "destination": {
+                "x": 266,
+                "y": 948,
+                "width": 80,
+                "height": 36
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 144,
+                "originalHeight": 36,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            }
+          ]
+        },
+        {
+          "file": "locales/zh-CN/textures/title.png",
+          "sha256": "9209de2ed75f8f7af51dd36eed66e2357fc71d4228d8d39b6966f8b02ca9bd00",
+          "width": 2048,
+          "height": 4096,
+          "operation": "Independent Chinese common UI cells; exact source pixels and two-pixel own-edge gutters",
+          "spriteMappings": [
+            {
+              "archive": "title",
+              "sprite": 39,
+              "key": "title-marisa-name",
+              "label": "雾雨 魔理沙",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-marisa-name.png",
+                "sha256": "df881dabf674fdbd9b79ed13350f04e8933b82cd7925868a4b521caf8c0632fd",
+                "originalFile": "data/title/title_pl01c.png",
+                "originalPngSha256": "59c90f2275b09e6581d42e0aa86ba90e89c8d2e4a4adbd56cc856a2612cc58b1",
+                "originalRect": {
+                  "x": 363,
+                  "y": 80,
+                  "width": 275,
+                  "height": 58
+                },
+                "originalDestination": {
+                  "x": 164,
+                  "y": 70,
+                  "width": 275,
+                  "height": 58
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 603,
+                "height": 357
+              },
+              "destination": {
+                "x": 2,
+                "y": 2,
+                "width": 603,
+                "height": 357
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 603,
+                "originalHeight": 357,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 38,
+              "key": "title-reimu-name",
+              "label": "博丽 灵梦",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-reimu-name.png",
+                "sha256": "b319930a1662ba00b25351b76489c9e481c34caa86d20f5597112d31d592ebed",
+                "originalFile": "data/title/title_pl00c.png",
+                "originalPngSha256": "b1c72bf9c5a91937e471a9d1041718edcc7c88d99e6201cce87854f7a0236b6b",
+                "originalRect": {
+                  "x": 383,
+                  "y": 80,
+                  "width": 222,
+                  "height": 58
+                },
+                "originalDestination": {
+                  "x": 190,
+                  "y": 70,
+                  "width": 222,
+                  "height": 58
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 603,
+                "height": 357
+              },
+              "destination": {
+                "x": 609,
+                "y": 2,
+                "width": 603,
+                "height": 357
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 603,
+                "originalHeight": 357,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 16,
+              "key": "achievement-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-16.png",
+                "pngSha256": "e1842062b08ba7b55e7d2758864fa6de537e24beb4c23fc2b1ab3693c4d2730b",
+                "sprite": 16,
+                "rect": {
+                  "x": 2,
+                  "y": 2,
+                  "width": 512,
+                  "height": 256
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 58,
+                    "width": 512,
+                    "height": 82
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 2,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 1216,
+                "y": 2,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 10,
+              "key": "title-10",
+              "label": "展示战斗经历",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-10.png",
+                "sha256": "ff424e4cf09d277c114bbace48791e464863c42dc43d68db48e8c2f354ba953c",
+                "originalFile": "data/title/selecttitle/sl_playerdata.png",
+                "originalPngSha256": "87910eca1201e481dd98995d826210e35abe64807ce219fcf20db6d8dd274ecd",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 2,
+                "y": 363,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 12,
+              "key": "title-12",
+              "label": "游戏方法",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-12.png",
+                "sha256": "6538f6a333a5552c4f64a100c57a69f601dc56b63b4808607d887058e0e51ab9",
+                "originalFile": "data/title/selecttitle/sl_manual.png",
+                "originalPngSha256": "4931312634d773cee001de99c55a950417a5c0383b529cd4b647db87351edc25",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 518,
+                "y": 363,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 13,
+              "key": "title-13",
+              "label": "保存游戏录像",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-13.png",
+                "sha256": "bf74f4fca90bd1d5dc6bae2befe4ed5d797ce19f26b779f2b9084fe6d5a97f9f",
+                "originalFile": "data/title/selecttitle/sl_savereplay.png",
+                "originalPngSha256": "77f4ae47fd5b9ef68f40f3d24d6c11bafa84d7b3be744624bdda5fc9decb72d1",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 1034,
+                "y": 363,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 14,
+              "key": "title-14",
+              "label": "输入得分者的名字",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-14.png",
+                "sha256": "6bf8ea92aee6562c8ac5c022bc398046bb178386aa1167ee12605e9b741c88cd",
+                "originalFile": "data/title/selecttitle/sl_regist.png",
+                "originalPngSha256": "ed2180706aef9dc1ddd732c16a826adbaa10a16e891cbe078740d9438d974072",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 2,
+                "y": 623,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 15,
+              "key": "title-15",
+              "label": "展示战斗经历",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-15.png",
+                "sha256": "ff424e4cf09d277c114bbace48791e464863c42dc43d68db48e8c2f354ba953c",
+                "originalFile": "data/title/selecttitle/sl_playerdata.png",
+                "originalPngSha256": "87910eca1201e481dd98995d826210e35abe64807ce219fcf20db6d8dd274ecd",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 518,
+                "y": 623,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 4,
+              "key": "title-4",
+              "label": "选择游戏难度",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-4.png",
+                "sha256": "3b4cb221016c799a4c1f0a09157d2dc2cca623b86dd0b9fa765763e113d28b08",
+                "originalFile": "data/title/selecttitle/sl_rank.png",
+                "originalPngSha256": "ce6e6ec21348a4d225e24f8f5bb676dcf4a5489a7e1b2cf515b1c073b842c21e",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 1034,
+                "y": 623,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 5,
+              "key": "title-5",
+              "label": "选择一位主人公",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-5.png",
+                "sha256": "8a02f5a0eb32ae984c3df20bd7f4adaf91b8796e257baa46c339d0d21814bd25",
+                "originalFile": "data/title/selecttitle/sl_player.png",
+                "originalPngSha256": "d0872d51cffb5b299f9b112c35c017dc4abb9c6a262840f27bdcf312a922d640",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 2,
+                "y": 883,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 7,
+              "key": "title-7",
+              "label": "选择关卡",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-7.png",
+                "sha256": "6175e16b123a94f2218853e19add7f3a0d0d2cd8d1e95a26b4a42cdea0bd2628",
+                "originalFile": "data/title/selecttitle/sl_stage.png",
+                "originalPngSha256": "1daf2ac3de227b648c60936fde40b504e4294a0ce9a49457417f12a7f53ebfed",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 518,
+                "y": 883,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 8,
+              "key": "title-8",
+              "label": "选择符卡",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-8.png",
+                "sha256": "523f1ed9d8d4e39e360db5b8841cc6e562eeccb62c01b40578df13955cb1382a",
+                "originalFile": "data/title/selecttitle/sl_spell.png",
+                "originalPngSha256": "0d1a7aa52bedd907d70cb79e020e90dd9643c458954476afc5f88f57b0ccce98",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 1034,
+                "y": 883,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 9,
+              "key": "title-9",
+              "label": "选择游戏录像",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-9.png",
+                "sha256": "55b4938549fe0f8a0063c9033880416458eadf5789ee34b6aa6ab82ec4b1204a",
+                "originalFile": "data/title/selecttitle/sl_replay.png",
+                "originalPngSha256": "f9a7ca368445c2c726b7e86feff169137ebeae547862017d3375667ad166de97",
+                "originalRect": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 512,
+                  "height": 256
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 2,
+                "y": 1143,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 11,
+              "key": "title-music",
+              "label": "音乐室",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-music.png",
+                "sha256": "3f235be59b476f6d919aade8f95abf3ffc42292a43f8edefca3dfee9f68633e0",
+                "originalFile": "data/title/selecttitle/sl_music.png",
+                "originalPngSha256": "49daffbbeae9f4c8347d33d6ddf3bb0d0cbb89a24be4a7dc4d95bd21762a2e17",
+                "originalRect": {
+                  "x": 285,
+                  "y": 145,
+                  "width": 112,
+                  "height": 42
+                },
+                "originalDestination": {
+                  "x": 200,
+                  "y": 146,
+                  "width": 112,
+                  "height": 42
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 518,
+                "y": 1143,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 6,
+              "key": "title-weapon",
+              "label": "SubWeapon Select",
+              "source": {
+                "file": "tools/assets/touhou-zh/title-weapon.png",
+                "sha256": "9843219e82e8c59a0bc7caaab07cb77498d7853350b92a3b4c15609e990ba9a7",
+                "originalFile": "data/title/selecttitle/sl_weapon.png",
+                "originalPngSha256": "04619fd6d7c255f7848e95b84441a456ede5fda4699d375f0f4a0a7e47b1654a",
+                "originalRect": {
+                  "x": 10,
+                  "y": 90,
+                  "width": 502,
+                  "height": 58
+                },
+                "originalDestination": {
+                  "x": 5,
+                  "y": 88,
+                  "width": 502,
+                  "height": 58
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 512,
+                "height": 256
+              },
+              "destination": {
+                "x": 1034,
+                "y": 1143,
+                "width": 512,
+                "height": 256
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 256,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 17,
+              "key": "difficulty-17-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-17.png",
+                "pngSha256": "28c49f06377955b292d88c4196e4bc7cf8b740044accdf825f731ac351f1f7ed",
+                "sprite": 17,
+                "rect": {
+                  "x": 2,
+                  "y": 2,
+                  "width": 512,
+                  "height": 160
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 76,
+                    "width": 512,
+                    "height": 38
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 2,
+                "width": 512,
+                "height": 160
+              },
+              "destination": {
+                "x": 2,
+                "y": 1403,
+                "width": 512,
+                "height": 160
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 160,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 18,
+              "key": "difficulty-18-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-17.png",
+                "pngSha256": "28c49f06377955b292d88c4196e4bc7cf8b740044accdf825f731ac351f1f7ed",
+                "sprite": 18,
+                "rect": {
+                  "x": 2,
+                  "y": 166,
+                  "width": 512,
+                  "height": 160
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 76,
+                    "width": 512,
+                    "height": 38
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 166,
+                "width": 512,
+                "height": 160
+              },
+              "destination": {
+                "x": 518,
+                "y": 1403,
+                "width": 512,
+                "height": 160
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 160,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 19,
+              "key": "difficulty-19-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-17.png",
+                "pngSha256": "28c49f06377955b292d88c4196e4bc7cf8b740044accdf825f731ac351f1f7ed",
+                "sprite": 19,
+                "rect": {
+                  "x": 2,
+                  "y": 330,
+                  "width": 512,
+                  "height": 160
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 76,
+                    "width": 512,
+                    "height": 38
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 330,
+                "width": 512,
+                "height": 160
+              },
+              "destination": {
+                "x": 1034,
+                "y": 1403,
+                "width": 512,
+                "height": 160
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 160,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 20,
+              "key": "difficulty-20-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-17.png",
+                "pngSha256": "28c49f06377955b292d88c4196e4bc7cf8b740044accdf825f731ac351f1f7ed",
+                "sprite": 20,
+                "rect": {
+                  "x": 2,
+                  "y": 494,
+                  "width": 512,
+                  "height": 160
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 76,
+                    "width": 512,
+                    "height": 38
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 494,
+                "width": 512,
+                "height": 160
+              },
+              "destination": {
+                "x": 2,
+                "y": 1567,
+                "width": 512,
+                "height": 160
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 160,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 21,
+              "key": "difficulty-21-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-17.png",
+                "pngSha256": "28c49f06377955b292d88c4196e4bc7cf8b740044accdf825f731ac351f1f7ed",
+                "sprite": 21,
+                "rect": {
+                  "x": 2,
+                  "y": 658,
+                  "width": 512,
+                  "height": 160
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 76,
+                    "width": 512,
+                    "height": 38
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 658,
+                "width": 512,
+                "height": 160
+              },
+              "destination": {
+                "x": 518,
+                "y": 1567,
+                "width": 512,
+                "height": 160
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 160,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 22,
+              "key": "difficulty-22-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-17.png",
+                "pngSha256": "28c49f06377955b292d88c4196e4bc7cf8b740044accdf825f731ac351f1f7ed",
+                "sprite": 22,
+                "rect": {
+                  "x": 2,
+                  "y": 822,
+                  "width": 512,
+                  "height": 160
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 76,
+                    "width": 512,
+                    "height": 38
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 822,
+                "width": 512,
+                "height": 160
+              },
+              "destination": {
+                "x": 1034,
+                "y": 1567,
+                "width": 512,
+                "height": 160
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 160,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 23,
+              "key": "difficulty-23-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-17.png",
+                "pngSha256": "28c49f06377955b292d88c4196e4bc7cf8b740044accdf825f731ac351f1f7ed",
+                "sprite": 23,
+                "rect": {
+                  "x": 2,
+                  "y": 986,
+                  "width": 512,
+                  "height": 160
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 76,
+                    "width": 512,
+                    "height": 38
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 986,
+                "width": 512,
+                "height": 160
+              },
+              "destination": {
+                "x": 2,
+                "y": 1731,
+                "width": 512,
+                "height": 160
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 160,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 24,
+              "key": "difficulty-24-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-17.png",
+                "pngSha256": "28c49f06377955b292d88c4196e4bc7cf8b740044accdf825f731ac351f1f7ed",
+                "sprite": 24,
+                "rect": {
+                  "x": 2,
+                  "y": 1150,
+                  "width": 512,
+                  "height": 160
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 76,
+                    "width": 512,
+                    "height": 38
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 1150,
+                "width": 512,
+                "height": 160
+              },
+              "destination": {
+                "x": 518,
+                "y": 1731,
+                "width": 512,
+                "height": 160
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 160,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 25,
+              "key": "difficulty-25-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-17.png",
+                "pngSha256": "28c49f06377955b292d88c4196e4bc7cf8b740044accdf825f731ac351f1f7ed",
+                "sprite": 25,
+                "rect": {
+                  "x": 2,
+                  "y": 1314,
+                  "width": 512,
+                  "height": 160
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 76,
+                    "width": 512,
+                    "height": 38
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 1314,
+                "width": 512,
+                "height": 160
+              },
+              "destination": {
+                "x": 1034,
+                "y": 1731,
+                "width": 512,
+                "height": 160
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 160,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 26,
+              "key": "difficulty-26-english",
+              "label": "Original English fallback",
+              "source": {
+                "file": "textures/title/entry-17.png",
+                "pngSha256": "28c49f06377955b292d88c4196e4bc7cf8b740044accdf825f731ac351f1f7ed",
+                "sprite": 26,
+                "rect": {
+                  "x": 2,
+                  "y": 1478,
+                  "width": 512,
+                  "height": 160
+                },
+                "regions": [
+                  {
+                    "x": 0,
+                    "y": 76,
+                    "width": 512,
+                    "height": 38
+                  }
+                ],
+                "kind": "base-English-mask"
+              },
+              "sourceRect": {
+                "x": 2,
+                "y": 1478,
+                "width": 512,
+                "height": 160
+              },
+              "destination": {
+                "x": 2,
+                "y": 1895,
+                "width": 512,
+                "height": 160
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 512,
+                "originalHeight": 160,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            },
+            {
+              "archive": "title",
+              "sprite": 27,
+              "key": "clear-stamp",
+              "label": "已通关",
+              "source": {
+                "file": "tools/assets/touhou-zh/clear-stamp.png",
+                "sha256": "0d4b5e21485671fd801832eb041667d2230d1efba12cf4db5b200d40fc0e60de",
+                "originalFile": "data/title/rank00.png",
+                "originalPngSha256": "ae560d7552e2a5918761d2bfe1a0a16183f6f15a6e6d30cce7dd929a9906c7aa",
+                "originalRect": {
+                  "x": 0,
+                  "y": 896,
+                  "width": 128,
+                  "height": 128
+                },
+                "originalDestination": {
+                  "x": 0,
+                  "y": 0,
+                  "width": 128,
+                  "height": 128
+                }
+              },
+              "sourceRect": {
+                "x": 0,
+                "y": 0,
+                "width": 128,
+                "height": 128
+              },
+              "destination": {
+                "x": 518,
+                "y": 1895,
+                "width": 128,
+                "height": 128
+              },
+              "paddingX": 2,
+              "paddingY": 2,
+              "geometry": {
+                "originalWidth": 128,
+                "originalHeight": 128,
+                "originalScaleX": 1,
+                "originalScaleY": 1,
+                "scaleX": 1,
+                "scaleY": 1
+              },
+              "operation": "Exact source RGBA copy with own-edge gutters; uniform contain scale; source ANM scripts unchanged."
+            }
+          ]
+        }
+      ],
+      "untranslated": [
+        {
+          "archive": "front",
+          "sprite": 93,
+          "reason": "TH16 pause row 8 means Return to Waypoint, not Options. Only the existing English Option subtitle is retained; its Japanese line is omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 39,
+          "reason": "The source TH20 biography and the patch TH16 seasonal biography are different title-specific stories. Both paragraphs are omitted; only the common character name is retained.",
+          "fallback": "雾雨 魔理沙"
+        },
+        {
+          "archive": "title",
+          "sprite": 38,
+          "reason": "The source TH20 biography and the patch TH16 seasonal biography are different title-specific stories. Both paragraphs are omitted; only the common character name is retained.",
+          "fallback": "博丽 灵梦"
+        },
+        {
+          "archive": "title",
+          "sprite": 16,
+          "reason": "This patch has no matching generic Chinese achievement heading. Existing English Achievement is retained; its Japanese subtitle is omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 6,
+          "reason": "No generic Chinese weapon heading exists in this patch; seasonal subtitle omitted.",
+          "fallback": "SubWeapon Select"
+        },
+        {
+          "archive": "title",
+          "sprite": 17,
+          "reason": "Chinese TH16 difficulty titles are season-specific and cannot translate the source stone grades. Only the corresponding existing English difficulty name is retained; title-specific grades and Japanese explanations are omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 18,
+          "reason": "Chinese TH16 difficulty titles are season-specific and cannot translate the source stone grades. Only the corresponding existing English difficulty name is retained; title-specific grades and Japanese explanations are omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 19,
+          "reason": "Chinese TH16 difficulty titles are season-specific and cannot translate the source stone grades. Only the corresponding existing English difficulty name is retained; title-specific grades and Japanese explanations are omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 20,
+          "reason": "Chinese TH16 difficulty titles are season-specific and cannot translate the source stone grades. Only the corresponding existing English difficulty name is retained; title-specific grades and Japanese explanations are omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 21,
+          "reason": "Chinese TH16 difficulty titles are season-specific and cannot translate the source stone grades. Only the corresponding existing English difficulty name is retained; title-specific grades and Japanese explanations are omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 22,
+          "reason": "Chinese TH16 difficulty titles are season-specific and cannot translate the source stone grades. Only the corresponding existing English difficulty name is retained; title-specific grades and Japanese explanations are omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 23,
+          "reason": "Chinese TH16 difficulty titles are season-specific and cannot translate the source stone grades. Only the corresponding existing English difficulty name is retained; title-specific grades and Japanese explanations are omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 24,
+          "reason": "Chinese TH16 difficulty titles are season-specific and cannot translate the source stone grades. Only the corresponding existing English difficulty name is retained; title-specific grades and Japanese explanations are omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 25,
+          "reason": "Chinese TH16 difficulty titles are season-specific and cannot translate the source stone grades. Only the corresponding existing English difficulty name is retained; title-specific grades and Japanese explanations are omitted.",
+          "fallback": "Original English fallback"
+        },
+        {
+          "archive": "title",
+          "sprite": 26,
+          "reason": "Chinese TH16 difficulty titles are season-specific and cannot translate the source stone grades. Only the corresponding existing English difficulty name is retained; title-specific grades and Japanese explanations are omitted.",
+          "fallback": "Original English fallback"
+        }
+      ],
+      "retained": [
+        {
+          "archive": "ascii_960",
+          "reason": "Digits, ASCII, English notices, NowLoading and 少女祈祷中 stay original. The patch itself retains the 終 bitmap control glyph; it supplies no distinct simplified glyph. No glyph indices, advances or font contracts change."
+        }
+      ],
+      "provenance": "locales/zh-CN/source.json"
+    }
   }
 }

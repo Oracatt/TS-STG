@@ -8357,6 +8357,20 @@
         "script": 377,
         "entry": 11,
         "sourceTexture": "front/lifebar.png"
+      },
+      {
+        "id": "front:378",
+        "bank": "front",
+        "script": 378,
+        "entry": 12,
+        "sourceTexture": "<common-original-hud-labels>"
+      },
+      {
+        "id": "front:379",
+        "bank": "front",
+        "script": 379,
+        "entry": 12,
+        "sourceTexture": "<common-original-hud-labels>"
       }
     ],
     "text": [

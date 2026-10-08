@@ -126,6 +126,7 @@ test('package-local verification accepts the audited clean bodies without readin
 
 test('mixed atlases retain selected RGBA exactly and remove every other pixel',{skip:!available},()=>{
   for(const texture of pack().manifest.textures){
+    if(texture.originalHudLabels)continue; // Separate source/audit, not a TH20 reconstruction texture.
     const output=pack().files.get(texture.file),input=readFileSync(`${source}/textures/${texture.source.archive.slice(0,-4)}/entry-${texture.source.entry}.png`);
     assert.equal(hash(input),texture.source.pngSha256);assert.equal(hash(output),texture.sha256);
     if(texture.spriteMappings)continue; // UI packing has a separate pixel-by-pixel oracle below.
@@ -141,8 +142,8 @@ test('every common static UI cell preserves original RGBA and geometry with inde
   const counts={},nontransparentBlack={};
   for(const name of ['front','ascii_960','title']){
     const original=read(`${source}/anm/${name}.json`),shared=JSON.parse(pack().files.get(`anm/${name}.json`));counts[name]=0;nontransparentBlack[name]=0;
-    assert.equal(shared.entries.length,original.entries.length,'No added surfaces or per-sprite textures');
-    for(const entry of shared.entries){
+    assert.equal(shared.entries.length,original.entries.length+(name==='front'?1:0),'Only the separately audited common label atlas is appended');
+    for(const entry of shared.entries.slice(0,original.entries.length)){
       if(!entry.texture.path){if(['dynamic','renderTarget'].includes(entry.texture.kind))assert.deepEqual(entry,original.entries[entry.index]);continue;}
       if(name==='ascii_960'&&entry.index===7)continue; // Audited source-margin loading atlas retains original UV quantization.
       const texture=pack().manifest.textures.find(t=>t.file===entry.texture.path),mappings=texture.spriteMappings;

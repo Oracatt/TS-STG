@@ -9,8 +9,9 @@ export const TOUHOU_RESOURCE_BANKS=Object.freeze(['pl00','pl01','bullet','effect
 /** Load the complete shared animation pack. A missing host selects exact-data,
  * headless simulation; it never substitutes a different weapon implementation. */
 export function createTouhouResources(host=null,{basePath='packages/thlib/assets/touhou-common',environment={},audioVolume=100,
-  bankNames=TOUHOU_RESOURCE_BANKS,archives={},shots:shotData={},styles=TOUHOU_BULLET_STYLES,players={}}={}){
+  bankNames=TOUHOU_RESOURCE_BANKS,archives={},shots:shotData={},styles=TOUHOU_BULLET_STYLES,players={},locale='ja'}={}){
   if(!Array.isArray(bankNames)||bankNames.some(name=>typeof name!=='string'||!name))throw new TypeError('Resource bank names must be nonempty strings');
+  if(typeof locale!=='string'||!locale.trim())throw new TypeError('Resource locale must be a nonempty string');
   const shots=Object.assign([...TOUHOU_PLAYER_DATA],shotData);shots.pl00=shots[0];shots.pl01=shots[1];
   const playerProfiles={0:{bank:'pl00'},1:{bank:'pl01'},...players};
   const banks=Object.fromEntries(bankNames.map(name=>[name,null])),data=Object.create(null),textureHandles=new Map(),createdBanks=new Set(),soundHandles=new Set(),dynamicTextures=new Map(),textRenderers=new Map();
@@ -19,6 +20,7 @@ export function createTouhouResources(host=null,{basePath='packages/thlib/assets
   const requireActive=()=>{if(disposed)throw new Error('Touhou resources have been disposed');};
   const resources={basePath:prefix,shots,styles,players:playerProfiles,banks,data,manifest:null,font:null,audio:null,audioManifest:null,
     get disposed(){return disposed;},
+    get locale(){return locale;},
     /** Register decoded, caller-owned data. Its texture paths are already resolved.
      * Existing banks stay immutable so live scenes cannot silently change skin. */
     registerBank(name,archive){
@@ -88,13 +90,27 @@ export function createTouhouResources(host=null,{basePath='packages/thlib/assets
     }
     return surfaces.get(key);
   },unloadTexture:()=>{}};
-  if(!host?.readText){for(const [name,archive]of Object.entries(archives))resources.registerBank(name,archive);return resources;}
+  if(!host?.readText){
+    if(locale!=='ja')throw new RangeError(`Resource locale ${locale} requires a common resource manifest`);
+    for(const [name,archive]of Object.entries(archives))resources.registerBank(name,archive);return resources;
+  }
   const read=file=>JSON.parse(host.readText(path(file)));
   resources.manifest=read('manifest.json');
   if(resources.manifest.format!=='ts-stg-touhou-common-v1')throw new Error('Unsupported common Touhou resource pack');
-  for(const name of new Set([...bankNames,...Object.keys(resources.manifest.archives),...Object.keys(archives)])){
-    let archive=archives[name];
-    if(!archive){const descriptor=resources.manifest.archives[name];if(!descriptor)throw new Error(`Missing common bank ${name}`);archive=read(descriptor.file);
+  let localizedArchives={};
+  if(locale!=='ja'){
+    const locales=resources.manifest.locales;
+    if(!locales||!Object.hasOwn(locales,locale))throw new RangeError(`Unsupported common resource locale: ${locale}`);
+    const selected=locales[locale];
+    if(!selected||typeof selected.archives!=='object'||selected.archives===null||Array.isArray(selected.archives))throw new Error(`Invalid common resource locale: ${locale}`);
+    localizedArchives=selected.archives;
+  }
+  for(const name of new Set([...bankNames,...Object.keys(resources.manifest.archives),...Object.keys(localizedArchives),...Object.keys(archives)])){
+    let archive=Object.hasOwn(archives,name)?archives[name]:null;
+    if(!archive){const descriptor=Object.hasOwn(localizedArchives,name)?localizedArchives[name]:resources.manifest.archives[name];
+      if(!descriptor)throw new Error(`Missing common bank ${name}`);
+      if(typeof descriptor.file!=='string'||!descriptor.file)throw new Error(`Invalid common bank descriptor: ${name}`);
+      archive=read(descriptor.file);
       for(const entry of archive.entries)if(entry.texture.path)entry.texture.path=path(entry.texture.path);
     }
     resources.registerBank(name,archive);

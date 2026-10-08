@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {TouhouHud} from '../packages/thlib/src/touhou/hud.js';
+import {TouhouHud,TOUHOU_HUD_LABEL_SCRIPTS} from '../packages/thlib/src/touhou/hud.js';
 
 function fixture(options={}){
   const created=[],text=[];
@@ -15,7 +15,7 @@ function fixture(options={}){
 
 test('default HUD keeps the original labels, seven slots, thirds and four-level numeric placement',()=>{
   const {hud,created,text}=fixture();
-  assert.deepEqual(created.map(vm=>vm.scriptId),[0,100,76,101,32,33,34,35,36,37,38,40,41,42,43,44,45,46]);
+  assert.deepEqual(created.map(vm=>vm.scriptId),[0,100,76,32,33,34,35,36,37,38,40,41,42,43,44,45,46,...Object.values(TOUHOU_HUD_LABEL_SCRIPTS)]);
   assert.deepEqual(hud.lifeIcons.map(vm=>vm.events),[[2],[2],[7],[3],[3],[3],[3]]);
   hud.draw({}, {power:123,lifeFragments:2,bombFragments:1});
   assert.deepEqual(text.filter(row=>row.y===182||row.y===189).map(row=>[row.text,row.x,row.y]),[['1.',540,182],['23',560,189],['/4.',574,182],['00',606,189]]);
@@ -30,6 +30,7 @@ test('unknown identity and difficulty omit their original labels without shiftin
   const {hud}=fixture({character:'sakuya',difficulty:'custom',characterScript:220,difficultyScript:221});
   assert.deepEqual(hud.roots.map(vm=>vm.scriptId),[0,100,221,220]);
   const omitted=fixture({character:0,difficulty:1,characterScript:null,difficultyScript:null});assert.equal(omitted.hud.roots.length,2);
+  assert.deepEqual(fixture({character:1,characterScript:102}).hud.roots.map(vm=>vm.scriptId),[0,100,76,102],'the original character label remains an explicit opt-in');
 });
 
 test('custom resource rules display exact power and fractions without using the wrong partial icon art',()=>{

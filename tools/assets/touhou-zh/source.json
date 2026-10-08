@@ -1,0 +1,1592 @@
+{
+  "format": "ts-stg-touhou-zh-source-v1",
+  "source": {
+    "package": "【喵玉×THB】东方天空璋汉化补丁[支持Steam版].rar",
+    "packageSha256": "3707f3bd3e935d2ebb001e0bbd1b1db2ecd00ecf41116571c98a74ae786ce4b0",
+    "database": "th16.sdb",
+    "databaseSha256": "3593e515c01f42664233e800d25495d41afe25a7c864a865f247ad3f941f0edc",
+    "documentationDate": "2017-11-17",
+    "originalGameVersion": "1.00a",
+    "originalAuthors": "Team Shanghai Alice / ZUN",
+    "translationAuthors": "喵玉汉化组 & THB学园",
+    "imageEditors": [
+      "hgs1220",
+      "黄金琪露诺",
+      "鸠子",
+      "莱亚"
+    ],
+    "license": "Original game and fan translation resources; not MIT. No new redistribution grant is implied.",
+    "acquisition": "User supplied local translation patch; original SQLite PNG blobs extracted without executing package code."
+  },
+  "cells": [
+    {
+      "key": "high-score",
+      "bank": "front",
+      "sprites": [
+        4
+      ],
+      "file": "high-score.png",
+      "rect": {
+        "x": 512,
+        "y": 0,
+        "width": 144,
+        "height": 36
+      },
+      "label": "最高得分",
+      "width": 144,
+      "height": 36,
+      "sha256": "d40da4f473745743497f0f54c4ef044909d331c287179c0ae669db1f26b60d3c",
+      "source": {
+        "file": "data/front/front00.png",
+        "pngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+        "width": 1024,
+        "height": 1024,
+        "rect": {
+          "x": 512,
+          "y": 0,
+          "width": 144,
+          "height": 36
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 144,
+          "height": 36
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "score",
+      "bank": "front",
+      "sprites": [
+        5
+      ],
+      "file": "score.png",
+      "rect": {
+        "x": 512,
+        "y": 36,
+        "width": 144,
+        "height": 36
+      },
+      "label": "得分",
+      "width": 144,
+      "height": 36,
+      "sha256": "b68bc32d13a660d5a3423c253877d38721efa63d390ad4aca84b7214c4ee9f2c",
+      "source": {
+        "file": "data/front/front00.png",
+        "pngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+        "width": 1024,
+        "height": 1024,
+        "rect": {
+          "x": 512,
+          "y": 36,
+          "width": 144,
+          "height": 36
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 144,
+          "height": 36
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "lives",
+      "bank": "front",
+      "sprites": [
+        6
+      ],
+      "file": "lives.png",
+      "rect": {
+        "x": 512,
+        "y": 72,
+        "width": 144,
+        "height": 36
+      },
+      "label": "剩余人数",
+      "width": 144,
+      "height": 36,
+      "sha256": "690ad90716fcd924f8e10eb1797f119e2f203bbb6c3ceec132e30df5fa00e6e3",
+      "source": {
+        "file": "data/front/front00.png",
+        "pngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+        "width": 1024,
+        "height": 1024,
+        "rect": {
+          "x": 512,
+          "y": 72,
+          "width": 144,
+          "height": 36
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 144,
+          "height": 36
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "fragments",
+      "bank": "front",
+      "sprites": [
+        7
+      ],
+      "file": "fragments.png",
+      "rect": {
+        "x": 576,
+        "y": 108,
+        "width": 80,
+        "height": 36
+      },
+      "label": "碎片",
+      "width": 80,
+      "height": 36,
+      "sha256": "662e7fa19bc9bcd9f8ae6f8ce2e3405cda30428419f09ca20b16a2c20dcef825",
+      "source": {
+        "file": "data/front/front00.png",
+        "pngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+        "width": 1024,
+        "height": 1024,
+        "rect": {
+          "x": 576,
+          "y": 108,
+          "width": 80,
+          "height": 36
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 80,
+          "height": 36
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "bombs",
+      "bank": "front",
+      "sprites": [
+        8
+      ],
+      "file": "bombs.png",
+      "rect": {
+        "x": 656,
+        "y": 0,
+        "width": 176,
+        "height": 36
+      },
+      "label": "Spell Card",
+      "width": 176,
+      "height": 36,
+      "sha256": "c5c707ecad6b552077d1f983d9f4dee188f41f8a3c046f13ff88674944f28b29",
+      "source": {
+        "file": "data/front/front00.png",
+        "pngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+        "width": 1024,
+        "height": 1024,
+        "rect": {
+          "x": 656,
+          "y": 0,
+          "width": 176,
+          "height": 36
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 176,
+          "height": 36
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "power",
+      "bank": "front",
+      "sprites": [
+        11
+      ],
+      "file": "power.png",
+      "rect": {
+        "x": 664,
+        "y": 108,
+        "width": 144,
+        "height": 36
+      },
+      "label": "灵力",
+      "width": 144,
+      "height": 36,
+      "sha256": "b0d1af92698762a03613ada7f5ba68babf4502724667875f20f12b0b5f8d9a8e",
+      "source": {
+        "file": "data/front/front00.png",
+        "pngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+        "width": 1024,
+        "height": 1024,
+        "rect": {
+          "x": 664,
+          "y": 108,
+          "width": 144,
+          "height": 36
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 144,
+          "height": 36
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "point-value",
+      "bank": "front",
+      "sprites": [
+        186
+      ],
+      "file": "point-value.png",
+      "rect": {
+        "x": 704,
+        "y": 72,
+        "width": 128,
+        "height": 36
+      },
+      "label": "最大得点",
+      "width": 128,
+      "height": 36,
+      "sha256": "e936897599e5abbfa236adb18b1d61d84b178233baa4550609eb965994e9d3bb",
+      "source": {
+        "file": "data/front/front00.png",
+        "pngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+        "width": 1024,
+        "height": 1024,
+        "rect": {
+          "x": 704,
+          "y": 72,
+          "width": 128,
+          "height": 36
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 36
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "graze",
+      "bank": "front",
+      "sprites": [
+        187
+      ],
+      "file": "graze.png",
+      "rect": {
+        "x": 704,
+        "y": 36,
+        "width": 128,
+        "height": 36
+      },
+      "label": "Graze",
+      "width": 128,
+      "height": 36,
+      "sha256": "e6e252cf5165f34ad13f86a31f3590db86cb063866918a3b106b60f7ed50890b",
+      "source": {
+        "file": "data/front/front00.png",
+        "pngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+        "width": 1024,
+        "height": 1024,
+        "rect": {
+          "x": 704,
+          "y": 36,
+          "width": 128,
+          "height": 36
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 36
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "spell-time",
+      "bank": "front",
+      "sprites": [
+        56
+      ],
+      "file": "spell-time.png",
+      "rect": {
+        "x": 672,
+        "y": 608,
+        "width": 128,
+        "height": 64
+      },
+      "label": "击破时间 / 实际时间",
+      "width": 128,
+      "height": 64,
+      "sha256": "fbd941cf5e4013fc34f193269f2c9c135c95e92fba7e4c69510901ee50e6792c",
+      "source": {
+        "file": "data/front/front00.png",
+        "pngSha256": "e69f6d3ad11067712585d2b8583c6bde46de009c61f3aa44a6ff8588db704cde",
+        "width": 1024,
+        "height": 1024,
+        "rect": {
+          "x": 672,
+          "y": 608,
+          "width": 128,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "reimu-name",
+      "bank": "front",
+      "sprites": [
+        73
+      ],
+      "file": "reimu-name.png",
+      "rect": {
+        "x": 383,
+        "y": 80,
+        "width": 222,
+        "height": 58
+      },
+      "label": "博丽 灵梦",
+      "width": 222,
+      "height": 58,
+      "sha256": "c95fdb6b94756537ac4126fcefb10b8d27169c77803ab9f32b47245c72b67d84",
+      "source": {
+        "file": "data/title/title_pl00c.png",
+        "pngSha256": "b1c72bf9c5a91937e471a9d1041718edcc7c88d99e6201cce87854f7a0236b6b",
+        "width": 850,
+        "height": 396,
+        "rect": {
+          "x": 383,
+          "y": 80,
+          "width": 222,
+          "height": 58
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 222,
+          "height": 58
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "marisa-name",
+      "bank": "front",
+      "sprites": [
+        74
+      ],
+      "file": "marisa-name.png",
+      "rect": {
+        "x": 363,
+        "y": 80,
+        "width": 275,
+        "height": 58
+      },
+      "label": "雾雨 魔理沙",
+      "width": 275,
+      "height": 58,
+      "sha256": "0db8ad86cfe4bd71e1eed6146440cd84dd9ec7b0cc1e1b05976e35271a265f56",
+      "source": {
+        "file": "data/title/title_pl01c.png",
+        "pngSha256": "59c90f2275b09e6581d42e0aa86ba90e89c8d2e4a4adbd56cc856a2612cc58b1",
+        "width": 850,
+        "height": 396,
+        "rect": {
+          "x": 363,
+          "y": 80,
+          "width": 275,
+          "height": 58
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 275,
+          "height": 58
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-0",
+      "bank": "front",
+      "sprites": [
+        85
+      ],
+      "file": "pause-0.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 64
+      },
+      "label": "解除游戏暂停",
+      "width": 512,
+      "height": 64,
+      "sha256": "c5b49192209fadcf32f157e6419d5355bd88d5a6af2a69f05f29421ef729e84c",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-1",
+      "bank": "front",
+      "sprites": [
+        86
+      ],
+      "file": "pause-1.png",
+      "rect": {
+        "x": 0,
+        "y": 64,
+        "width": 512,
+        "height": 64
+      },
+      "label": "结束游戏",
+      "width": 512,
+      "height": 64,
+      "sha256": "698b34d35d84201040028dd48a87e32577e3e1ac25795c13247278f907bbcf54",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 64,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-2",
+      "bank": "front",
+      "sprites": [
+        87
+      ],
+      "file": "pause-2.png",
+      "rect": {
+        "x": 0,
+        "y": 128,
+        "width": 512,
+        "height": 64
+      },
+      "label": "保存录像后结束游戏",
+      "width": 512,
+      "height": 64,
+      "sha256": "e7738e41c3cf3e32167cc4e4c029cb3f8a945ae575bbdc5bdd622dd5ecc26642",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 128,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-3",
+      "bank": "front",
+      "sprites": [
+        88
+      ],
+      "file": "pause-3.png",
+      "rect": {
+        "x": 0,
+        "y": 192,
+        "width": 512,
+        "height": 64
+      },
+      "label": "操作说明",
+      "width": 512,
+      "height": 64,
+      "sha256": "5591e3179fe65b871a8cb282669eeef4cfa1f796c92b834777aaa90c0ec48b88",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 192,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-4",
+      "bank": "front",
+      "sprites": [
+        89
+      ],
+      "file": "pause-4.png",
+      "rect": {
+        "x": 0,
+        "y": 256,
+        "width": 512,
+        "height": 64
+      },
+      "label": "从头重新开始",
+      "width": 512,
+      "height": 64,
+      "sha256": "eb1fdf997bb7c5e9a68f88b0e6a09f7a33fe2ebe6e2577e24325abd72a7705cf",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 256,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-5",
+      "bank": "front",
+      "sprites": [
+        90
+      ],
+      "file": "pause-5.png",
+      "rect": {
+        "x": 0,
+        "y": 320,
+        "width": 512,
+        "height": 64
+      },
+      "label": "继续游戏",
+      "width": 512,
+      "height": 64,
+      "sha256": "80547a93dd0d103b713d4965d6dccb712b7dda8ac82ae792fb2a176a54bb064e",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 320,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-6",
+      "bank": "front",
+      "sprites": [
+        91
+      ],
+      "file": "pause-6.png",
+      "rect": {
+        "x": 0,
+        "y": 384,
+        "width": 512,
+        "height": 64
+      },
+      "label": "保存游戏录像",
+      "width": 512,
+      "height": 64,
+      "sha256": "885fa6b5093eda23b2c646381412342426d2a7a44e6e7e1f61595093091b926c",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 384,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-7",
+      "bank": "front",
+      "sprites": [
+        92
+      ],
+      "file": "pause-7.png",
+      "rect": {
+        "x": 0,
+        "y": 448,
+        "width": 512,
+        "height": 64
+      },
+      "label": "再次播放录像",
+      "width": 512,
+      "height": 64,
+      "sha256": "75b050eb3dc428dbdfd7b05d8c6121f7ec824f819b24dab1dda7f113d1b7810a",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 448,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "confirm",
+      "bank": "front",
+      "sprites": [
+        95
+      ],
+      "file": "confirm.png",
+      "rect": {
+        "x": 0,
+        "y": 576,
+        "width": 512,
+        "height": 64
+      },
+      "label": "真的可以吗？",
+      "width": 512,
+      "height": 64,
+      "sha256": "79a92b98eeca364c040855f12a1039f95ba2a1c9be17a4e164d7d355f5db15f7",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 576,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "yes",
+      "bank": "front",
+      "sprites": [
+        96
+      ],
+      "file": "yes.png",
+      "rect": {
+        "x": 0,
+        "y": 640,
+        "width": 512,
+        "height": 64
+      },
+      "label": "好的",
+      "width": 512,
+      "height": 64,
+      "sha256": "785e3426dcb0aeae0c1c46788231beb7798ffd82df01f71ac0218ecbe8d4ce76",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 640,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "no",
+      "bank": "front",
+      "sprites": [
+        97
+      ],
+      "file": "no.png",
+      "rect": {
+        "x": 0,
+        "y": 704,
+        "width": 512,
+        "height": 64
+      },
+      "label": "算了",
+      "width": 512,
+      "height": 64,
+      "sha256": "ba5a59419b1a8d5c989e18873a3bfa3aecf02c15caf969d68e0a87407cc5a122",
+      "source": {
+        "file": "data/ascii/pause.png",
+        "pngSha256": "681a26f48183a2ad21191f4c5e655cbd51ce4592f9d8e813b12faa39eee7ace8",
+        "width": 512,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 704,
+          "width": 512,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-title-0",
+      "bank": "front",
+      "sprites": [
+        98
+      ],
+      "file": "pause-title-0.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 192,
+        "height": 64
+      },
+      "label": "游戏暂停",
+      "width": 192,
+      "height": 64,
+      "sha256": "3cbbe2a52b5ac88247b912387fa41b324dfce2cf4b6c8d16d66daae12a0e9965",
+      "source": {
+        "file": "data/ascii/pause_title.png",
+        "pngSha256": "675a79621c4218b9eb0b10d03cb047dcff2a160c853a9456c03e384fccc2fa9f",
+        "width": 256,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 192,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 192,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-title-1",
+      "bank": "front",
+      "sprites": [
+        99
+      ],
+      "file": "pause-title-1.png",
+      "rect": {
+        "x": 0,
+        "y": 64,
+        "width": 192,
+        "height": 64
+      },
+      "label": "满身疮痍",
+      "width": 192,
+      "height": 64,
+      "sha256": "a519c4bfbdce046c0057bfab9faeaf762f47b5996e6caa7dd7f3f52bba88a5e6",
+      "source": {
+        "file": "data/ascii/pause_title.png",
+        "pngSha256": "675a79621c4218b9eb0b10d03cb047dcff2a160c853a9456c03e384fccc2fa9f",
+        "width": 256,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 64,
+          "width": 192,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 192,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-title-2",
+      "bank": "front",
+      "sprites": [
+        100
+      ],
+      "file": "pause-title-2.png",
+      "rect": {
+        "x": 0,
+        "y": 128,
+        "width": 192,
+        "height": 64
+      },
+      "label": "播放完毕",
+      "width": 192,
+      "height": 64,
+      "sha256": "f09370cbe7c9c2b2ac8eaa44c9ad35d5475ff6421ad918c84884dc1bf408fd4e",
+      "source": {
+        "file": "data/ascii/pause_title.png",
+        "pngSha256": "675a79621c4218b9eb0b10d03cb047dcff2a160c853a9456c03e384fccc2fa9f",
+        "width": 256,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 128,
+          "width": 192,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 192,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "pause-title-3",
+      "bank": "front",
+      "sprites": [
+        101
+      ],
+      "file": "pause-title-3.png",
+      "rect": {
+        "x": 0,
+        "y": 192,
+        "width": 192,
+        "height": 64
+      },
+      "label": "攻略失败",
+      "width": 192,
+      "height": 64,
+      "sha256": "ed27a2100daf7cca2132b46993bb80f4250ae6affc8c28fc6ec731723827011f",
+      "source": {
+        "file": "data/ascii/pause_title.png",
+        "pngSha256": "675a79621c4218b9eb0b10d03cb047dcff2a160c853a9456c03e384fccc2fa9f",
+        "width": 256,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 192,
+          "width": 192,
+          "height": 64
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 192,
+          "height": 64
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-4",
+      "bank": "title",
+      "sprites": [
+        4
+      ],
+      "file": "title-4.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 256
+      },
+      "label": "选择游戏难度",
+      "width": 512,
+      "height": 256,
+      "sha256": "3b4cb221016c799a4c1f0a09157d2dc2cca623b86dd0b9fa765763e113d28b08",
+      "source": {
+        "file": "data/title/selecttitle/sl_rank.png",
+        "pngSha256": "ce6e6ec21348a4d225e24f8f5bb676dcf4a5489a7e1b2cf515b1c073b842c21e",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-5",
+      "bank": "title",
+      "sprites": [
+        5
+      ],
+      "file": "title-5.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 256
+      },
+      "label": "选择一位主人公",
+      "width": 512,
+      "height": 256,
+      "sha256": "8a02f5a0eb32ae984c3df20bd7f4adaf91b8796e257baa46c339d0d21814bd25",
+      "source": {
+        "file": "data/title/selecttitle/sl_player.png",
+        "pngSha256": "d0872d51cffb5b299f9b112c35c017dc4abb9c6a262840f27bdcf312a922d640",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-7",
+      "bank": "title",
+      "sprites": [
+        7
+      ],
+      "file": "title-7.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 256
+      },
+      "label": "选择关卡",
+      "width": 512,
+      "height": 256,
+      "sha256": "6175e16b123a94f2218853e19add7f3a0d0d2cd8d1e95a26b4a42cdea0bd2628",
+      "source": {
+        "file": "data/title/selecttitle/sl_stage.png",
+        "pngSha256": "1daf2ac3de227b648c60936fde40b504e4294a0ce9a49457417f12a7f53ebfed",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-8",
+      "bank": "title",
+      "sprites": [
+        8
+      ],
+      "file": "title-8.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 256
+      },
+      "label": "选择符卡",
+      "width": 512,
+      "height": 256,
+      "sha256": "523f1ed9d8d4e39e360db5b8841cc6e562eeccb62c01b40578df13955cb1382a",
+      "source": {
+        "file": "data/title/selecttitle/sl_spell.png",
+        "pngSha256": "0d1a7aa52bedd907d70cb79e020e90dd9643c458954476afc5f88f57b0ccce98",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-9",
+      "bank": "title",
+      "sprites": [
+        9
+      ],
+      "file": "title-9.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 256
+      },
+      "label": "选择游戏录像",
+      "width": 512,
+      "height": 256,
+      "sha256": "55b4938549fe0f8a0063c9033880416458eadf5789ee34b6aa6ab82ec4b1204a",
+      "source": {
+        "file": "data/title/selecttitle/sl_replay.png",
+        "pngSha256": "f9a7ca368445c2c726b7e86feff169137ebeae547862017d3375667ad166de97",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-10",
+      "bank": "title",
+      "sprites": [
+        10
+      ],
+      "file": "title-10.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 256
+      },
+      "label": "展示战斗经历",
+      "width": 512,
+      "height": 256,
+      "sha256": "ff424e4cf09d277c114bbace48791e464863c42dc43d68db48e8c2f354ba953c",
+      "source": {
+        "file": "data/title/selecttitle/sl_playerdata.png",
+        "pngSha256": "87910eca1201e481dd98995d826210e35abe64807ce219fcf20db6d8dd274ecd",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-12",
+      "bank": "title",
+      "sprites": [
+        12
+      ],
+      "file": "title-12.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 256
+      },
+      "label": "游戏方法",
+      "width": 512,
+      "height": 256,
+      "sha256": "6538f6a333a5552c4f64a100c57a69f601dc56b63b4808607d887058e0e51ab9",
+      "source": {
+        "file": "data/title/selecttitle/sl_manual.png",
+        "pngSha256": "4931312634d773cee001de99c55a950417a5c0383b529cd4b647db87351edc25",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-13",
+      "bank": "title",
+      "sprites": [
+        13
+      ],
+      "file": "title-13.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 256
+      },
+      "label": "保存游戏录像",
+      "width": 512,
+      "height": 256,
+      "sha256": "bf74f4fca90bd1d5dc6bae2befe4ed5d797ce19f26b779f2b9084fe6d5a97f9f",
+      "source": {
+        "file": "data/title/selecttitle/sl_savereplay.png",
+        "pngSha256": "77f4ae47fd5b9ef68f40f3d24d6c11bafa84d7b3be744624bdda5fc9decb72d1",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-14",
+      "bank": "title",
+      "sprites": [
+        14
+      ],
+      "file": "title-14.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 256
+      },
+      "label": "输入得分者的名字",
+      "width": 512,
+      "height": 256,
+      "sha256": "6bf8ea92aee6562c8ac5c022bc398046bb178386aa1167ee12605e9b741c88cd",
+      "source": {
+        "file": "data/title/selecttitle/sl_regist.png",
+        "pngSha256": "ed2180706aef9dc1ddd732c16a826adbaa10a16e891cbe078740d9438d974072",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-15",
+      "bank": "title",
+      "sprites": [
+        15
+      ],
+      "file": "title-15.png",
+      "rect": {
+        "x": 0,
+        "y": 0,
+        "width": 512,
+        "height": 256
+      },
+      "label": "展示战斗经历",
+      "width": 512,
+      "height": 256,
+      "sha256": "ff424e4cf09d277c114bbace48791e464863c42dc43d68db48e8c2f354ba953c",
+      "source": {
+        "file": "data/title/selecttitle/sl_playerdata.png",
+        "pngSha256": "87910eca1201e481dd98995d826210e35abe64807ce219fcf20db6d8dd274ecd",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 512,
+          "height": 256
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-weapon",
+      "bank": "title",
+      "sprites": [
+        6
+      ],
+      "file": "title-weapon.png",
+      "rect": {
+        "x": 10,
+        "y": 90,
+        "width": 502,
+        "height": 58
+      },
+      "label": "SubWeapon Select",
+      "canvas": {
+        "width": 512,
+        "height": 256,
+        "x": 5,
+        "y": 88
+      },
+      "untranslated": "No generic Chinese weapon heading exists in this patch; seasonal subtitle omitted.",
+      "width": 512,
+      "height": 256,
+      "sha256": "9843219e82e8c59a0bc7caaab07cb77498d7853350b92a3b4c15609e990ba9a7",
+      "source": {
+        "file": "data/title/selecttitle/sl_weapon.png",
+        "pngSha256": "04619fd6d7c255f7848e95b84441a456ede5fda4699d375f0f4a0a7e47b1654a",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 10,
+          "y": 90,
+          "width": 502,
+          "height": 58
+        },
+        "destination": {
+          "x": 5,
+          "y": 88,
+          "width": 502,
+          "height": 58
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-music",
+      "bank": "title",
+      "sprites": [
+        11
+      ],
+      "file": "title-music.png",
+      "rect": {
+        "x": 285,
+        "y": 145,
+        "width": 112,
+        "height": 42
+      },
+      "label": "音乐室",
+      "canvas": {
+        "width": 512,
+        "height": 256,
+        "x": 200,
+        "y": 146
+      },
+      "additionalParts": [
+        {
+          "rect": {
+            "x": 24,
+            "y": 70,
+            "width": 476,
+            "height": 75
+          },
+          "x": 24,
+          "y": 70
+        }
+      ],
+      "note": "The generic English heading and contiguous 音乐室 substring are copied separately; the TH16 four-seasons qualifier is not imported.",
+      "width": 512,
+      "height": 256,
+      "sha256": "3f235be59b476f6d919aade8f95abf3ffc42292a43f8edefca3dfee9f68633e0",
+      "source": {
+        "file": "data/title/selecttitle/sl_music.png",
+        "pngSha256": "49daffbbeae9f4c8347d33d6ddf3bb0d0cbb89a24be4a7dc4d95bd21762a2e17",
+        "width": 512,
+        "height": 256,
+        "rect": {
+          "x": 285,
+          "y": 145,
+          "width": 112,
+          "height": 42
+        },
+        "destination": {
+          "x": 200,
+          "y": 146,
+          "width": 112,
+          "height": 42
+        },
+        "additionalParts": [
+          {
+            "rect": {
+              "x": 24,
+              "y": 70,
+              "width": 476,
+              "height": 75
+            },
+            "x": 24,
+            "y": 70
+          }
+        ]
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "clear-stamp",
+      "bank": "title",
+      "sprites": [
+        27
+      ],
+      "file": "clear-stamp.png",
+      "rect": {
+        "x": 0,
+        "y": 896,
+        "width": 128,
+        "height": 128
+      },
+      "label": "已通关",
+      "width": 128,
+      "height": 128,
+      "sha256": "0d4b5e21485671fd801832eb041667d2230d1efba12cf4db5b200d40fc0e60de",
+      "source": {
+        "file": "data/title/rank00.png",
+        "pngSha256": "ae560d7552e2a5918761d2bfe1a0a16183f6f15a6e6d30cce7dd929a9906c7aa",
+        "width": 1024,
+        "height": 1024,
+        "rect": {
+          "x": 0,
+          "y": 896,
+          "width": 128,
+          "height": 128
+        },
+        "destination": {
+          "x": 0,
+          "y": 0,
+          "width": 128,
+          "height": 128
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-reimu-name",
+      "bank": "title",
+      "sprites": [
+        38
+      ],
+      "file": "title-reimu-name.png",
+      "rect": {
+        "x": 383,
+        "y": 80,
+        "width": 222,
+        "height": 58
+      },
+      "label": "博丽 灵梦",
+      "canvas": {
+        "width": 603,
+        "height": 357,
+        "x": 190,
+        "y": 70
+      },
+      "untranslated": "The source TH20 biography and the patch TH16 seasonal biography are different title-specific stories. Both paragraphs are omitted; only the common character name is retained.",
+      "width": 603,
+      "height": 357,
+      "sha256": "b319930a1662ba00b25351b76489c9e481c34caa86d20f5597112d31d592ebed",
+      "source": {
+        "file": "data/title/title_pl00c.png",
+        "pngSha256": "b1c72bf9c5a91937e471a9d1041718edcc7c88d99e6201cce87854f7a0236b6b",
+        "width": 850,
+        "height": 396,
+        "rect": {
+          "x": 383,
+          "y": 80,
+          "width": 222,
+          "height": 58
+        },
+        "destination": {
+          "x": 190,
+          "y": 70,
+          "width": 222,
+          "height": 58
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    },
+    {
+      "key": "title-marisa-name",
+      "bank": "title",
+      "sprites": [
+        39
+      ],
+      "file": "title-marisa-name.png",
+      "rect": {
+        "x": 363,
+        "y": 80,
+        "width": 275,
+        "height": 58
+      },
+      "label": "雾雨 魔理沙",
+      "canvas": {
+        "width": 603,
+        "height": 357,
+        "x": 164,
+        "y": 70
+      },
+      "untranslated": "The source TH20 biography and the patch TH16 seasonal biography are different title-specific stories. Both paragraphs are omitted; only the common character name is retained.",
+      "width": 603,
+      "height": 357,
+      "sha256": "df881dabf674fdbd9b79ed13350f04e8933b82cd7925868a4b521caf8c0632fd",
+      "source": {
+        "file": "data/title/title_pl01c.png",
+        "pngSha256": "59c90f2275b09e6581d42e0aa86ba90e89c8d2e4a4adbd56cc856a2612cc58b1",
+        "width": 850,
+        "height": 396,
+        "rect": {
+          "x": 363,
+          "y": 80,
+          "width": 275,
+          "height": 58
+        },
+        "destination": {
+          "x": 164,
+          "y": 70,
+          "width": 275,
+          "height": 58
+        }
+      },
+      "operation": "Selected source RGBA copied exactly; no redrawing, color keying, resampling or source program execution."
+    }
+  ]
+}

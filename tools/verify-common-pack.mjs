@@ -65,6 +65,31 @@ export function verifyCommonPack(base){
  }
  for(const id of [49,50,53,84])assert.ok(!archives.front.scripts[id].excluded,`Missing common result/stock front${id}`);
  for(const name of ['front','ascii_960','title'])for(const entry of archives[name].entries.filter(entry=>entry.texture.path)){
+  const supplement=manifest.textures.find(value=>value.file===entry.texture.path&&value.originalHudLabels);
+  if(supplement){
+   assert.equal(name,'front');
+   const audit=JSON.parse(readFileSync(checked(manifest.hudLabels),'utf8'));
+   assert.equal(audit.format,'ts-stg-original-hud-labels-v1');
+   assert.deepEqual(audit.labels.map(label=>label.key),['pointValue','graze']);
+   assert.equal(audit.texture.sha256,supplement.sha256);assert.deepEqual(audit.source,supplement.source);
+   assert.match(audit.source.pngSha256,/^[0-9a-f]{64}$/);assert.ok(audit.source.title&&audit.source.url);
+   const pixels=readFileSync(checked(supplement.file)),width=pixels.readUInt32BE(16),height=pixels.readUInt32BE(20);
+   assert.deepEqual([entry.width,entry.height,entry.texture.width,entry.texture.height],[width,height,width,height]);
+   assert.equal(entry.texture.sha256,supplement.sha256);assert.equal(entry.texture.sourceSha256,audit.source.pngSha256);
+   const addition=manifest.transformations.find(change=>change.operation==='append-original-hud-labels'&&change.entry===entry.index);
+   assert.ok(addition);assert.equal(addition.provenance,manifest.hudLabels);assert.equal(addition.labels.length,2);
+   for(const [i,label]of audit.labels.entries()){
+    const reference=addition.labels[i],sprite=archives.front.sprites[reference.sprite],animation=archives.front.scripts[reference.script],r=label.rect;
+    assert.equal(reference.key,label.key);assert.equal(reference.script,378+i);assert.equal(sprite.entry,entry.index);
+    assert.deepEqual([sprite.x,sprite.y,sprite.width,sprite.height],[r.x,r.y,r.width,r.height]);
+    assert.equal(sprite.scaleX,1);assert.equal(sprite.scaleY,1);
+    assert.deepEqual([r.width,r.height],[label.sourceRect.width,label.sourceRect.height],'Original label dimensions are preserved');
+    assert.ok(r.x>=2&&r.y>=2&&r.x+r.width+2<=width&&r.y+r.height+2<=height,'Original label and its own gutters fit');
+    assert.ok(animation.instructions.some(ins=>ins.opcode===300&&ins.args[0]===sprite.index));
+    assert.equal(supplement.spriteMappings[i].sprite,sprite.index);
+   }
+   continue;
+  }
   if(name==='ascii_960'&&entry.index===7){
    const texture=manifest.textures.find(value=>value.file===entry.texture.path);
    assert.equal(texture.operation,'Byte-for-byte copy');assert.equal(texture.spriteMappings,undefined);
@@ -130,6 +155,46 @@ export function verifyCommonPack(base){
  assert.equal(catalog.format,'ts-stg-touhou-prefabs-v1');
  const inventory=Object.values(catalog.animations).flat();assert.equal(inventory.length,scripts,'Prefab inventory must cover every retained animation');
  for(const entry of inventory)assert.ok(!archives[entry.bank].scripts[entry.script].excluded,entry.id);
+ for(const [language,locale]of Object.entries(manifest.locales??{})){
+  assert.equal(locale.format,'ts-stg-touhou-locale-v1');assert.equal(locale.language,language);
+  const provenance=JSON.parse(readFileSync(checked(locale.provenance),'utf8'));
+  assert.deepEqual(provenance.source,locale.source,'Locale provenance is packaged with its manifest');
+  const localized={};
+  for(const [name,entry]of Object.entries(locale.archives)){
+   assert.ok(archives[name],`Localized bank ${name} requires a base bank`);assert.equal(hash(entry.file),entry.sha256);
+   const data=JSON.parse(readFileSync(checked(entry.file),'utf8'));localized[name]=data;
+   assert.equal(entry.baseSha256,manifest.archives[name].sha256,'Localized bank records its actual base');
+   assert.deepEqual(data.scripts,archives[name].scripts,'Localization changes artwork, never animation bytecode or simulation clocks');
+   assert.equal(data.sprites.length,archives[name].sprites.length,'Localization preserves public sprite IDs');
+   for(const sprite of data.sprites)assert.equal(!!sprite.excluded,!!archives[name].sprites[sprite.index].excluded,'Localization preserves the selected common content boundary');
+  }
+  for(const texture of locale.textures){
+   assert.equal(hash(texture.file),texture.sha256);const image=readFileSync(checked(texture.file)),width=image.readUInt32BE(16),height=image.readUInt32BE(20);
+   assert.deepEqual([texture.width,texture.height],[width,height]);
+   for(const mapping of texture.spriteMappings){
+    const bank=localized[mapping.archive],sprite=bank?.sprites[mapping.sprite],r=mapping.destination,s=mapping.sourceRect;
+    assert.ok(sprite&&!sprite.excluded,'Localized labels must have a live public sprite');
+    const entry=bank.entries[sprite.entry];assert.equal(entry.texture.path,texture.file);
+    assert.deepEqual([sprite.x,sprite.y,sprite.width,sprite.height],[r.x,r.y,r.width,r.height]);
+    assert.deepEqual([r.width,r.height],[s.width,s.height],'Cropped original pixels are not resized in the atlas');
+    assert.equal(mapping.paddingX,2);assert.equal(mapping.paddingY,2);
+    assert.ok(r.x>=2&&r.y>=2&&r.x+r.width+2<=width&&r.y+r.height+2<=height,'Localized cell and gutters fit their atlas');
+    if(mapping.source.kind==='base-English-mask'){
+     assert.equal(hash(mapping.source.file),mapping.source.pngSha256,'English fallback uses the packaged base artwork');
+     const original=archives[mapping.archive].sprites[mapping.source.sprite];
+     assert.deepEqual(mapping.source.rect,{x:original.x,y:original.y,width:original.width,height:original.height});
+     for(const region of mapping.source.regions)assert.ok(region.x>=0&&region.y>=0&&region.x+region.width<=original.width&&region.y+region.height<=original.height,'English fallback crop stays inside its original sprite');
+    }else{
+     assert.match(mapping.source.sha256,/^[0-9a-f]{64}$/);assert.match(mapping.source.originalPngSha256,/^[0-9a-f]{64}$/);
+     const cell=provenance.cells.find(cell=>cell.key===mapping.key);assert.ok(cell,'Chinese sprite has recorded source provenance');
+     assert.equal(mapping.source.sha256,cell.sha256);assert.equal(mapping.source.originalPngSha256,cell.source.pngSha256);
+     assert.deepEqual(mapping.source.originalRect,cell.source.rect);
+    }
+    assert.equal(sprite.scaleX,sprite.scaleY,'Translated artwork retains its aspect ratio');
+    assert.ok(Number.isFinite(sprite.scaleX)&&sprite.scaleX>0);
+   }
+  }
+ }
  assert.deepEqual({archives:Object.keys(archives).length,textures:manifest.textures.length,sounds:new Set(manifest.sounds.map(sound=>sound.file)).size,scripts,sprites},
   Object.fromEntries(['archives','textures','sounds','scripts','sprites'].map(key=>[key,manifest.counts[key]])));
  for(let id=150;id<=165;id++)assert.ok(archives.front.scripts[id].excluded,'Named original Boss UI must remain excluded');

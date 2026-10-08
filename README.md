@@ -54,6 +54,8 @@ node tools/import-rushboss-dialogue.mjs D:\c++\TouhouRushBoss-main
 
 两个 Demo 共用 thlib 的 `TouhouGameplayCompositor`：根据原作回调顺序交替合成背景与前景，符卡开场双圈参与背景扭曲，敌弹主体在背景之后绘制，符卡名在最终界面合成之后绘制。接入与裁剪规则见 [公共图层合成](docs/touhou-rendering.md)，源码依据见 [图层审计](docs/TOUHOU_RENDER_SOURCE_AUDIT.md)。
 
+右侧状态栏也由公共 `TouhouHud` 完整绘制：原图标签、数字字图、残机与 Bomb 图标，以及灵力下的最大得点、擦弹。游戏只通过 `systemOptions.hud.skin/layout/palette` 换肤；资源语言通过 `createTouhouResources` 的 `locale` 选择。接口及素材来源见 [公共状态栏](docs/touhou-hud.md)。
+
 ## JavaScript 符卡预览
 
 运行 `start-spellcard-editor.cmd` 打开独立桌面 JS 符卡工具。在代码区编写普通 `.spell.js`，通过内嵌 TS-STG 引擎实时预览；支持语法高亮、查找替换、错误定位，以及暂停、逐帧和按固定种子跳转。源码是唯一编辑对象，工具不生成或回写事件图。保存的 ES 模块可直接导入游戏。首次启动需要安装编辑器自己的桌面依赖。结构、使用与范围见 [SpellCardEditor](docs/spellcard-editor.md)。
