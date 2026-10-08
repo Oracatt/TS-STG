@@ -45,10 +45,10 @@ New-Item -ItemType Directory -Path (Join-Path $staging 'packages') | Out-Null
 $librarySource = Join-Path $projectRoot 'packages/thlib'
 $libraryTarget = Join-Path $staging 'packages/thlib'
 if (-not (Test-Path -LiteralPath (Join-Path $librarySource 'assets/reference-common/manifest.json'))) {
-    throw 'Import the shared bullet/Bomb visual pack with tools/import-common-reference-assets.mjs before packaging this local SDK.'
+    throw 'The versioned shared bullet/Bomb visual pack is missing. Restore packages/thlib/assets/reference-common from Git.'
 }
 if (-not (Test-Path -LiteralPath (Join-Path $librarySource 'assets/touhou-common/manifest.json'))) {
-    throw 'Import the complete shared player/animation resource pack with tools/import-touhou-common-assets.mjs before packaging.'
+    throw 'The versioned shared player/animation resource pack is missing. Restore packages/thlib/assets/touhou-common from Git.'
 }
 $commonManifest = Get-Content -LiteralPath (Join-Path $librarySource 'assets/touhou-common/manifest.json') -Raw | ConvertFrom-Json
 foreach ($bankName in @('pl00','pl01','bullet','effect','enemy','ascii_960','front','text','title','screenswitch')) {
@@ -63,7 +63,7 @@ foreach ($module in @('application','scene-transition','stage-clear','stage-tran
     }
 }
 if (-not (Test-Path -LiteralPath (Join-Path $librarySource 'assets/spell-common/manifest.json'))) {
-    throw 'Import the shared spell/charge/aura resource pack with tools/import-common-spell-assets.mjs before packaging.'
+    throw 'The versioned shared spell/charge/aura resource pack is missing. Restore packages/thlib/assets/spell-common from Git.'
 }
 New-Item -ItemType Directory -Path $libraryTarget | Out-Null
 foreach ($directory in @('src','assets')) { Copy-OwnedTree (Join-Path $librarySource $directory) $libraryTarget }

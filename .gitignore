@@ -19,12 +19,9 @@ Thumbs.db
 !.env.example
 !.env.template
 
-# Imported reference media stays local; its importers and source notices are tracked.
+# Demo-specific media stays local. Common thlib assets are versioned with the library.
 /games/touhou20/assets/
 /games/rushboss/assets/
-/packages/thlib/assets/reference-common/
-/packages/thlib/assets/touhou-common/
-/packages/thlib/assets/spell-common/
 
 # Generated verification output is reproducible. Keep the authored capture notes.
 /reports/**

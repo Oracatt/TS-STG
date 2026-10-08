@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 Scope: this MIT license covers TS-STG source and authored common assets.
-Locally imported graphics under assets/reference-common retain their original
-owners' rights and are excluded from this MIT grant. Consult that pack's
-NOTICE.md and manifest provenance for its source and usage classification.
+Original graphics, sound and animation data under assets/reference-common,
+assets/touhou-common and assets/spell-common retain their original owners'
+rights and are excluded from this MIT grant. Consult each pack's NOTICE.md
+and manifest provenance for its source and usage classification. Inclusion
+in the repository or a package does not change those rights.

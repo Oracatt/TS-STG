@@ -176,6 +176,11 @@ and common item placement/retirement. Render views perform scale/translation;
 enemy and damage adapters must use the same logical coordinates. A Y-up source
 game converts at its application boundary.
 
+The three common packs (`assets/reference-common/`, `assets/touhou-common/`, and
+`assets/spell-common/`) are versioned with thlib and included in its npm package
+and engine SDK. A fresh checkout does not need a demo or resource importer to
+use them. Their original NOTICE and manifest files are retained.
+
 `assets/touhou-common/` contains curated full ANM animations and common image,
 font and sound data. Mixed atlases preserve selected original pixels and clear
 exclusive regions; excluded script/sprite IDs throw instead of silently drawing
@@ -237,7 +242,7 @@ artwork when the shared image pack has no matching motif. Unknown names,
 including colour-qualified names such as `orb.gray`, throw `RangeError`.
 
 Shared bullet, laser, Bomb and effect sprites are organized as a data-only pack in
-`assets/reference-common/`. This local pack selects complete reusable atlases and
+`assets/reference-common/`. This bundled pack selects complete reusable atlases and
 excludes title artwork, HUD, backgrounds, character sheets and atlases mixed with
 title-specific objects. Its manifest supplies named sprites and animation clips,
 source hashes and original resource provenance; its NOTICE is separate from the

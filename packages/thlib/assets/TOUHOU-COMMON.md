@@ -1,13 +1,13 @@
 # Complete shared Touhou resources
 
-`touhou-common/` is the locally imported resource pack for `@ts-stg/thlib/touhou`.
+`touhou-common/` is the bundled resource pack for `@ts-stg/thlib/touhou` and is versioned with the library.
 It carries complete animation instructions and their dependency trees, including
 Reimu/Marisa bodies, options, baseline weapons, Bombs and focus indicators. It
 also includes ordinary bullets/lasers, cancellation, common items, fairy enemies,
 particles/death/charge effects, scene-cover/reveal transitions, the NowLoading
 indicator, bitmap glyphs and the original common sound effects.
 
-Import with `node tools/import-touhou-common-assets.mjs`. The default input is the
+A fresh checkout or installed package already contains these files. To rebuild from local reference inputs, use `node tools/import-touhou-common-assets.mjs`. The default input is the
 existing local import at `games/touhou20/assets`; that directory is only an import
 source, never a runtime dependency. Use `--source` for another existing import,
 `--out` to relocate the result, or `--check` to verify every generated file.
@@ -23,7 +23,7 @@ const player = new TouhouPlayer({
 
 `createTouhouResources()` without a host supplies the exact same baseline numeric
 shot tables for headless simulation, with null animation banks. `getTouhouPlayerData`
-returns these immutable tables directly. Rendering requires the imported pack and
+returns these immutable tables directly. Rendering requires the bundled pack and
 the injected texture loader. Animation timing, transformations, blending, child
 spawning and sound metadata are retained; this is not a static-sprite substitute.
 

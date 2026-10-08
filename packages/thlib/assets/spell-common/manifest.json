@@ -1,0 +1,107 @@
+{
+  "format": "ts-stg-sprite-pack-v1",
+  "version": 1,
+  "name": "spell-common",
+  "license": "Original-resource; not MIT",
+  "notice": "NOTICE.md",
+  "textures": {
+    "spell-line": {
+      "file": "textures/spell-line.png",
+      "width": 128,
+      "height": 128,
+      "sha256": "1bdc636e9d649a38c272602dfa281557a730838d32f43d4974d978acffc2cd03",
+      "source": {
+        "file": "image/effect/eff_line.png",
+        "archiveName": "thsrc.smx\\image\\effect\\eff_line.png",
+        "archiveOffset": 212171,
+        "sha256": "1bdc636e9d649a38c272602dfa281557a730838d32f43d4974d978acffc2cd03"
+      }
+    },
+    "legacy-aura": {
+      "file": "textures/legacy-aura.png",
+      "width": 128,
+      "height": 64,
+      "sha256": "03ee3f4d98ae94f32abce87461c329489021951477e0a2ec36b818d4ccc1b773",
+      "source": {
+        "file": "image/effect/eff_aura.png",
+        "archiveName": "thsrc.smx\\image\\effect\\eff_aura.png",
+        "archiveOffset": 578047,
+        "sha256": "03ee3f4d98ae94f32abce87461c329489021951477e0a2ec36b818d4ccc1b773"
+      }
+    },
+    "legacy-petals": {
+      "file": "textures/legacy-petals.png",
+      "width": 64,
+      "height": 64,
+      "sha256": "a9795da32b0a25827385a97971d8c031b6f6feac0e5a1926bdf00bbe5819fb50",
+      "source": {
+        "file": "image/effect/eff_maple.png",
+        "archiveName": "thsrc.smx\\image\\effect\\eff_maple.png",
+        "archiveOffset": 308107,
+        "sha256": "a9795da32b0a25827385a97971d8c031b6f6feac0e5a1926bdf00bbe5819fb50"
+      }
+    }
+  },
+  "sprites": {
+    "spell.attack-strip": {
+      "texture": "spell-line",
+      "x": 96,
+      "y": 0,
+      "width": 16,
+      "height": 128
+    },
+    "spell.circle-inner": {
+      "texture": "spell-line",
+      "x": 48,
+      "y": 0,
+      "width": 16,
+      "height": 128
+    },
+    "spell.circle-outer": {
+      "texture": "spell-line",
+      "x": 80,
+      "y": 0,
+      "width": 16,
+      "height": 128
+    },
+    "boss.aura-ring": {
+      "texture": "legacy-aura",
+      "x": 52,
+      "y": 6,
+      "width": 39,
+      "height": 39
+    },
+    "boss.aura-fire": {
+      "texture": "legacy-aura",
+      "x": 7,
+      "y": 3,
+      "width": 37,
+      "height": 42
+    },
+    "charge.leaf": {
+      "texture": "legacy-petals",
+      "x": 32,
+      "y": 0,
+      "width": 32,
+      "height": 32
+    },
+    "charge.circle": {
+      "texture": "legacy-petals",
+      "x": 0,
+      "y": 32,
+      "width": 32,
+      "height": 32
+    }
+  },
+  "clips": {},
+  "provenance": {
+    "input": "Previously imported local media from TouhouRushBoss thsrc.smx",
+    "archiveSha256": "d156d11ea024d2eae227ddfcc6f24c9c765b54abd5443fce094d6f008cbe4f28",
+    "pixels": "Whole reviewed common effect atlases copied byte-for-byte; no game-specific Boss artwork"
+  },
+  "excluded": [
+    "Boss portraits and cut-ins",
+    "Specific Boss backgrounds",
+    "Title and HUD artwork"
+  ]
+}

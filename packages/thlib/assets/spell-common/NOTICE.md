@@ -1,0 +1,3 @@
+# Common spell effect skins — original resources, not MIT
+
+These unchanged common effect PNGs are imported from the local TouhouRushBoss thsrc.smx archive. Artwork retains its original authors' rights and is not covered by TS-STG's MIT code license. The manifest records source archive SHA-256, entry offsets and per-file hashes. No executable data, Boss portraits, Boss backgrounds, title or HUD artwork is included. The legacy aura/petal skin keeps the source's alpha edges and charge circle instead of replacing it with an approximate generated shape. This import does not grant redistribution rights.

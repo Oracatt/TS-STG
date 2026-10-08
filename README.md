@@ -43,7 +43,7 @@ Windows x64 构建同时包含 V8 JIT 和 QuickJS。默认 `auto` 选择 V8；�
 
 ```powershell
 .\Play-RushBoss.cmd
-# 更换工作区时：先导入公共原作资源，再导入私有美术、BGM 和对白
+# 克隆已包含 thlib 公共素材；仅 Demo 私有美术、BGM 和参考资源需要本机导入
 .\import-th20.ps1 -Reference D:\AIWorkspace\Touhou20Reconstruction
 node tools/import-rushboss-portrait-assets.mjs D:\AIWorkspace\Touhou20Reconstruction
 node tools/import-rushboss-assets.mjs --source D:\c++\TouhouRushBoss-main
@@ -101,13 +101,13 @@ ctest --test-dir build -C Release --output-on-failure
 
 `test:package` 在仓库外安装真正的 thlib npm 压缩包，并以 Node/QuickJS 验证独立消费，包含通用素材，不携带参考应用及作品专属资源。`test:th20`、原作图形与数值检查需要先导入本机资产。更多源码对照见 [验证记录](docs/verification.md)。
 
-**后续只发布底层引擎和 thlib。** `.\package.ps1` 生成纯 SDK，仅含引擎、thlib、通用素材及必要接口文档/许可证；不带任何 Demo、作品专属素材、测试或导入工具。`Run.cmd` 运行使用方编写的 `main.js`。`touhou20`、`rushboss` 都只作开发、展示和回归 Demo；`.\package.ps1 -WithReferenceAssets` 生成的本机私用锦上京 Demo 包不属于发布物。重打包会保留旧目录及存档；当前没有发布任何内容。
+**后续只发布底层引擎和 thlib。** `.\package.ps1` 生成纯 SDK，仅含引擎、thlib、通用素材及必要接口文档/许可证；不带任何 Demo、作品专属素材、测试或导入工具。`Run.cmd` 运行使用方编写的 `main.js`。`touhou20`、`rushboss` 都只作开发、展示和回归 Demo；`.\package.ps1 -WithReferenceAssets` 生成的本机私用锦上京 Demo 包不属于发布物。重打包会保留旧目录及存档；当前未发布 SDK 或 npm 版本。
 
 [原生接口](docs/native-api.md) · [ANM 实现与边界](docs/anm-restoration.md) · [第三方许可](THIRD_PARTY.md)
 
 ## Git 版本管理
 
-本地仓库主分支为 `main`。源码、两个 Demo 的业务代码、工具、文档、原创示例素材和测试基准纳入版本管理；构建目录、依赖、发行包、存档、生成报告和导入原作素材由 `.gitignore` 排除。`reports/touhou/scene-transition/README.md` 是保留的手写验证说明。换行由 `.gitattributes` 统一，二进制素材保持原字节。
+本地仓库主分支为 `main`。源码、thlib 三套完整公共素材及其来源说明、两个 Demo 的业务代码、工具、文档、原创示例素材和测试基准纳入版本管理；构建目录、依赖、发行包、存档、生成报告和 Demo 专属素材由 `.gitignore` 排除。`reports/touhou/scene-transition/README.md` 是保留的手写验证说明。换行由 `.gitattributes` 统一，二进制素材保持原字节。
 
 每项完整修改验证后，检查差异并按范围提交：
 
@@ -119,4 +119,4 @@ git diff --cached
 git commit -m "描述本次修改"
 ```
 
-克隆或检出到新目录后，按上面的构建与资源导入步骤恢复运行环境。被忽略的素材和存档不在 Git 历史中；本机现有文件继续保留。远程仓库尚未配置。
+克隆或检出到新目录后，thlib 的 `reference-common`、`touhou-common`、`spell-common` 素材包已完整存在，无须执行导入器即可使用或打包 thlib。原作对照与 Demo 运行所需的作品专属素材仍按上面的步骤本机导入；存档不纳入 Git。远程仓库为 [Oracatt/TS-STG](https://github.com/Oracatt/TS-STG)。
