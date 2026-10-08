@@ -53,6 +53,24 @@ the entire row: original image label, underline, related stock icons, fragment
 fraction and numbers. Supplying only `x` or `y` leaves the other coordinate at its
 default. Row overrides do not change animation memory or advance animation time.
 
+Rows also accept an optional `numberWidth`, in the same 640x480 screen units.
+This limits the leftward advance of a right-aligned numeric group from its
+existing right anchor. Only an overlong group is reduced, uniformly in both
+axes; its value, commas, final continue digit and bitmap shadow are preserved.
+`highScore` and `score` default to 116 units, placing their numbers after the
+original label at the existing x=620 anchor. The stored score cap is 999999999,
+which displays as `9,999,999,990` (or a different final continue/high-score digit).
+That ten-digit display is fitted instead of overlapping the label. Scores up to
+`999,999,990` retain their original size and geometry. Fitting uses the recovered
+font 10/11 advances of 12 units per digit and 4 per comma; it does not compress
+glyph spacing or remove digits. The original right-side glyph/shadow overhang
+also shrinks inward. Coordinate overrides translate the row and its numeric
+anchor together without changing this width. Other rows have no default limit;
+they can opt in with, for example, `layout: {graze: {numberWidth: 116}}`.
+Set `numberWidth: null` to disable fitting for a row. A specified width must be
+positive and finite. The same public rule applies to the Japanese baseline and
+localized label packs; a game does not redraw its own long-score values.
+
 | Row | Origin | Data | Label source |
 | --- | --- | --- | --- |
 | `highScore` | 428, 42 | `highScore`, `highScoreDigit` | Original `front:6`, sprite 4 |

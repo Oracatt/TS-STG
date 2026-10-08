@@ -11,7 +11,7 @@ const screenView=Object.freeze({x:0,y:0,scale:1,screenScale:1.5});
 // Row origins use the recovered 640x480 screen coordinates. Moving a row moves
 // its image label, underline, stock icons and numbers together.
 export const TOUHOU_HUD_LAYOUT=Object.freeze(Object.fromEntries(Object.entries({
-  highScore:{x:428,y:42},score:{x:428,y:64},lives:{x:428,y:96},bombs:{x:428,y:134},
+  highScore:{x:428,y:42,numberWidth:116},score:{x:428,y:64,numberWidth:116},lives:{x:428,y:96},bombs:{x:428,y:134},
   power:{x:444,y:182},pointValue:{x:444,y:204},graze:{x:444,y:226},replay:{x:440,y:274},
 }).map(([key,value])=>[key,Object.freeze(value)])));
 export const TOUHOU_HUD_PALETTE=Object.freeze(Object.fromEntries(Object.entries({
@@ -29,6 +29,7 @@ const rowLayout=overrides=>{
   const result={};for(const key of Object.keys(overrides))if(!Object.hasOwn(TOUHOU_HUD_LAYOUT,key))throw new RangeError(`Unknown HUD row ${key}`);
   for(const[key,origin]of Object.entries(TOUHOU_HUD_LAYOUT)){
     const row={...origin,...overrides[key]};if(!Number.isFinite(row.x)||!Number.isFinite(row.y))throw new TypeError(`HUD row ${key} requires finite coordinates`);
+    if(row.numberWidth!=null&&(!Number.isFinite(row.numberWidth)||row.numberWidth<=0))throw new RangeError(`HUD row ${key}.numberWidth requires a positive finite width or null`);
     result[key]=Object.freeze(row);
   }return Object.freeze(result);
 };
@@ -182,7 +183,16 @@ export class TouhouHud {
     if(hideNumbers){if(queue!==draw)queue.flush(draw);return draw;}
     const put=(row,text,x,y,options={})=>{
       const point=this.layout[row],original=TOUHOU_HUD_LAYOUT[row],colors=this.palette[row==='lives'||row==='bombs'?'stock':row];
-      this.font.draw(queue,text,{x:x+point.x-original.x,y:y+point.y-original.y,font:10,drawPriority:75,color:tint(colors.color),shadowColor:colors.shadowColor===null?null:tint(colors.shadowColor),...options});
+      const settings={x:x+point.x-original.x,y:y+point.y-original.y,font:10,drawPriority:75,color:tint(colors.color),shadowColor:colors.shadowColor===null?null:tint(colors.shadowColor),...options};
+      if(point.numberWidth!=null&&settings.alignX===2){
+        // Recovered font 10/11 right alignment advances 12 screen units per
+        // digit and 4 per comma. Fit this leftward span, preserving the source
+        // right anchor, glyphs and shadow overhang. Ordinary scores keep scale 1.
+        let width=0;for(const ch of String(text))width+=ch===','?4:12;
+        const sx=settings.scaleX??1,sy=settings.scaleY??sx,fit=Math.min(1,point.numberWidth/(width*Math.abs(sx)));
+        if(fit<1){settings.scaleX=sx*fit;settings.scaleY=sy*fit;}
+      }
+      this.font.draw(queue,text,settings);
     };
     put('highScore',touhouGroupedScore(state.highScore??0,state.highScoreDigit??0),620,42,{alignX:2});
     put('score',touhouGroupedScore(state.score??0,state.continues??0),620,64,{alignX:2});

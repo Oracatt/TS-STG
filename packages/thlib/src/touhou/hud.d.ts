@@ -6,7 +6,10 @@ import type {TouhouPlayerRules} from './player-rules.js';
 export {TOUHOU_HUD_LABEL_SCRIPTS} from './hud-label-data.js';
 export interface TouhouHudState {lives?:number;bombs?:number;lifeFragments?:number;bombFragments?:number;power?:number;score?:number|bigint;highScore?:number|bigint;continues?:number;highScoreDigit?:number;pointValue?:number;graze?:number;replay?:boolean;}
 export type TouhouHudRow='highScore'|'score'|'lives'|'bombs'|'power'|'pointValue'|'graze'|'replay';
-export interface TouhouHudRowPosition{x:number;y:number;}
+export interface TouhouHudRowPosition{x:number;y:number;
+ /** Maximum leftward advance of right-aligned bitmap numbers in 640x480 units. Overlong groups shrink uniformly; null disables fitting. */
+ numberWidth?:number|null;
+}
 export type TouhouHudLayout=Readonly<Record<TouhouHudRow,Readonly<TouhouHudRowPosition>>>;
 export type TouhouHudPaletteKey='highScore'|'score'|'stock'|'power'|'pointValue'|'graze';
 export interface TouhouHudNumberColors{color:number;shadowColor:number|null;}
@@ -24,7 +27,7 @@ export interface TouhouHudOptions{bank:AnmBank;textBank?:AnmBank|null;font:Touho
  /** Character artwork is opt-in: 101/102 select the original Reimu/Marisa labels. Difficulty defaults to the original known-ID label; null omits either label. */
  characterScript?:number|null;difficultyScript?:number|null;
  skin?:TouhouHudSkin|null;
- /** Row origins in 640x480 screen units. Each override translates its label, underline, numbers and stock icons together. */
+ /** Row origins in 640x480 screen units. Coordinates translate its label, underline, numbers and stock icons together. numberWidth only fits right-aligned numeric groups. */
  layout?:Partial<Record<TouhouHudRow,Partial<TouhouHudRowPosition>>>;
  /** RGB components use ARGB notation; alpha continues to follow the original stock animation. Null shadowColor disables the numeric shadow. */
  palette?:Partial<Record<TouhouHudPaletteKey,Partial<TouhouHudNumberColors>>>;

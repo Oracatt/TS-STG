@@ -29,6 +29,61 @@ function fixture(options={}){
 function render(hud,state={},options){const draw=new DrawList();hud.draw(draw,state,options);return draw.commands;}
 const scripts=commands=>commands.filter(command=>command[0]==='fixture-anm').map(command=>command[1]);
 
+function scoreFixture(locale='ja',options={}){
+  const front=locale==='ja'?data('front'):JSON.parse(fs.readFileSync(new URL('../packages/thlib/assets/touhou-common/locales/zh-CN/anm/front.json',import.meta.url)));
+  const bank=new AnmBank(front,{loadTexture:()=>11}),font=new TouhouBitmapFont(data('ascii_960'),{loadTexture:()=>12}),values=[];
+  const draw=font.draw;font.draw=function(target,text,settings){
+    if(target.enqueuePriority&&settings.drawPriority===75)values.push({text,...settings});
+    return draw.call(this,target,text,settings);
+  };
+  const hud=new TouhouHud({bank,font,...options});advance(hud);
+  return{hud,font,values};
+}
+function scoreBounds(font,value){
+  const glyphs=[...font.layout(value.text,{...value,font:10}),...font.layout(value.text,{...value,font:11})];
+  return{left:Math.min(...glyphs.map(g=>g.x)),right:Math.max(...glyphs.map(g=>g.x+g.width)),glyphs};
+}
+
+test('true source cap and every continue digit fit both score rows beside the real Japanese and Chinese image labels',()=>{
+  // damage/items/spell cap the stored score at 999999999; display multiplies
+  // it by ten and appends the actual continue/high-score final digit.
+  for(const locale of ['ja','zh-CN']){
+    const{hud,font,values}=scoreFixture(locale);
+    for(let finalDigit=0;finalDigit<=9;finalDigit++){
+      values.length=0;const commands=render(hud,{score:999999999,continues:finalDigit,highScore:999999999n,highScoreDigit:finalDigit});
+      for(const[row,script,y]of [['highScore',6,42],['score',7,64]]){
+        const value=values.find(value=>value.y===y),vm=hud.roots[0].children.find(vm=>vm.scriptId===script);
+        assert.equal(value.text,`9,999,999,99${finalDigit}`);
+        const labelRight=Math.max(...anmSpriteVertices(vm,hud.rowView(row)).map(vertex=>vertex[0]));
+        const bounds=scoreBounds(font,value);
+        assert.ok(bounds.left>=labelRight+6.5-.001,`${locale} ${row} cap must clear its image label: ${bounds.left} vs ${labelRight}`);
+        assert.ok(bounds.right<=936.001,'shrinking retains the original right edge');
+        assert.ok(value.scaleX<1);assert.equal(value.scaleX,value.scaleY,'long scores shrink uniformly');
+        assert.equal(bounds.glyphs.length,26,'all thirteen foreground and shadow glyphs remain');
+      }
+      assert.ok(!commands.some(command=>command[0]==='text'),'scores retain the original bitmap font');
+    }
+    hud.destroy();
+  }
+});
+
+test('ordinary score sizes and right anchors are unchanged while optional row widths translate and fit together',()=>{
+  const{hud,font,values}=scoreFixture();render(hud,{score:99999999,highScore:12345});
+  for(const y of [42,64]){
+    const value=values.find(value=>value.y===y);
+    assert.equal(value.x,620);assert.equal(value.scaleX??1,1);assert.equal(value.scaleY??1,1);
+    assert.deepEqual(scoreBounds(font,value).glyphs,[...font.layout(value.text,{font:10,x:620,y,alignX:2}),...font.layout(value.text,{font:11,x:620,y,alignX:2})]);
+  }
+  hud.destroy();
+  const moved=scoreFixture('zh-CN',{layout:{score:{x:438,y:74,numberWidth:100},highScore:{numberWidth:null}}});
+  render(moved.hud,{score:999999999,continues:9,highScore:999999999,highScoreDigit:9});
+  const score=moved.values.find(value=>value.y===74),high=moved.values.find(value=>value.y===42);
+  assert.equal(score.x,630);assert.ok(Math.abs(score.scaleX-100/132)<1e-7);assert.equal(score.scaleX,score.scaleY);
+  assert.ok(scoreBounds(moved.font,score).left>=795-.001);
+  assert.equal(high.scaleX??1,1,'null opts out of fitting without modifying the score value');
+  assert.equal(moved.hud.layout.score.numberWidth,100);moved.hud.destroy();
+});
+
 test('public default HUD draws all bitmap status labels and exactly the two portable rows below power',()=>{
   const{hud,values}=fixture();
   const commands=render(hud,{highScore:123456,score:100,pointValue:654320,graze:12345,pointItems:777});
@@ -137,5 +192,5 @@ test('real common bitmap font emits original image glyphs for values and Replay 
 
 test('invalid row, palette and skin options fail before creating animation owners',()=>{
   const bank={create(){throw new Error('must validate before creating animations');}},font={draw(){}};
-  for(const options of [{layout:{graze:{y:NaN}}},{layout:{pointItems:{y:300}}},{palette:{graze:{color:-1}}},{palette:{unknown:{color:0}}},{skin:{drawFrame:true}}])assert.throws(()=>new TouhouHud({bank,font,...options}),/HUD/);
+  for(const options of [{layout:{graze:{y:NaN}}},{layout:{pointItems:{y:300}}},{layout:{score:{numberWidth:0}}},{layout:{score:{numberWidth:-1}}},{layout:{score:{numberWidth:Infinity}}},{layout:{score:{numberWidth:'120'}}},{palette:{graze:{color:-1}}},{palette:{unknown:{color:0}}},{skin:{drawFrame:true}}])assert.throws(()=>new TouhouHud({bank,font,...options}),/HUD/);
 });
