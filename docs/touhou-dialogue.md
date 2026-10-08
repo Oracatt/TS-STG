@@ -23,6 +23,24 @@ const dialogue = new TouhouDialogue({
 
 位置参数 `x/y` 是原作消息指令 28 将 MSG 坐标乘 2 后的 ANM 坐标。默认取 `st01m0` 的左 `(116,240)`、右 `(360,240)`，因此框根的原始参数为 `(232,480)`、`(720,480)`；可注入逐句位置与 `boxStyle`。整段对白是全屏 UI，不继承游戏区的 `x/y` 偏移。`draw(draw, {x:336,y:24,scale:1.5,screenScale:1})` 会使用 `{x:0,y:0,scale:1,screenScale:1.5}` 绘制，对应 640×480 源屏幕放大到 960×720。
 
+`boxMode: 0 | 1 | 2` 独立选择气泡方向：0 指向左立绘，1 指向右立绘，2 指向场上的角色。省略时仍由 `speaker` 选择 0 / 1。模式 2 使用公共单行 ANM272、双行 ANM296，以及原箭头262/266；它不会创建 Boss、选择具体人物或自动跟踪实体。`speaker` 仍表示台词的归属，模式 2 不激活任何立绘。调用方将场地坐标投影为全屏坐标，再根据所选气泡的布局设置 `x/y`，不能直接传入场地中的 `boss.x/y`。
+
+原作 `st01m0` 战前段在 MSG@50 撤玩家立绘、用 MSG9 选择模式 2、MSG28 指定 `(192,150)` 并放行 Boss 入场，@110 才出现首句；等待玩家推进后，@144 才创建 Boss 立绘，@148 改用右立绘气泡。灵梦路线相应偏移为 @58 / @118 / @152 / @156。该固定锚点对应源场地角色 `(0,128)` 的全屏位置 `(224,144)`，不是逐帧跟随。业务可以用以下步骤表达这类通用演出：
+
+```js
+{
+  speaker: 'right', boxMode: 2, x: 384, y: 300,
+  text: '由业务提供的场上发言',
+  portraits: {left: {present: false}, right: {present: false}},
+  entrance: {portraitFrame: 0, speakerFrame: 0, textFrame: 60, inputFrame: 94},
+  events: [{type: 'appear', entranceStage: 'portraits'}],
+}
+// 下一句可将双方 present:true，重新进入各自的公共立绘动画。
+// onEvent 负责场地角色的创建；坐标和台词由业务决定。
+```
+
+显式 `portraits[side].present:false` 让已存在的该侧立绘通过原 ANM interrupt1 退场，退出尾仍由对话更新 / 绘制；重复 false 不重置退出。其间不再激活该侧或重置表情。随后 true 创建新的入场实例，快速重新出现会清理旧尾；未提供 present 保持已有实例。自定义 factory 立绘可以实现 `setPresent(present,dialogue)`，自行管理中途隐藏 / 再入动画。没有该钩子时，false 立即抑制该自定义立绘的绘制和状态，但 owner 继续持有、更新和最终释放它；整段结束的 `finish` 不用于中途隐藏。
+
 原始身体 PNG 把魔石直接画进角色和手部，不能通过停掉另一个 ANM 节点去除。导入器保留真正的身体脚本 `pl00:62`、`pl01:73`，把四种石头身体 sprite 统一换成无魔石原画的 UV 裁片；干净 PNG 原样复制，裁片用单一倍率还原源身体画框，不拉伸图像。原始独立表情脚本 `64/75`、18 张表情图、表情覆盖位置、淡入、明暗、说话与退出动作全部保留。`manifest.transformations` 记录原身体/干净图哈希、UV 映射与差异；`tools/import-touhou-common-assets.mjs --check` 可核对重新导入的一致性。这个换肤仍存在原画差异，尤其魔理沙从握石改为张手，不能宣称原作身体像素完全一致。没有公共 Boss 图像时，默认在对话框显示调用方提供的名字。
 
 `TOUHOU_DIALOGUE_PORTRAITS` 记录经过源 ANM 模式 2（位置与尺寸乘 0.5）后的全屏坐标：灵梦身体 249×349，初始 `(-48,138)`、不说话 `(-32,138)`、说话 `(0,130)`；魔理沙身体 309×389，相应为 `(-48,98)`、`(-32,98)`、`(0,90)`。`pl00:64` 的头像保持相对身体 `(36,15.5)`，`pl01:75` 为 `(23.5,62)`。说话/不说话切换使用原 15 帧插值与颜色，进场淡入 15 帧，退出 30 帧；身体和头像分别参加原层 35/36 的排序。
@@ -46,7 +64,7 @@ const dialogue = new TouhouDialogue({
 // entrance: {portraitFrame: 0, speakerFrame: 4, textFrame: 34, inputFrame: 38}
 ```
 
-入口配置仅作用于第一步，以 `inputFrame` 接管第一步的 `coldFrames`，因此不会在第 38 帧之后再叠加业务冷却。之后步骤和自动推进时长仍使用调用方的数据。第一步的 `portrait`、`emotion` 事件随立绘阶段执行，`active` 随说话阶段执行，`text` 及其他事件随文字阶段执行；同一阶段保持原事件顺序。自定义事件可声明 `entranceStage: 'portraits' | 'speaker' | 'text'`，选择需要的阶段。载荷与回调参数保持原样。没有步骤时立即完成，不凭空播放入口。`snapshot().entrance` 提供 `frame`、`portraits`、`speaker`、`text`、`inputReady`；没有入口配置时，不增加该字段。
+构造参数的入口配置仍仅作用于第一步；每个步骤另可用自己的 `entrance` 指定相同时序，显式 null 禁用该步入口。使用入口的步骤以 `inputFrame` 接管其 `coldFrames`，不在开放输入后再叠加业务冷却；自动推进时长保持调用方的数据。中途带入口的步骤会先删除旧气泡、清掉旧文字，直到新的 `textFrame` 才建立新气泡。`portrait`、`emotion` 事件随立绘阶段执行，`active` 随说话阶段执行，`text` 及其他事件随文字阶段执行；同一阶段保持原事件顺序。自定义事件可声明 `entranceStage: 'portraits' | 'speaker' | 'text'`，选择需要的阶段。载荷与回调参数保持原样。没有步骤时立即完成，不凭空播放入口。`snapshot().entrance` 提供 `frame`、`portraits`、`speaker`、`text`、`inputReady`；没有入口配置时，不增加该字段。
 
 默认 `entrance: null` 继续即时显示，兼容原有调用。显式设置的 `startDelayFrames` 是入口时序开始前的附加等待，不会由预置自动移除。竖屏 Demo 在战后明确使用 `entrance: 'afterBoss', startDelayFrames: 0`，保留 Rush 的台词、人物与表情，替换其额外的 50 帧开场等待；历史宽屏调用与导入数据仍保留旧时序。战前调用也不受这项可选预置影响。
 

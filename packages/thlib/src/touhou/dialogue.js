@@ -74,12 +74,12 @@ export class TouhouDialogue {
     this.playerProfile=portraitProfiles[character]??defaultPortraitProfiles[character]??null;
     if(!this.playerProfile&&!createPortrait)throw new TypeError('Custom dialogue character requires a portrait profile or factory');
     if(createPortrait!==null&&typeof createPortrait!=='function')throw new TypeError('Dialogue portrait factory must be a function');
-    this.createPortrait=createPortrait;this.customPortraits={};
+    this.createPortrait=createPortrait;this.customPortraits={};this.portraitPresence={};
     this.playerPortrait=Object.freeze({x:playerPortrait.x??this.playerProfile?.x??0,y:playerPortrait.y??this.playerProfile?.y??0,height:playerPortrait.height??this.playerProfile?.height??1});
     if(!Number.isFinite(this.playerPortrait.x)||!Number.isFinite(this.playerPortrait.y)||!Number.isFinite(this.playerPortrait.height)||this.playerPortrait.height<=0)
       throw new RangeError('Player portrait layout requires finite x/y and positive height');
     Object.assign(this,{resources,steps,character,codePage,onEvent,onComplete,onExitHandoff,drawPortrait,charsPerFrame,skipMask,skipHoldFrames,maxLineBytes,speakerNames,textColor});
-    this.entranceTiming=entranceTiming(entrance);this.entranceState=null;
+    this.entranceTiming=entranceTiming(entrance);this.stepEntranceTiming=null;this.entranceState=null;
     this.exitTiming=exitTiming(exit);this.exitState=null;this.displayStep=null;
     this.front=resources.createBank('front');this.textBank=resources.createBank('text');this.portraitBank=this.playerProfile&&!createPortrait?resources.createBank(this.playerProfile.bank):null;
     this.buttons=new TouhouButtons();this.queue=new TouhouRenderQueue();this.age=0;this.index=-1;this.current=null;this.complete=false;this.disposed=false;
@@ -103,9 +103,14 @@ export class TouhouDialogue {
       this._finish();return;
     }
     this.displayStep=step;
-    if(index===0&&this.entranceTiming&&!step.terminal){
-      // The source entry's input instruction owns its first wait. Later
-      // steps retain their supplied cold/automatic policies unchanged.
+    if(step.boxMode!==undefined&&![0,1,2].includes(step.boxMode))throw new RangeError('Dialogue box mode must be 0, 1 or 2');
+    const timing=step.entrance===undefined?(index===0?this.entranceTiming:null):entranceTiming(step.entrance);
+    this.stepEntranceTiming=timing;
+    if(timing&&!step.terminal){
+      // An authored MSG-style wait may occur after another speaker as well.
+      // Retire the old balloon and hide text until this step's reveal cue.
+      if(this.box){this.box.destroy();this.box=null;}this.lines=[];this.pages=[];
+      for(const vm of this.texts)if(vm.alive)vm.interruptNow(3);
       this.cold=0;this.entranceState={frame:0,portraits:false,speaker:false,text:false,inputReady:false};
       for(const event of step.events??[])if(!['portraits','speaker','text'].includes(eventEntranceStage(event)))
         throw new RangeError('Dialogue entrance event stage must be portraits, speaker or text');
@@ -119,27 +124,43 @@ export class TouhouDialogue {
     if(step.terminal){this._finish();return;}
     this._showStepText(step);
   }
+  _setPortraitPresence(side,present){
+    if(present===undefined||this.portraitPresence[side]===present)return;
+    const previous=this.portraitPresence[side];this.portraitPresence[side]=present;
+    if(this.customPortraits[side]){this.customPortraits[side].setPresent?.(present,this);return;}
+    if(!present){
+      // MSG4/5 are pending exits. Keep their original ANM tails alive, and
+      // do not reactivate them through a later speaker/emotion instruction.
+      if(side==='left')this.portrait?.interrupt(1,true);else this.rightPortraitMotion?.interrupt(1,true);
+    }else if(previous===false){
+      // Re-entry is a fresh template, even when the previous tail is alive.
+      if(side==='left'){this.portrait?.destroy();this.portraitBank?.collect();this.portrait=null;this.portraitMotion=null;}
+      else{this.rightPortraitBank?.dispose();this.rightPortraitBank=null;this.rightPortraitMotion=null;}
+    }
+  }
   _createPortraits(step){
+    for(const side of ['left','right'])this._setPortraitPresence(side,step.portraits?.[side]?.present);
     for(const side of ['left','right'])if(step.portraits?.[side]?.present&&!this.customPortraits[side]&&this.createPortrait){
       const portrait=this.createPortrait(side,step,this);
-      if(portrait){if(typeof portrait.draw!=='function')throw new TypeError('Dialogue portrait must implement draw');this.customPortraits[side]=portrait;}
+      if(portrait){if(typeof portrait.draw!=='function')throw new TypeError('Dialogue portrait must implement draw');this.customPortraits[side]=portrait;portrait.setPresent?.(true,this);}
     }
     if(step.portraits?.left?.present&&!this.customPortraits.left&&!this.playerProfile)throw new TypeError('Missing custom left dialogue portrait');
-    if(step.portraits?.left?.present&&!this.customPortraits.left&&!this.portrait){
+    if(step.portraits?.left?.present&&!this.customPortraits.left&&!this.portrait?.alive){
       this.portraitBank??=this.resources.createBank(this.playerProfile.bank);
       this.portrait=this.portraitBank.create(this.playerProfile.root);this.portraitMotion=find(this.portrait,this.playerProfile.body);
     }
-    if(this.portrait)this.portrait.interruptNow(TOUHOU_DIALOGUE_EXPRESSIONS[step.portraits?.left?.emotion??step.emotion]??17,true);
-    for(const side of ['left','right'])this.customPortraits[side]?.setStep?.(step,this);
-    if(step.portraits?.right?.present&&!this.customPortraits.right&&!this.rightPortraitMotion)this._createRightPortrait();
+    if(this.portrait&&this.portraitPresence.left!==false)this.portrait.interruptNow(TOUHOU_DIALOGUE_EXPRESSIONS[step.portraits?.left?.emotion??step.emotion]??17,true);
+    for(const side of ['left','right'])if(this.portraitPresence[side]!==false)this.customPortraits[side]?.setStep?.(step,this);
+    if(step.portraits?.right?.present&&!this.customPortraits.right&&!this.rightPortraitMotion?.alive){this.rightPortraitBank?.dispose();this._createRightPortrait();}
   }
   _activateSpeaker(step){
-    this.portrait?.interruptNow(step.speaker==='left'?2:3,true);
-    this.rightPortraitMotion?.interruptNow(step.speaker==='right'?2:3);
-    for(const side of ['left','right'])this.customPortraits[side]?.setActive?.(step.speaker===side,this);
+    const active=side=>step.boxMode!==2&&step.speaker===side;
+    if(this.portraitPresence.left!==false)this.portrait?.interruptNow(active('left')?2:3,true);
+    if(this.portraitPresence.right!==false)this.rightPortraitMotion?.interruptNow(active('right')?2:3);
+    for(const side of ['left','right'])if(this.portraitPresence[side]!==false)this.customPortraits[side]?.setActive?.(active(side),this);
   }
   _advanceEntrance(){
-    const state=this.entranceState,timing=this.entranceTiming,step=this.current;
+    const state=this.entranceState,timing=this.stepEntranceTiming,step=this.current;
     for(const [stage,key,action] of [['portraits','portraitFrame',()=>this._createPortraits(step)],
       ['speaker','speakerFrame',()=>this._activateSpeaker(step)],['text','textFrame',()=>this._showStepText(step)]]){
       if(state[stage]||state.frame<timing[key])continue;
@@ -155,7 +176,7 @@ export class TouhouDialogue {
   }
   _showPage(){
     this.textAge=0;this.shownCharacters=this.charsPerFrame===Infinity?Infinity:0;
-    const lines=this.pages[this.page]??[''],mode=this.current.speaker==='left'?0:1,type=(this.current.boxStyle??0)*3+mode+(lines.length>1?24:0);
+    const lines=this.pages[this.page]??[''],mode=this.current.boxMode??(this.current.speaker==='left'?0:1),type=(this.current.boxStyle??0)*3+mode+(lines.length>1?24:0);
     this.box?.destroy();this.boxType=type;this.mode=mode;
     const bytes=Math.max(...lines.map(line=>this.resources.encodeText(line,this.codePage).length));
     this.boxWidth=f32(Math.max(0,((bytes&0x1ffffffe)*8-24)*2));
@@ -227,7 +248,11 @@ export class TouhouDialogue {
     return{x:0,y:0,scale:1,screenScale:(view.scale??1)*(view.screenScale??1)};
   }
   portraitState(side='left'){
-    if(this.customPortraits[side])return this.customPortraits[side].state?.(this)??null;
+    if(this.customPortraits[side]){
+      const portrait=this.customPortraits[side];
+      if(this.portraitPresence[side]===false&&!portrait.setPresent)return null;
+      return portrait.state?.(this)??null;
+    }
     const vm=side==='right'?this.rightPortraitMotion:this.portraitMotion;
     if(!vm?.alive)return null;const position=vm.worldPosition({screenScale:1}),profile=side==='right'?TOUHOU_DIALOGUE_PORTRAITS.right:this.playerProfile;
     return{x:position.x,y:position.y,width:profile.width,height:profile.height,color:vm.color,alpha:vm.alpha,layer:vm.layer};
@@ -245,8 +270,10 @@ export class TouhouDialogue {
       keepDefault=this.drawPortrait(target,this.exiting?this.displayStep:this.current,this,screenView)===false;
     },{order:this.rightPortraitMotion?.renderOrder??Infinity});
     if(keepDefault)this._drawDefaultPortrait(queue,view);
-    for(const [side,portrait]of Object.entries(this.customPortraits))queue.enqueue(this.portraitState(side)?.layer??35,
-      target=>portrait.draw(target,this.exiting?this.displayStep:this.current,this,screenView));
+    for(const [side,portrait]of Object.entries(this.customPortraits)){
+      if(this.portraitPresence[side]===false&&!portrait.setPresent)continue;
+      queue.enqueue(this.portraitState(side)?.layer??35,target=>portrait.draw(target,this.exiting?this.displayStep:this.current,this,screenView));
+    }
     this.front.draw(queue,screenView);this.textBank.draw(queue,screenView);queue.flush(draw);
   }
   /** Graceful close uses the configured original exit; dispose() remains the
@@ -258,7 +285,8 @@ export class TouhouDialogue {
     this.exitState={frame:0,handedOff:false};this.startDelay=0;this.cold=0;this.entranceState=null;
     // MSG4/5 use pending recursive interrupt1, not immediate destruction.
     // Bodies/expressions slide and fade for30 frames using their source ANMs.
-    this.portrait?.interrupt(1,true);this.rightPortraitMotion?.interrupt(1,true);
+    if(this.portraitPresence.left!==false)this.portrait?.interrupt(1,true);
+    if(this.portraitPresence.right!==false)this.rightPortraitMotion?.interrupt(1,true);
     for(const portrait of Object.values(this.customPortraits))portrait.finish?.(this);
     // MSG6 clear_dialogue_text(false): blank the text surfaces, interrupt1
     // for their8-frame retirement, and delete the bubble tree. Its5-frame

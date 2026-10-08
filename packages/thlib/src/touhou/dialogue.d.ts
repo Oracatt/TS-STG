@@ -2,7 +2,7 @@ import type {DrawList} from '../index.js';
 import type {AnmView} from './anm.js';
 import type {TouhouResources} from './resources.js';
 export interface TouhouDialogueEvent {type:string;
-  /** First-entry scheduling only. Defaults: portrait/emotion -> portraits,
+  /** Staged-entry scheduling only. Defaults: portrait/emotion -> portraits,
    * active -> speaker, text and other events -> text. */
   entranceStage?:'portraits'|'speaker'|'text';[key:string]:unknown;}
 export interface TouhouDialogueEntranceTiming {
@@ -28,16 +28,34 @@ export interface TouhouDialoguePortraitProfile {bank:string;root:number;body:num
 export interface TouhouDialoguePortrait {
  draw(draw:DrawList,step:TouhouDialogueStep,dialogue:TouhouDialogue,view:AnmView):void;
  update?(dialogue:TouhouDialogue):void;setStep?(step:TouhouDialogueStep,dialogue:TouhouDialogue):void;
+ /** Explicit per-side presence changes. A hook owns its fade/re-entry and
+  * remains drawable while absent; without one, false immediately hides draw/state.
+  * Neither case releases ownership: update/dispose still run. */
+ setPresent?(present:boolean,dialogue:TouhouDialogue):void;
  setActive?(active:boolean,dialogue:TouhouDialogue):void;finish?(dialogue:TouhouDialogue):void;dispose?():void;
  state?(dialogue:TouhouDialogue):TouhouDialoguePortraitState|null;
 }
-export interface TouhouDialogueStep {text?:string;speaker?:'left'|'right';emotion?:string;terminal?:boolean;coldFrames?:number;autoFrames?:number;boxStyle?:number;x?:number;y?:number;events?:TouhouDialogueEvent[];portraits?:{left?:{present?:boolean;emotion?:string};right?:{present?:boolean;emotion?:string}};}
+export interface TouhouDialogueStep {text?:string;speaker?:'left'|'right';emotion?:string;terminal?:boolean;coldFrames?:number;autoFrames?:number;boxStyle?:number;
+ /** 0/1 are the portrait-side balloons; 2 points toward an actor above the
+  * balloon and leaves both portraits inactive. Defaults to speaker left/right. */
+ boxMode?:0|1|2;
+ /** ANM raw coordinates: twice the original 640x480 screen coordinates,
+  * retaining the source balloon's own anchor/tail offsets. */
+ x?:number;y?:number;
+ /** Optional timing for this step. Undefined retains the legacy first-step
+  * entrance option; later steps default to immediate entry. Null disables it. */
+ entrance?:'afterBoss'|TouhouDialogueEntranceTiming|null;
+ events?:TouhouDialogueEvent[];
+ /** Explicit false starts the source portrait exit once; true re-enters from
+  * a fresh source template. Omitted presence preserves the prior state. */
+ portraits?:{left?:{present?:boolean;emotion?:string};right?:{present?:boolean;emotion?:string}};}
 export interface TouhouDialogueOptions {resources:TouhouResources;steps?:TouhouDialogueStep[];character?:string|number;codePage?:number;charsPerFrame?:number;startDelayFrames?:number;skipMask?:number;skipHoldFrames?:number;maxLineBytes?:number;textColor?:number;speakerNames?:{left?:string;right?:string};onEvent?:(event:TouhouDialogueEvent,step:TouhouDialogueStep,dialogue:TouhouDialogue)=>void;onComplete?:(dialogue:TouhouDialogue)=>void;
   /** Extends the built-in 0/1 profiles. IDs outside that set never silently select Marisa. */
   portraitProfiles?:Record<string,TouhouDialoguePortraitProfile>;
   /** Called for each present side; null uses its source preset. Returned portraits are updated and disposed by the dialogue. */
   createPortrait?:(side:'left'|'right',step:TouhouDialogueStep,dialogue:TouhouDialogue)=>TouhouDialoguePortrait|null;
-  /** Optional first-step staging. Default null preserves immediate entry.
+  /** Optional default first-step staging. A step may override it.
+   * Default null preserves immediate entry.
    * Times are relative to entry after startDelayFrames. Replaces the first
    * step's coldFrames; subsequent steps retain their authored input policy. */
   entrance?:'afterBoss'|TouhouDialogueEntranceTiming|null;
