@@ -1,16 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { AnmBank } from '../packages/thlib/src/touhou/anm.js';
-import { TouhouBossHud } from '../packages/thlib/src/touhou/boss-hud.js';
-import { TouhouSpell } from '../packages/thlib/src/touhou/spell.js';
-import { TouhouBossPresentation, TOUHOU_BOSS_PROFILES, TOUHOU_BOSS_SCREEN_VIEW, createTouhouBossAuraView } from '../packages/thlib/src/touhou/boss-presentation.js';
-import { projectedAnmGeometry } from '../packages/thlib/src/touhou/anm-projection.js';
-import { TouhouRenderQueue } from '../packages/thlib/src/touhou/render-queue.js';
-import { DrawList } from '../packages/thlib/src/render.js';
-import { TouhouBitmapFont } from '../packages/thlib/src/touhou/font.js';
-import { TouhouGame } from '../packages/thlib/src/touhou/game.js';
-import { createTouhouResources } from '../packages/thlib/src/touhou/resources.js';
+import { AnmBank } from '../packages/thlib/dist/touhou/anm.js';
+import { TouhouBossHud } from '../packages/thlib/dist/touhou/boss-hud.js';
+import { TouhouSpell } from '../packages/thlib/dist/touhou/spell.js';
+import { TouhouBossPresentation, TOUHOU_BOSS_PROFILES, TOUHOU_BOSS_SCREEN_VIEW, createTouhouBossAuraView } from '../packages/thlib/dist/touhou/boss-presentation.js';
+import { projectedAnmGeometry } from '../packages/thlib/dist/touhou/anm-projection.js';
+import { TouhouRenderQueue } from '../packages/thlib/dist/touhou/render-queue.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
+import { TouhouBitmapFont } from '../packages/thlib/dist/touhou/font.js';
+import { TouhouGame } from '../packages/thlib/dist/touhou/game.js';
+import { createTouhouResources } from '../packages/thlib/dist/touhou/resources.js';
 
 const data = name => JSON.parse(fs.readFileSync(new URL(`../packages/thlib/assets/touhou-common/anm/${name}.json`, import.meta.url)));
 const bank = name => new AnmBank(data(name), { loadTexture: () => 11 });

@@ -1,9 +1,9 @@
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import {resolve,dirname} from 'node:path';
 import {createHash} from 'node:crypto';
-import {AnmBank} from '../packages/thlib/src/touhou/anm.js';
-import {DrawList} from '../packages/thlib/src/render.js';
-import {createTouhouCamera} from '../packages/thlib/src/touhou/anm-projection.js';
+import {AnmBank} from '../packages/thlib/dist/touhou/anm.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
+import {createTouhouCamera} from '../packages/thlib/dist/touhou/anm-projection.js';
 const root=resolve(import.meta.dirname,'..'),base=resolve(root,'packages/thlib/assets/touhou-common');
 const manifest=JSON.parse(readFileSync(resolve(base,'manifest.json'))),report={format:'ts-stg-touhou-prefab-audit-v1',passed:true,
   scope:'Actual portable JS ANM create/update/draw for each selected source script; static default data, not a GPU/original-game image equivalence claim',explicitStageCamera:{bank:'effect',scripts:[95,96,97,98,133,134],viewport:{x:272,y:120,width:416,height:480},billboardAxis:{x:1,y:0,z:0}},manifestSha256:createHash('sha256').update(readFileSync(resolve(base,'manifest.json'))).digest('hex'),banks:{},failures:[]};

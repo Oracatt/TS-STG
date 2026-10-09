@@ -1,6 +1,6 @@
 # RushBoss Demo 的阶段切换节奏
 
-公共 [`TouhouBossPhaseTimeline`](../packages/thlib/src/touhou/boss-phase-timeline.js) 管理固定帧时钟、准备事件和攻击启动。具体阶段使用的帧数与 Rush 弹幕自身的准备长度位于私有 [`boss-phase-timing.js`](../games/rushboss/src/boss-phase-timing.js)。原作 Boss 名称、具体攻击、阶段选择和剧情不进入 thlib。
+公共 [`TouhouBossPhaseTimeline`](../packages/thlib/src/touhou/boss-phase-timeline.ts) 管理固定帧时钟、准备事件和攻击启动。具体阶段使用的帧数与 Rush 弹幕自身的准备长度位于私有 [`boss-phase-timing.js`](../games/rushboss/src/boss-phase-timing.ts)。原作 Boss 名称、具体攻击、阶段选择和剧情不进入 thlib。
 
 本次对齐的是**符卡击破后进入新非符血组**的准备、血环出现与第一发弹幕的先后关系。普通非符转符卡继续使用同一组剩余血环；血环贴图采样的修复与血环是否归一化是两件独立的事。单卡练习仍使用独立满环。见 [血环说明](touhou-boss-hud.md) 和 [血量映射](rushboss-source-health.md)。
 

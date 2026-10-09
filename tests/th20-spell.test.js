@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { Th20Spell, encodeTh20SpellTime, invalidTh20SpellTime, quantizeTh20SpellTime } from '../games/touhou20/src/spell.js';
 import { AnmBank } from '../games/touhou20/src/anm.js';
 import { Th20BitmapFont } from '../games/touhou20/src/font.js';
-import { DrawList } from '../packages/thlib/src/render.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 const vectors = JSON.parse(fs.readFileSync(new URL('./fixtures/th20-player-vectors.json', import.meta.url)));
 const make = options => new Th20Spell({ player: { x: 0, y: 400, score: 0, bomb: null }, ...options });
 

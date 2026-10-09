@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {spellCard,createSpell} from '../examples/spellcard/moonfold.spell.js';
 import {validateSpellMetadata} from '../tools/spellcard-editor/metadata.js';
-import {TouhouBossCharge} from '../packages/thlib/src/touhou/boss-presentation.js';
-import {TouhouRNG} from '../packages/thlib/src/touhou/math.js';
-import {touhouStyle} from '../packages/thlib/src/touhou/bullet-patterns.js';
-import {TOUHOU_BULLET_STYLES} from '../packages/thlib/src/touhou/bullet-style-data.js';
+import {TouhouBossCharge} from '../packages/thlib/dist/touhou/boss-presentation.js';
+import {TouhouRNG} from '../packages/thlib/dist/touhou/math.js';
+import {touhouStyle} from '../packages/thlib/dist/touhou/bullet-patterns.js';
+import {TOUHOU_BULLET_STYLES} from '../packages/thlib/dist/touhou/bullet-style-data.js';
 import {bulletTestBank} from './fixtures/th20-bullet-bank.js';
 
 // These tests inspect the authored program and real public charge ownership.

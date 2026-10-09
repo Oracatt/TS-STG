@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { TouhouBossPhasePlan } from '../packages/thlib/src/touhou/boss-phase-plan.js';
-import { TouhouBossHud } from '../packages/thlib/src/touhou/boss-hud.js';
-import { AnmBank } from '../packages/thlib/src/touhou/anm.js';
-import { DrawList } from '../packages/thlib/src/render.js';
-import { TOUHOU_BOSS_SCREEN_VIEW } from '../packages/thlib/src/touhou/boss-presentation.js';
+import { TouhouBossPhasePlan } from '../packages/thlib/dist/touhou/boss-phase-plan.js';
+import { TouhouBossHud } from '../packages/thlib/dist/touhou/boss-hud.js';
+import { AnmBank } from '../packages/thlib/dist/touhou/anm.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
+import { TOUHOU_BOSS_SCREEN_VIEW } from '../packages/thlib/dist/touhou/boss-presentation.js';
 
 const data = (name, original = false) => JSON.parse(fs.readFileSync(new URL(
   `../${original ? 'games/touhou20/assets' : 'packages/thlib/assets/touhou-common'}/anm/${name}.json`, import.meta.url)));

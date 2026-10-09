@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 import {DrawList} from '@ts-stg/thlib';
 import {createTouhouResources,TouhouLaserField} from '@ts-stg/thlib/touhou';
-import {anmSpriteVertices} from '../packages/thlib/src/touhou/anm-render.js';
+import {anmSpriteVertices} from '../packages/thlib/dist/touhou/anm-render.js';
 
 const available=existsSync('packages/thlib/assets/touhou-common/manifest.json');
 function fixture(){

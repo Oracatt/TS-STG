@@ -19,7 +19,7 @@ const binary = path.resolve(root, executable), out = path.resolve(root, output),
 assert.ok(fs.existsSync(binary), 'Build the native host with both backends first'); fs.mkdirSync(out, { recursive: true });
 const fileHash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const sources = ['phase-sequence', 'world', 'player', 'player-profile', 'player-rules', 'items', 'lasers', 'application', 'resources']
-  .map(name => 'packages/thlib/src/touhou/' + name + '.js');
+  .map(name => 'packages/thlib/dist/touhou/' + name + '.js');
 const fixture = 'tests/fixtures/touhou-framework-extension-native.js'; sources.push(fixture);
 const hashes = () => Object.fromEntries(sources.map(file => [file, fileHash(path.join(root, file))]));
 const sourceHashes = hashes(), binarySha256 = fileHash(binary), runs = [];

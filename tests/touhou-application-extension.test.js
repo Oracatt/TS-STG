@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DrawList,Keys} from '@ts-stg/thlib';
-import {TouhouApplication} from '../packages/thlib/src/touhou/application.js';
-import {TouhouTitleMenu} from '../packages/thlib/src/touhou/menu.js';
-import {createTouhouResources} from '../packages/thlib/src/touhou/resources.js';
-import {TouhouDialogue} from '../packages/thlib/src/touhou/dialogue.js';
-import {TouhouGameOver,continueTouhouGame} from '../packages/thlib/src/touhou/game-over.js';
-import {TouhouPlayer} from '../packages/thlib/src/touhou/player.js';
-import {TOUHOU_PLAYER_DATA} from '../packages/thlib/src/touhou/player-data.js';
+import {TouhouApplication} from '../packages/thlib/dist/touhou/application.js';
+import {TouhouTitleMenu} from '../packages/thlib/dist/touhou/menu.js';
+import {createTouhouResources} from '../packages/thlib/dist/touhou/resources.js';
+import {TouhouDialogue} from '../packages/thlib/dist/touhou/dialogue.js';
+import {TouhouGameOver,continueTouhouGame} from '../packages/thlib/dist/touhou/game-over.js';
+import {TouhouPlayer} from '../packages/thlib/dist/touhou/player.js';
+import {TOUHOU_PLAYER_DATA} from '../packages/thlib/dist/touhou/player-data.js';
 
 const ticks=(owner,count,mask=0)=>{for(let n=0;n<count;n++)owner.update(mask);};
 function bank(name='fixture'){

@@ -18,8 +18,8 @@ const binary=path.join(root,'build/Release/ts-stg.exe');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(scratch,{recursive:true});
 const hash=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const files=['games/rushboss/src/runtime.js','games/rushboss/src/projectiles.js',
-  'games/rushboss/src/portrait-application.js','packages/thlib/src/touhou/lasers.js',
-  'packages/thlib/src/touhou/laser-cancellation.js','packages/thlib/src/world.js'];
+  'games/rushboss/src/portrait-application.js','packages/thlib/dist/touhou/lasers.js',
+  'packages/thlib/dist/touhou/laser-cancellation.js','packages/thlib/dist/world.js'];
 const hashes=()=>Object.fromEntries(files.map(file=>[file,hash(path.join(root,file))]));
 const sourceHashes=hashes(),fixtures=[],results=[];
 for(const age of [27,40,70]){

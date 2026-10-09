@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TouhouPlayer } from '../packages/thlib/src/touhou/player.js';
-import { TOUHOU_BULLET_STYLES } from '../packages/thlib/src/touhou/bullet-style-data.js';
+import { TouhouPlayer } from '../packages/thlib/dist/touhou/player.js';
+import { TOUHOU_BULLET_STYLES } from '../packages/thlib/dist/touhou/bullet-style-data.js';
 
 // Read-only source audit, 2026-10-04. No original executable is run here.
 // The reconstruction's player_entity/cpu_validation.json records 12,000 original

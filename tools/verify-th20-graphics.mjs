@@ -28,7 +28,7 @@ mkdirSync(resolve(root,'build'),{recursive:true});mkdirSync(resolve(workspace,ou
 const temporary=mkdtempSync(resolve(root,'build/th20-graphics-')),entry=join(temporary,'entry.js'),results=[];
 try{
   for(const scene of scenes){
-    writeFileSync(entry,`${meshOnly?"import {DrawList} from '../../packages/thlib/src/render.js';delete DrawList.prototype.quad;\n":''}globalThis.__TH20_DEMO_OPTIONS=${JSON.stringify({...scene.options,musicVolume:0})};
+    writeFileSync(entry,`${meshOnly?"import {DrawList} from '../../packages/thlib/dist/render.js';delete DrawList.prototype.quad;\n":''}globalThis.__TH20_DEMO_OPTIONS=${JSON.stringify({...scene.options,musicVolume:0})};
 await import('../../games/touhou20/main.js');
 const game=globalThis.__tsstg_game;let frame=0;
 globalThis.__tsstg_game={update(){const mask=${scene.input};game.update(mask);frame++;},render:()=>game.render(),snapshot:()=>({hostFrames:frame,...game.snapshot()})};

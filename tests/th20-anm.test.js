@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import {decodeAnm,AnmBank,UnsupportedAnmError} from '../games/touhou20/src/anm.js';
 import {anmSpriteVertices} from '../games/touhou20/src/anm-render.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 import {AnmInterpolation} from '../games/touhou20/src/anm-interpolation.js';
 import {Th20RenderQueue} from '../games/touhou20/src/render-queue.js';
 

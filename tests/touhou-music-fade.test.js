@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {TouhouMusicFade,touhouMusicVolume} from '../packages/thlib/src/touhou/index.js';
+import {TouhouMusicFade,touhouMusicVolume} from '../packages/thlib/dist/touhou/index.js';
 
 test('music uses the source squared setting curve, separately from sound effects',()=>{
   // audio_runtime/audio_state.cpp::music_volume, units 1/100 dB.

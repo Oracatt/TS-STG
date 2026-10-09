@@ -1,6 +1,6 @@
 # TS-STG
 
-**C++ 平台宿主 + 纯 JavaScript thlib + 游戏业务层**的东方风格 STG 引擎。Windows x64 默认使用嵌入式 V8 JIT，也保留 QuickJS-NG 可切换；两者共用同一套纯 JS thlib。
+**C++ 平台宿主 + TypeScript thlib + 游戏业务层**的东方风格 STG 引擎。Windows x64 默认使用嵌入式 V8 JIT，也保留 QuickJS-NG 可切换；两者运行同一份由 TypeScript 编译的标准 JavaScript，不需要在游戏中安装 TypeScript 或 Node。
 
 | 层级 | 职责 |
 | --- | --- |
@@ -17,6 +17,7 @@
 
 ```powershell
 cd D:\AIWorkspace\TS-STG
+npm ci
 .\build.ps1 -Test
 .\Play.cmd
 ```
@@ -35,7 +36,7 @@ Windows x64 构建同时包含 V8 JIT 和 QuickJS。默认 `auto` 选择 V8；�
 .\run.ps1 -Entry games/touhou20/marisa.js
 ```
 
-导入器只读取参考工程，不执行原游戏机器码。完整 Demo 资源放在忽略目录 `games/touhou20/assets/` 供对照；运行时的公共部分加载 thlib 的 `assets/touhou-common/`，包括完整动画、基础射击数据、角色本体和音效。混合图集剔除魔石等专属区域，记录保留区域、来源和哈希；`assets/reference-common/` 另供简单 SpriteAtlas 模板使用。该应用保留原作菜单、角色与界面，并使用验证模块组合的 JS 道中；它不是原关卡通关复刻，也尚未完成整作逐帧、逐像素或音频采样一致性验收。支持范围见 [还原状态](docs/status.md)，应用接口见 [业务接入说明](docs/th20-guide.md)。
+导入器只读取参考工程，不执行原游戏机器码。完整 Demo 资源放在忽略目录 `games/touhou20/assets/` 供对照；运行时的公共部分加载 thlib 的 `assets/touhou-common/`，包括完整动画、基础射击数据、角色本体和音效。混合图集剔除魔石等专属区域，记录保留区域、来源和哈希；`assets/reference-common/` 另供简单 SpriteAtlas 模板使用。该应用保留原作菜单、角色与界面，并使用验证模块组合的 TS 道中；它不是原关卡通关复刻，也尚未完成整作逐帧、逐像素或音频采样一致性验收。支持范围见 [还原状态](docs/status.md)，应用接口见 [业务接入说明](docs/th20-guide.md)。
 
 已修复最终呈现重复透明混合产生的黑边、纹理切换导致立绘缺半边的问题，并保留标题、动画和字体优化。性能记录有明确测量版本与范围，见 [性能记录](docs/performance.md)；不承诺所有密集场景稳定 60 FPS。
 
@@ -56,11 +57,11 @@ node tools/import-rushboss-dialogue.mjs D:\c++\TouhouRushBoss-main
 
 右侧状态栏也由公共 `TouhouHud` 完整绘制：原图标签、数字字图、残机与 Bomb 图标，以及灵力下的最大得点、擦弹。游戏只通过 `systemOptions.hud.skin/layout/palette` 换肤；资源语言通过 `createTouhouResources` 的 `locale` 选择。接口及素材来源见 [公共状态栏](docs/touhou-hud.md)。
 
-## JavaScript 符卡预览
+## TypeScript 符卡预览
 
-运行 `start-spellcard-editor.cmd` 打开独立桌面 JS 符卡工具。在代码区编写普通 `.spell.js`，通过内嵌 TS-STG 引擎实时预览；支持语法高亮、查找替换、错误定位，以及暂停、逐帧和按固定种子跳转。源码是唯一编辑对象，工具不生成或回写事件图。保存的 ES 模块可直接导入游戏。首次启动需要安装编辑器自己的桌面依赖。结构、使用与范围见 [SpellCardEditor](docs/spellcard-editor.md)。
+运行 `start-spellcard-editor.cmd` 打开独立桌面符卡工具。在代码区编写 `.spell.ts`，通过内嵌 TS-STG 引擎实时预览，支持 `.ts` / `.mts`，也兼容原有 `.js` / `.mjs`。预览只编译临时副本，保存的始终是作者源码。支持语法高亮、查找替换、TS 语法诊断、运行时错误映回原文，以及暂停、逐帧和按固定种子跳转。首次启动需要安装编辑器自己的桌面依赖。结构、使用与范围见 [SpellCardEditor](docs/spellcard-editor.md)。
 
-示例 [月折「借光的纸鹤」](examples/spellcard/moonfold.md) 用径向展开的青蓝纸翼、紫色残月与反复锁定的金针，演示一张可直接编辑的 JS 符卡：可留在缺口附近小幅诱导，也可观察弹间空隙主动换位。
+示例 [月折「借光的纸鹤」](examples/spellcard/moonfold.md) 用径向展开的青蓝纸翼、紫色残月与反复锁定的金针，演示一张可直接编辑的 TS 符卡：可留在缺口附近小幅诱导，也可观察弹间空隙主动换位。
 
 ## 依赖 thlib 制作自己的游戏
 
@@ -92,7 +93,9 @@ thlib 不依赖 Node、DOM 或 C++ 全局对象。`@ts-stg/thlib/touhou` 提供 
 开发环境：Windows x64、VS2019/2022 C++ 工具、CMake 3.24+、Node.js 24+、Python 3（仅参考数据导入）。首次构建下载固定版本 raylib 5.5、QuickJS-NG 0.10.1 与 V8 12.3.219.9 静态 SDK，均校验 SHA-256。构建后的游戏无需 Node 或 Python。
 
 ```powershell
-npm install --ignore-scripts
+npm ci
+npm run build
+npm run typecheck
 npm test
 npm run test:package
 npm run test:integration
@@ -102,6 +105,8 @@ ctest --test-dir build -C Release --output-on-failure
 ```
 
 `test:package` 在仓库外安装真正的 thlib npm 压缩包，并以 Node/QuickJS 验证独立消费，包含通用素材，不携带参考应用及作品专属资源。`test:th20`、原作图形与数值检查需要先导入本机资产。更多源码对照见 [验证记录](docs/verification.md)。
+
+thlib、示例、Demo 和编辑器维护 TypeScript 源码。thlib 的 JS、类型声明和 source map 由构建生成到 `packages/thlib/dist/`；示例与 Demo 的 JS 生成在源文件旁，以兼容现有原生入口路径。不要编辑生成的 JS。独立编辑器 UI 需先 `npm ci --prefix tools/spellcard-editor`，再运行 `npm run typecheck:editor` 和 `npm --prefix tools/spellcard-editor run build`。迁移边界、消费方式与构建约定见 [TypeScript 开发](docs/typescript.md)。
 
 **后续只发布底层引擎和 thlib。** `.\package.ps1` 生成纯 SDK，仅含引擎、thlib、通用素材及必要接口文档/许可证；不带任何 Demo、作品专属素材、测试或导入工具。`Run.cmd` 运行使用方编写的 `main.js`。`touhou20`、`rushboss` 都只作开发、展示和回归 Demo；`.\package.ps1 -WithReferenceAssets` 生成的本机私用锦上京 Demo 包不属于发布物。重打包会保留旧目录及存档；当前未发布 SDK 或 npm 版本。
 

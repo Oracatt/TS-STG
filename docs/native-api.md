@@ -1,6 +1,6 @@
 # Native host API
 
-The global `tsstg` object exposes platform services. Its TypeScript contract is `packages/thlib/src/native-host.d.ts`. Game rules and image processing remain in JS.
+The global `tsstg` object exposes platform services. Its TypeScript contract is `packages/thlib/src/native-host.ts`, emitted as `dist/native-host.d.ts`. Game rules and image processing are authored in portable TypeScript and run as compiled JavaScript.
 
 `NativeHost` is exported as a type from `@ts-stg/thlib`. The native executable defaults to the consumer project's `main.js`. The engine SDK contains only the native host, thlib, common assets, API documentation and licenses; it contains no demo. Repository launchers explicitly choose a demo, and `-WithReferenceAssets` creates a separate private local demo bundle rather than a release artifact.
 

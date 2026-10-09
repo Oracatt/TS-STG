@@ -15,11 +15,11 @@ const out=path.join(root,'reports/rushboss/runtime.json');
 const catalogs=[['sunny',sunnyPhases],['monstone',monstonePhases],['artia',artiaPhases]];
 const sourceFiles=['games/rushboss/src/runtime.js','games/rushboss/src/player-adapter.js','games/rushboss/src/random.js',
   'games/rushboss/src/sunny.js','games/rushboss/src/monstone.js','games/rushboss/src/artia.js',
-  'games/rushboss/src/bullet-styles.js','packages/thlib/src/world.js',
-  'packages/thlib/src/bullet-presets.js','packages/thlib/src/bullets.js',
-  'packages/thlib/src/lasers.js','packages/thlib/src/math.js','packages/thlib/src/bomb-geometry.js',
+  'games/rushboss/src/bullet-styles.js','packages/thlib/dist/world.js',
+  'packages/thlib/dist/bullet-presets.js','packages/thlib/dist/bullets.js',
+  'packages/thlib/dist/lasers.js','packages/thlib/dist/math.js','packages/thlib/dist/bomb-geometry.js',
   'games/rushboss/src/bullet-visuals.js',
-  ...fs.readdirSync(path.join(root,'packages/thlib/src/touhou')).filter(file=>file.endsWith('.js')).sort().map(file=>'packages/thlib/src/touhou/'+file)];
+  ...fs.readdirSync(path.join(root,'packages/thlib/dist/touhou')).filter(file=>file.endsWith('.js')).sort().map(file=>'packages/thlib/dist/touhou/'+file)];
 const hashSources=()=>Object.fromEntries(sourceFiles.map(file=>
   [file,createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex')]));
 const sourceHashes=hashSources();

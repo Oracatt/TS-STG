@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { AnmBank } from '../packages/thlib/src/touhou/anm.js';
-import { TouhouBossCharge } from '../packages/thlib/src/touhou/boss-presentation.js';
-import { TouhouBossPhaseTimeline } from '../packages/thlib/src/touhou/boss-phase-timeline.js';
+import { AnmBank } from '../packages/thlib/dist/touhou/anm.js';
+import { TouhouBossCharge } from '../packages/thlib/dist/touhou/boss-presentation.js';
+import { TouhouBossPhaseTimeline } from '../packages/thlib/dist/touhou/boss-phase-timeline.js';
 
 const common = JSON.parse(fs.readFileSync(new URL('../packages/thlib/assets/touhou-common/anm/effect.json', import.meta.url), 'utf8'));
 

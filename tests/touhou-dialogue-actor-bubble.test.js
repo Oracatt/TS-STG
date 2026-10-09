@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {AnmBank,TouhouDialogue,createTouhouResources,anmSpriteVertices,TOUHOU_DIALOGUE_PORTRAITS} from '../packages/thlib/src/touhou/index.js';
-import {DrawList} from '../packages/thlib/src/index.js';
-import {f32,add,mul} from '../packages/thlib/src/touhou/math.js';
+import {AnmBank,TouhouDialogue,createTouhouResources,anmSpriteVertices,TOUHOU_DIALOGUE_PORTRAITS} from '../packages/thlib/dist/touhou/index.js';
+import {DrawList} from '../packages/thlib/dist/index.js';
+import {f32,add,mul} from '../packages/thlib/dist/touhou/math.js';
 
 const tick=(owner,count)=>{for(let i=0;i<count;i++)owner.update(0);};
 const descendants=vm=>vm?[...vm.children,...vm.children.flatMap(descendants)]:[];

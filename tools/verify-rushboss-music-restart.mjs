@@ -23,8 +23,8 @@ fs.mkdirSync(out, { recursive: true }); fs.mkdirSync(scratch, { recursive: true 
 const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const manifest = JSON.parse(fs.readFileSync(path.join(root, 'games/rushboss/assets/manifest.json'), 'utf8'));
 const files = ['native/src/host.cpp', 'native/include/tsstg/music_stream.hpp', 'games/rushboss/src/music.js', 'games/rushboss/src/graphics-portrait.js',
-  'games/rushboss/src/portrait-application.js', 'packages/thlib/src/touhou/application.js',
-  'packages/thlib/src/touhou/music.js', 'packages/thlib/src/touhou/game-over.js',
+  'games/rushboss/src/portrait-application.js', 'packages/thlib/dist/touhou/application.js',
+  'packages/thlib/dist/touhou/music.js', 'packages/thlib/dist/touhou/game-over.js',
   'tests/fixtures/rushboss-music-restart-native.js', 'tools/verify-rushboss-music-restart.mjs'];
 const hashes = () => Object.fromEntries(files.map(file => [file, hash(path.join(root, file))]));
 const sourceHashes = hashes();

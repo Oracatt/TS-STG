@@ -25,8 +25,8 @@ const exe=join(root,'build/Release/ts-stg.exe');assert.ok(existsSync(exe));
 const hash=file=>createHash('sha256').update(readFileSync(file)).digest('hex');
 const codeFiles=['games/rushboss/src/runtime.js','games/rushboss/src/player-adapter.js',
   'games/rushboss/src/graphics.js','games/rushboss/src/bullet-visuals.js','games/rushboss/src/game.js',
-  'packages/thlib/src/touhou/player.js','packages/thlib/src/touhou/shots.js','packages/thlib/src/touhou/bombs.js',
-  'packages/thlib/src/touhou/resources.js','packages/thlib/src/touhou/anm-vm.js','packages/thlib/src/touhou/anm-render.js'];
+  'packages/thlib/dist/touhou/player.js','packages/thlib/dist/touhou/shots.js','packages/thlib/dist/touhou/bombs.js',
+  'packages/thlib/dist/touhou/resources.js','packages/thlib/dist/touhou/anm-vm.js','packages/thlib/dist/touhou/anm-render.js'];
 const hashes=()=>Object.fromEntries(codeFiles.map(file=>[file,hash(join(root,file))]));
 const results=[];
 for(const scene of cases){

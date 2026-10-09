@@ -1,6 +1,6 @@
 import fs from 'node:fs';import path from 'node:path';import {spawnSync} from 'node:child_process';import {createHash} from 'node:crypto';
 import {RUSH_DIALOGUE_DATA} from '../games/rushboss/src/dialogue-data.js';
-import {TouhouDialogue,createTouhouResources} from '../packages/thlib/src/touhou/index.js';import {Keys} from '../packages/thlib/src/input.js';
+import {TouhouDialogue,createTouhouResources} from '../packages/thlib/dist/touhou/index.js';import {Keys} from '../packages/thlib/dist/input.js';
 const root=path.resolve(import.meta.dirname,'..'),directory=path.resolve(root,'build/rushboss-dialogue-oracle'),reference='D:/c++/TouhouRushBoss-main/src/Dialog.h';fs.mkdirSync(directory,{recursive:true});
 const source=fs.readFileSync(reference,'utf8'),at=source.indexOf('void OnUpdate() override'),begin=source.indexOf('{',at);let end=begin+1,depth=1;
 for(;depth;end++){if(source[end]==='{')depth++;if(source[end]==='}')depth--;}

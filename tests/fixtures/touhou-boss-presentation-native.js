@@ -1,6 +1,6 @@
 import { AnmBank, TouhouBitmapFont, TouhouBossPresentation, TouhouRenderQueue, TouhouTextRenderer,
-  createTouhouResources, TOUHOU_BOSS_SCREEN_VIEW } from '../../packages/thlib/src/touhou/index.js';
-import { DrawList } from '../../packages/thlib/src/render.js';
+  createTouhouResources, TOUHOU_BOSS_SCREEN_VIEW } from '../../packages/thlib/dist/touhou/index.js';
+import { DrawList } from '../../packages/thlib/dist/render.js';
 
 // Draw the same common presentation with unfiltered extracted ANM or the public
 // asset pack. The checkerboard is authored diagnostic input, not a Boss skin.

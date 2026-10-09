@@ -1,6 +1,6 @@
 # 灵梦 Bomb 法球的退场生命周期
 
-公共实现是 [`TouhouReimuBomb`](../packages/thlib/src/touhou/bombs.js)，由 `TouhouPlayer` 持有。灵梦的 Bomb 规则和 `pl00` 通用动画属于 thlib，使用方不需要在关卡或 Boss 脚本中补退场特效。
+公共实现是 [`TouhouReimuBomb`](../packages/thlib/src/touhou/bombs.ts)，由 `TouhouPlayer` 持有。灵梦的 Bomb 规则和 `pl00` 通用动画属于 thlib，使用方不需要在关卡或 Boss 脚本中补退场特效。
 
 ## 修复的行为
 

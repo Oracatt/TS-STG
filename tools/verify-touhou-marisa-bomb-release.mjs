@@ -21,8 +21,8 @@ assert.ok(samples.length);if(chosen)assert.ok(chosen.every(frame=>samples.includ
 const scratch=join(root,'build/touhou-marisa-bomb-release'),out=resolve(root,output);
 mkdirSync(scratch,{recursive:true});mkdirSync(out,{recursive:true});
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
-const tracked=['packages/thlib/src/touhou/bombs.js','packages/thlib/src/touhou/player.js',
-  'packages/thlib/src/touhou/anm-vm.js','packages/thlib/src/touhou/anm-render.js',
+const tracked=['packages/thlib/dist/touhou/bombs.js','packages/thlib/dist/touhou/player.js',
+  'packages/thlib/dist/touhou/anm-vm.js','packages/thlib/dist/touhou/anm-render.js',
   'packages/thlib/assets/touhou-common/anm/pl01.json'];
 const hashes=()=>Object.fromEntries(tracked.map(file=>[file,hash(readFileSync(join(root,file)))]));
 const before=hashes(),fixtures=[],results=[];

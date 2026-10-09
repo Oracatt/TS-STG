@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { DrawList } from '../packages/thlib/src/index.js';
-import { Keys } from '../packages/thlib/src/input.js';
-import { AnmBank } from '../packages/thlib/src/touhou/anm.js';
-import { TouhouRenderQueue } from '../packages/thlib/src/touhou/render-queue.js';
-import { TouhouStageClear, TOUHOU_STAGE_CLEAR_PRESET } from '../packages/thlib/src/touhou/stage-clear.js';
-import { TouhouStageTransition, TOUHOU_STAGE_TRANSITION_PRESET } from '../packages/thlib/src/touhou/stage-transition.js';
+import { DrawList } from '../packages/thlib/dist/index.js';
+import { Keys } from '../packages/thlib/dist/input.js';
+import { AnmBank } from '../packages/thlib/dist/touhou/anm.js';
+import { TouhouRenderQueue } from '../packages/thlib/dist/touhou/render-queue.js';
+import { TouhouStageClear, TOUHOU_STAGE_CLEAR_PRESET } from '../packages/thlib/dist/touhou/stage-clear.js';
+import { TouhouStageTransition, TOUHOU_STAGE_TRANSITION_PRESET } from '../packages/thlib/dist/touhou/stage-transition.js';
 
 test('stage clear awards once, rejects held confirmation and observes source120 minimum plus10-frame exit', () => {
   const events = [], clear = new TouhouStageClear({ bonus: 100000, initialMask: Keys.SHOOT,

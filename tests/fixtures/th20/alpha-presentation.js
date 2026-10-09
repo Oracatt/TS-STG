@@ -1,5 +1,5 @@
 import { AnmBank } from '../../../games/touhou20/src/anm.js';
-import { DrawList } from '../../../packages/thlib/src/render.js';
+import { DrawList } from '../../../packages/thlib/dist/render.js';
 
 // GPU diagnostic: original source-ANM alpha writes followed by the old canvas
 // presentation blend, alongside an opaque RGB copy. Assets are never modified.

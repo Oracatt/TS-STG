@@ -30,3 +30,41 @@ new TouhouGameOver({bank,player,session:{stage:7,stageKind:'normal'},
 new TouhouTitleMenu({bank,font:resources.font!,characters:['alice'],createSelectionPage:()=>({})});
 // @ts-expect-error Resource bank registration takes decoded animation data.
 resources.registerBank('bad','portrait.png');
+
+// The stock application preserves its full game type without a type assertion.
+import type {TouhouGame,TouhouApplicationGameScene} from '@ts-stg/thlib/touhou';
+const defaultApplication=new TouhouApplication({resources});
+const defaultGame:TouhouGame|null=defaultApplication.game;
+if(defaultApplication.game){const actualPlayer:TouhouPlayer=defaultApplication.game.player;void actualPlayer;}
+
+class AuthoredGameScene implements TouhouApplicationGameScene {
+  frame=0;
+  paused=false;
+  readonly chapter='snow';
+  update(mask:number){this.frame+=mask===0?1:2;}
+  draw(draw:DrawList){draw.rect(0,0,8,8,0xffffffff);}
+  snapshot(){return{chapter:this.chapter,frame:this.frame};}
+  destroy(){}
+}
+const customApplication=new TouhouApplication<AuthoredGameScene>({resources,
+  createGame(options,app){
+    const character:string|number=options.character??0;
+    const priorScene:AuthoredGameScene|null=app.game;
+    void character;void priorScene;
+    return new AuthoredGameScene();
+  },
+  onAfterUpdate(app){const chapter:string|undefined=app.game?.chapter;void chapter;},
+  onPauseChange(paused,app){const frame:number|undefined=app.game?.frame;void paused;void frame;},
+  scenes:{ending:(_context,app)=>({update(){const scene:AuthoredGameScene|null=app.game;void scene;},draw(draw){draw.point(0,0,0xffffffff);}})},
+});
+const customGame:AuthoredGameScene|null=customApplication.game;
+const inferredApplication=new TouhouApplication({resources,createGame:()=>new AuthoredGameScene()});
+const inferredGame:AuthoredGameScene|null=inferredApplication.game;
+customApplication.registerScene('bonus',(_context,app)=>({update(){const chapter:string|undefined=app.game?.chapter;void chapter;},render:()=>new DrawList().commands}));
+
+// @ts-expect-error The default game cannot acquire fields from an authored scene.
+defaultApplication.game?.chapter;
+// @ts-expect-error A custom factory must return the declared scene type.
+new TouhouApplication<AuthoredGameScene>({createGame:()=>({update(){},draw(){}})});
+// @ts-expect-error Scene updates keep the numeric input-mask contract.
+new TouhouApplication({createGame:()=>({update(mask:string){},draw(){}})});

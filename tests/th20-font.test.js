@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import crypto from 'node:crypto';
 import {Th20BitmapFont} from '../games/touhou20/src/font.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 import {fontCases} from './fixtures/th20/font-cases.js';
 const data=JSON.parse(fs.readFileSync(new URL('../games/touhou20/assets/anm/ascii_960.json',import.meta.url))),golden=JSON.parse(fs.readFileSync(new URL('./fixtures/th20/font-layout-golden.json',import.meta.url)));
 const create=screenScale=>new Th20BitmapFont(data,{loadTexture:()=>1,screenScale});

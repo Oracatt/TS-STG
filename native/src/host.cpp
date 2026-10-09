@@ -113,17 +113,19 @@ public:
         const std::string packageName = "@ts-stg/thlib";
         if (name == packageName || name.rfind(packageName + "/", 0) == 0) {
             const auto section = name == packageName ? std::string() : name.substr(packageName.size() + 1);
-            // Public library modules resolve under src only. Import sections
+            // Public library modules resolve exclusively under compiled dist.
+            // TypeScript compilation belongs to the SDK build, not either VM.
+            // Import sections
             // contain plain identifiers; traversal and absolute paths are invalid.
             if (!section.empty() && (section.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789-_/") != std::string::npos ||
                 section.front() == '/' || section.back() == '/' || section.find("//") != std::string::npos))
                 throw std::runtime_error("Unsupported module import: " + name);
             if (name != packageName && section.empty()) throw std::runtime_error("Unsupported module import: " + name);
             if (!libraryRoot_) {
-                for (const auto& candidate : {root_ / "packages/thlib/src", root_ / "node_modules/@ts-stg/thlib/src"}) {
+                for (const auto& candidate : {root_ / "packages/thlib/dist", root_ / "node_modules/@ts-stg/thlib/dist"}) {
                     if (fs::is_regular_file(candidate / "index.js")) { libraryRoot_ = fs::canonical(candidate); break; }
                 }
-                if (!libraryRoot_) throw std::runtime_error("Cannot resolve @ts-stg/thlib: install it in node_modules or provide packages/thlib/src");
+                if (!libraryRoot_) throw std::runtime_error("Cannot resolve @ts-stg/thlib: install a built package in node_modules or run npm run build for packages/thlib/dist");
             }
             auto entry = section.empty() ? *libraryRoot_ / "index.js" : *libraryRoot_ / section / "index.js";
             if (!section.empty() && !fs::is_regular_file(entry)) entry = *libraryRoot_ / (section + ".js");

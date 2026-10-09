@@ -45,7 +45,11 @@ export async function verifyDesktop({win,root,files,readStatus,dialog,child,init
     assert.equal(await evaluate('document.getElementById("file-dirty").hidden'),true,'startup file starts saved');
     assert.equal(await readFile(initialDocument.path,'utf8'),initial,'opening never writes the input file');
     assert.deepEqual(await evaluate('window.spellCardEditor.loadDraft()'),{},'startup file does not replace the isolated draft');
-  }else assert.ok(initial.includes('function fireRing('));
+  }else{
+    assert.ok(initial.includes('function fireRing('));
+    assert.ok(initial.includes('context: SpellContext'),'new documents contain real TypeScript');
+    assert.equal(await evaluate('document.getElementById("source-language").textContent'),'TypeScript');
+  }
   assert.ok(!initial.includes('@spellcard-editor:'));
 
   // Only this self-test session's disposable draft directory is touched.
@@ -193,10 +197,37 @@ export function createSpell(context) {
     await click('new-document');await wait(async()=>(await text())!==goodSource,'new file while old save is pending');
     releaseSave({canceled:false,filePath:late});
     await wait(async()=>{try{return await readFile(late,'utf8')===goodSource;}catch{return false;}},'old source saved to its own file');
-    await pause(200);assert.equal(await evaluate('document.getElementById("file-name").textContent'),'untitled.spell.js','late save cannot claim the new document');
+    await pause(200);assert.equal(await evaluate('document.getElementById("file-name").textContent'),'untitled.spell.ts','late save cannot claim the new document');
     assert.equal(await evaluate('document.getElementById("file-dirty").hidden'),false);
     dialog.showOpenDialog=async()=>({canceled:false,filePaths:[saved]});await click('import-document');
     await wait(async()=>(await text())===goodSource&&await loaded()&&(await readStatus()).document.name==='JS Search','return to saved test source');
+
+    // TypeScript is retained as the editable/saved document. Its erased preview
+    // executes in the same native scene as JS and errors return original lines.
+    const typedSource="import type {SpellContext} from '../../../examples/spellcard/types.js';\n"+
+      goodSource.replace('createSpell(context)','createSpell(context: SpellContext)').replace("const title = 'JS Search'","const title: string = 'TS Preview'");
+    const typedFile=path.join(root,path.dirname(files.control),'roundtrip.spell.mts');
+    await writeFile(typedFile,typedSource);
+    dialog.showOpenDialog=async()=>({canceled:false,filePaths:[typedFile]});await click('import-document');
+    await wait(async()=>await loaded()&&(await readStatus()).document.name==='TS Preview','open and transpile an mts module');
+    assert.equal(await text(),typedSource);
+    assert.equal(await evaluate('document.getElementById("source-language").textContent'),'TypeScript');
+    await click('save-source');await pause(150);
+    assert.equal(await readFile(typedFile,'utf8'),typedSource,'save retains annotations and import type verbatim');
+    const typedSaved=path.join(root,path.dirname(files.control),'roundtrip.spell.ts');
+    dialog.showSaveDialog=async()=>({canceled:false,filePath:typedSaved});await click('export-document');
+    await wait(async()=>{try{return await readFile(typedSaved,'utf8')===typedSource;}catch{return false;}},'save a ts document without replacing it by generated JS');
+    const typedRevision=(await readStatus()).documentRevision;
+    await setText('// incomplete TypeScript\ninterface Point { x: number; }\nconst value: number = ;');
+    await wait(async()=>String(await evaluate('document.getElementById("source-error").textContent')).includes('roundtrip.spell.ts:3:23'),'TypeScript syntax diagnostic uses author line and column');
+    assert.equal((await readStatus()).documentRevision,typedRevision,'failed TS compilation keeps the last native scene');
+    await click('error-goto');assert.equal(await evaluate('globalThis.__checkCodeView.state.doc.lineAt(globalThis.__checkCodeView.state.selection.main.head).number'),3);
+    await setText('interface Point {\n  x: number;\n}\n'+typedSource.replace('let frame = 0, alive = true;','throw new Error("TS mapped runtime");\n  let frame = 0, alive = true;'));
+    const thrownLine=(await text()).split('\n').findIndex(line=>line.includes('throw new Error'))+1;
+    await wait(async()=>String(await evaluate('document.getElementById("source-error").textContent')).includes(`roundtrip.spell.ts:${thrownLine}:`),'native TypeScript runtime stack maps to original lines');
+    await click('error-goto');assert.equal(await evaluate('globalThis.__checkCodeView.state.doc.lineAt(globalThis.__checkCodeView.state.selection.main.head).number'),thrownLine);
+    dialog.showOpenDialog=async()=>({canceled:false,filePaths:[saved]});await click('import-document');
+    await wait(async()=>(await text())===goodSource&&await loaded()&&(await readStatus()).document.name==='JS Search','JS still opens after a TypeScript error');
   }finally{dialog.showSaveDialog=originalSave;dialog.showOpenDialog=originalOpen;}
 
   // Diagnostics have real native file/line positions and never replace text.
@@ -267,5 +298,5 @@ export function createSpell(context) {
   await wait(async()=>child()?.pid&&child().pid!==oldChild.pid&&await loaded()&&(await readStatus()).frame===180&&(await readStatus()).bullets>0,'restart restores authored scene');
   await wait(async()=>Number(await evaluate('document.getElementById("native-frame").dataset.frame'))>oldFrame,'restarted native pixels');
   await writeFile(path.join(output,'verification.json'),JSON.stringify({passed:true,startupPath:initialDocument?.path??null,preview:await readStatus(),resize:after,
-    verified:['source-only UI without event authoring','six-field rehearsal metadata','CodeMirror syntax and line numbers','JS closures and metadata expressions','automatic native reload','old JS draft preserved without JSON migration','temporary control loss freezes and resumes the same runner','communication warning leaves source diagnostics intact','pause','seeded seek','single step','find/replace','undo/redo and code folding','JS save/open roundtrip and mjs import','unsupported/cancelled import preserves code','late save preserves new document ownership','native diagnostics and goto line','syntax error retains scene and draft','automatic preview toggle and single Ctrl+Enter dispatch','focused native input and modified key release','blur releases keys','Space preserves button keyboard behavior','adjustable split and embedded resize','native RGBA pixels','source untouched by preview controls','native process exit and authored scene restart']},null,2));
+    verified:['source-only UI without event authoring','six-field rehearsal metadata','CodeMirror TypeScript syntax and line numbers','JS closures and metadata expressions','automatic native reload','old JS draft preserved without JSON migration','temporary control loss freezes and resumes the same runner','communication warning leaves source diagnostics intact','pause','seeded seek','single step','find/replace','undo/redo and code folding','JS save/open roundtrip and mjs import','TypeScript mts import and verbatim ts save','TypeScript syntax diagnostics preserve author line and column','native runtime source maps restore original TypeScript lines','unsupported/cancelled import preserves code','late save preserves new document ownership','native diagnostics and goto line','syntax error retains scene and draft','automatic preview toggle and single Ctrl+Enter dispatch','focused native input and modified key release','blur releases keys','Space preserves button keyboard behavior','adjustable split and embedded resize','native RGBA pixels','source untouched by preview controls','native process exit and authored scene restart']},null,2));
 }

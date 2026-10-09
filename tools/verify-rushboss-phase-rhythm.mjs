@@ -11,7 +11,7 @@ const root=path.resolve(import.meta.dirname,'..'),out=path.join(root,'reports/ru
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(scratch,{recursive:true});
 const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const files=['games/rushboss/src/runtime.js','games/rushboss/src/shared-presentation.js','games/rushboss/src/artia.js',
-  'games/rushboss/src/boss-phase-timing.js','packages/thlib/src/touhou/boss-phase-timeline.js','packages/thlib/src/touhou/boss-presentation.js'];
+  'games/rushboss/src/boss-phase-timing.js','packages/thlib/dist/touhou/boss-phase-timeline.js','packages/thlib/dist/touhou/boss-presentation.js'];
 const hashes=()=>Object.fromEntries(files.map(file=>[file,sha(path.join(root,file))]));
 const sourceHashes=hashes(),results=[];
 const pipe=`\\\\.\\pipe\\ts-stg-phase-rhythm-${process.pid}`,sockets=new Set();

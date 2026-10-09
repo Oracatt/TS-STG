@@ -10,7 +10,7 @@ const root=path.resolve(import.meta.dirname,'..');
 const out=path.join(root,'reports/rushboss/shared-spell-ring'),scratch=path.join(root,'build/rushboss-shared-spell-ring');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(scratch,{recursive:true});
 const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-const files=['packages/thlib/src/touhou/boss-phase-plan.js','packages/thlib/src/touhou/boss-hud.js',
+const files=['packages/thlib/dist/touhou/boss-phase-plan.js','packages/thlib/dist/touhou/boss-hud.js',
   'games/rushboss/src/shared-presentation.js','games/rushboss/src/runtime.js','tools/import-touhou-common-assets.mjs',
   'packages/thlib/assets/touhou-common/anm/front.json','packages/thlib/assets/touhou-common/textures/front/entry-11.png'];
 const hashes=()=>Object.fromEntries(files.map(file=>[file,sha(path.join(root,file))]));

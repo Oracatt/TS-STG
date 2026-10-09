@@ -22,7 +22,7 @@ const out=resolve(root,output),scratch=join(root,'build/spell-name-order');
 mkdirSync(out,{recursive:true});mkdirSync(scratch,{recursive:true});
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const jsFiles=dir=>readdirSync(join(root,dir),{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?jsFiles(`${dir}/${entry.name}`):entry.name.endsWith('.js')?[`${dir}/${entry.name}`]:[]);
-const sourceHashes=()=>Object.fromEntries([...jsFiles('packages/thlib/src'),...jsFiles('games/rushboss/src')].map(file=>[file,hash(readFileSync(join(root,file)))]));
+const sourceHashes=()=>Object.fromEntries([...jsFiles('packages/thlib/dist'),...jsFiles('games/rushboss/src')].map(file=>[file,hash(readFileSync(join(root,file)))]));
 const before=sourceHashes(),results=[];
 
 // Markers are offscreen and record actual flush calls, not enqueue order.
@@ -169,7 +169,7 @@ for(const scene of scenes){
   for(const variant of ['fixed','old-order'])renders[variant]=runEntry(`${scene.name}-${variant}`,`
 import {createRushPortraitGame} from '../../games/rushboss/src/portrait-application.js';
 import {SaveStore} from '@ts-stg/thlib';
-import {anmSpriteVertices} from '../../packages/thlib/src/touhou/anm-render.js';
+import {anmSpriteVertices} from '../../packages/thlib/dist/touhou/anm-render.js';
 const game=createRushPortraitGame(tsstg,{startBoss:${JSON.stringify(scene.boss)},phaseIndex:${scene.phase},difficulty:3,
   mode:'spell',invincible:true,skipDialogue:true,store:new SaveStore()});
 game.setVolume('musicVolume',0);game.setVolume('soundVolume',0);
@@ -212,7 +212,7 @@ const oracle={};
 for(const variant of ['fixed','old-order'])oracle[variant]=runEntry(`bank-oracle-${variant}`,`
 import {DrawList} from '@ts-stg/thlib';
 import {createTouhouResources,TouhouRenderQueue} from '@ts-stg/thlib/touhou';
-import {anmSpriteVertices} from '../../packages/thlib/src/touhou/anm-render.js';
+import {anmSpriteVertices} from '../../packages/thlib/dist/touhou/anm-render.js';
 const resources=createTouhouResources(tsstg),plate=resources.banks.ascii_960.create(0),
   title=resources.createNameAnimation('Order ABC',{color:0x00ff00,shadowColor:0xff000000}),
   record=resources.banks.ascii_960.create(1),info=[plate,title,record];

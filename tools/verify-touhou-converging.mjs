@@ -1,7 +1,7 @@
 import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';import {spawnSync} from 'node:child_process';
-import {TouhouConvergingParticles} from '../packages/thlib/src/touhou/converging-particles.js';
-import {TouhouRNG} from '../packages/thlib/src/touhou/math.js';
-import {AnmInterpolation} from '../packages/thlib/src/touhou/anm-interpolation.js';
+import {TouhouConvergingParticles} from '../packages/thlib/dist/touhou/converging-particles.js';
+import {TouhouRNG} from '../packages/thlib/dist/touhou/math.js';
+import {AnmInterpolation} from '../packages/thlib/dist/touhou/anm-interpolation.js';
 const root=path.resolve(import.meta.dirname,'..'),source=path.resolve(process.argv[2]??'D:/AIWorkspace/Touhou20Reconstruction/source_reconstruction'),dir=path.resolve(root,'build/touhou-converging-oracle');fs.mkdirSync(dir,{recursive:true});
 const unix=p=>p.replaceAll('\\','/'),f=Math.fround,bits=value=>new Uint32Array(new Float32Array([value]).buffer)[0];
 fs.writeFileSync(path.join(dir,'CMakeLists.txt'),`cmake_minimum_required(VERSION 3.20)

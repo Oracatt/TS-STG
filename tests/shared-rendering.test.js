@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
-import * as shared from '../packages/thlib/src/index.js';
+import * as shared from '../packages/thlib/dist/index.js';
 import * as originalMath from '../games/touhou20/src/math.js';
 import { Th20RenderMesh, Th20StageDistortion, Th20EnemyDistortion } from '../games/touhou20/src/distortion.js';
 import { Th20RenderQueue } from '../games/touhou20/src/render-queue.js';

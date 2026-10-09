@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createTouhouLaserCollisionState,getTouhouLaserCollisionSegments,
-  updateTouhouLaserCollision,touhouLaserIntersectsCircle} from '../packages/thlib/src/touhou/laser-collision.js';
-import {TouhouLaserField} from '../packages/thlib/src/touhou/lasers.js';
-import {cancelTouhouLaser,eraseTouhouLaser} from '../packages/thlib/src/touhou/laser-cancellation.js';
+  updateTouhouLaserCollision,touhouLaserIntersectsCircle} from '../packages/thlib/dist/touhou/laser-collision.js';
+import {TouhouLaserField} from '../packages/thlib/dist/touhou/lasers.js';
+import {cancelTouhouLaser,eraseTouhouLaser} from '../packages/thlib/dist/touhou/laser-cancellation.js';
 import {bulletTestBank,bulletTestStyles} from './fixtures/th20-bullet-bank.js';
 
 const field=()=>new TouhouLaserField({bank:bulletTestBank(),styles:bulletTestStyles()});

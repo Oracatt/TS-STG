@@ -1,1 +1,0 @@
-export * from '@ts-stg/thlib/touhou/bullets'; export { touhouBulletCommand as th20BulletCommand, SUPPORTED_TOUHOU_BULLET_COMMANDS as SUPPORTED_TH20_BULLET_COMMANDS, TouhouBulletField as Th20BulletField } from '@ts-stg/thlib/touhou/bullets';

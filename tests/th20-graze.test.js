@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { Th20ShortLine, Th20GrazeEffects } from '../games/touhou20/src/short-line.js';
 import { Th20RNG } from '../games/touhou20/src/math.js';
-import { DrawList } from '../packages/thlib/src/render.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 const vectors = JSON.parse(fs.readFileSync(new URL('./fixtures/th20-player-vectors.json', import.meta.url)));
 const bits = value => new Uint32Array(new Float32Array([value]).buffer)[0];
 test('original graze ShortLine20 trajectory, random stream and alpha match C++ bits', () => {

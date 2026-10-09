@@ -19,7 +19,7 @@ async function fixture(t){
     'tools/spellcard-editor/node_modules/private.js':'PRIVATE DEPENDENCY',
     'build/spellcard-editor-ui/code-editor.bundle.js':'export const codeMirror = true;',
     'build/spellcard-editor/control.json':'PRIVATE CONTROL',
-    'packages/thlib/src/index.js':'PRIVATE LIBRARY',
+    'packages/thlib/dist/index.js':'PRIVATE LIBRARY',
     'packages/thlib/assets/test.png':'PRIVATE ASSET','private/secret.txt':'PRIVATE',
   };
   for(const [file,contents]of Object.entries(files)){await mkdir(path.dirname(path.join(root,file)),{recursive:true});await writeFile(path.join(root,file),contents);}

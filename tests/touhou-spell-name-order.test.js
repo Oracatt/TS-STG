@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {AnmBank} from '../packages/thlib/src/touhou/anm.js';
-import {TouhouSpell} from '../packages/thlib/src/touhou/spell.js';
-import {TouhouTextRenderer} from '../packages/thlib/src/touhou/text-renderer.js';
-import {TouhouRenderQueue} from '../packages/thlib/src/touhou/render-queue.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {AnmBank} from '../packages/thlib/dist/touhou/anm.js';
+import {TouhouSpell} from '../packages/thlib/dist/touhou/spell.js';
+import {TouhouTextRenderer} from '../packages/thlib/dist/touhou/text-renderer.js';
+import {TouhouRenderQueue} from '../packages/thlib/dist/touhou/render-queue.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 
 const data=name=>JSON.parse(readFileSync(new URL(`../packages/thlib/assets/touhou-common/anm/${name}.json`,import.meta.url)));
 function fixture({character=0,viewIndex=0,codePage=932}={}){

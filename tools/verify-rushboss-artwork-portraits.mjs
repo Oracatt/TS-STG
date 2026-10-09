@@ -36,7 +36,7 @@ const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const hashFile=file=>hash(readFileSync(file));
 const sources=dir=>readdirSync(join(root,dir),{withFileTypes:true}).flatMap(entry=>
   entry.isDirectory()?sources(`${dir}/${entry.name}`):entry.name.endsWith('.js')?[`${dir}/${entry.name}`]:[]);
-const files=[...sources('packages/thlib/src'),...sources('games/rushboss/src'),
+const files=[...sources('packages/thlib/dist'),...sources('games/rushboss/src'),
   'tools/verify-rushboss-artwork-portraits.mjs'].sort();
 const codeHashes=()=>Object.fromEntries(files.map(file=>[file,hashFile(join(root,file))]));
 const before=codeHashes(),binarySha256=existsSync(exe)?hashFile(exe):null;

@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TouhouWorld, TOUHOU_WORLD_BOUNDS, normalizeTouhouWorldBounds, resolveTouhouWorld } from '../packages/thlib/src/touhou/world.js';
-import { TouhouBulletField, touhouBulletCommand as command } from '../packages/thlib/src/touhou/bullets.js';
-import { TouhouLaserField } from '../packages/thlib/src/touhou/lasers.js';
-import { cancelTouhouLaser, eraseTouhouLaser } from '../packages/thlib/src/touhou/laser-cancellation.js';
-import { TouhouEnemy, TouhouMotion } from '../packages/thlib/src/touhou/enemy.js';
+import { TouhouWorld, TOUHOU_WORLD_BOUNDS, normalizeTouhouWorldBounds, resolveTouhouWorld } from '../packages/thlib/dist/touhou/world.js';
+import { TouhouBulletField, touhouBulletCommand as command } from '../packages/thlib/dist/touhou/bullets.js';
+import { TouhouLaserField } from '../packages/thlib/dist/touhou/lasers.js';
+import { cancelTouhouLaser, eraseTouhouLaser } from '../packages/thlib/dist/touhou/laser-cancellation.js';
+import { TouhouEnemy, TouhouMotion } from '../packages/thlib/dist/touhou/enemy.js';
 import { bulletTestBank, bulletTestStyles } from './fixtures/th20-bullet-bank.js';
 
 const bullets = options => new TouhouBulletField({ bank: bulletTestBank(), styles: bulletTestStyles(), ...options });

@@ -1,6 +1,6 @@
 # RushBoss Demo 的原作血量配置
 
-运行时配置位于 [`games/rushboss/src/boss-health-profile.js`](../games/rushboss/src/boss-health-profile.js)。这里只配置 Demo 的具体阶段耐久；thlib 继续提供通用整数伤害规则和按实际 HP 分组的血环，不携带任何具体 Boss 的平衡数据。
+运行时配置位于 [`games/rushboss/src/boss-health-profile.js`](../games/rushboss/src/boss-health-profile.ts)。这里只配置 Demo 的具体阶段耐久；thlib 继续提供通用整数伤害规则和按实际 HP 分组的血环，不携带任何具体 Boss 的平衡数据。
 
 这是一份 **以 TH20 普通流程 ECL 血量为依据的 Demo 映射**，不是 RushBoss 原始 HP，也不表示两部作品具有同样的攻击难度。Sunny 对应三面完整顺序，Monstone 主要对应四面，Artia 主要对应六面。Rush 的弹幕、阶段数量和时限不变，因此对两者阶段数量不等的部分明确选择复用来源，没有使用统一倍率。也没有使用 Rush `lifeBar.min/max` 作为血条显示权重。
 
@@ -8,7 +8,7 @@
 
 本地只读参考根目录为 `D:/AIWorkspace/Touhou20Reconstruction`。`source_reconstruction/gameplay/enemy_opcode_state.cpp:47` 的 `511` 设置整组初始及最大 HP；`:50` 的 `514` 设置切换阈值和时限；`:78` 的 `527` 把阈值除以整组最大 HP，发布血环段界。因此拆成两个 Demo 阶段时，**非符 HP = 整组 HP − 符卡阈值，符卡 HP = 阈值**，不能把整组血量再次完整赋给非符。
 
-`source_reconstruction/gameplay/enemy_damage_helpers.cpp:4–12` 中，普通伤害直接扣 HP，符卡伤害先扣七倍整数累积量，再除以 7 得到显示 HP。公共 [`TouhouHealth`](../packages/thlib/src/touhou/damage.js) 和 [`RushPlayerAdapter.beginPhase`](../games/rushboss/src/player-adapter.js) 已沿用这条规则。这次不改伤害公式。
+`source_reconstruction/gameplay/enemy_damage_helpers.cpp:4–12` 中，普通伤害直接扣 HP，符卡伤害先扣七倍整数累积量，再除以 7 得到显示 HP。公共 [`TouhouHealth`](../packages/thlib/src/touhou/damage.ts) 和 [`RushPlayerAdapter.beginPhase`](../games/rushboss/src/player-adapter.ts) 已沿用这条规则。这次不改伤害公式。
 
 旧 Sunny 第一非符是 450 HP，第一符卡是 1000 HP。忽略命中率、ECL 指定的保护计时和每帧伤害上限，以原始伤害量比较，前者只有后者约 `450 / (1000 × 7) = 6.43%` 的耐久，非符会过早结束。现在该组来自 `st03bs` 的 `23000 / 3000`：非符 20000，符卡 3000，分别约需 20000 和 21000 原始伤害量。公共默认共用血环中的符卡段是 `3000 / 23000 ≈ 13.04%`，此时符卡本身仍是完整的 3000 HP。竖屏 Demo 使用默认 `spellRing:'shared'`，非符到达分段处后，符卡从该剩余弧段继续，不重新填满整圈。整数截断可能使死亡边界相差最多 6 原始伤害量；上述比较不承诺实际击破时间。
 

@@ -110,7 +110,7 @@ export function verifyThlibTypes(library){
  const installed=join(consumer,'node_modules/@ts-stg/thlib');mkdirSync(installed,{recursive:true});
  // Assets are already validated by the package checks. Copy the exact exported
  // source/declaration tree and manifest, rather than redirecting resolution.
- cpSync(join(library,'src'),join(installed,'src'),{recursive:true,errorOnExist:true});
+ cpSync(join(library,'dist'),join(installed,'dist'),{recursive:true,errorOnExist:true});
  cpSync(join(library,'package.json'),join(installed,'package.json'));
  writeFileSync(join(consumer,'package.json'),JSON.stringify({name:'independent-thlib-types',private:true,type:'module'}));
  const source=readFileSync(join(root,'tests/fixtures/thlib-consumer.ts'),'utf8')+gameplayConsumer+musicConsumer;writeFileSync(join(consumer,'consumer.ts'),source);
@@ -125,7 +125,7 @@ export function verifyThlibTypes(library){
  return {compiler:version,consumer,sourcePackage:resolve(library),compilerOptions,
   apiGroups:['application lifecycle','captured and direct title backgrounds','stage selection callbacks','dialogue lifecycle and portrait injection','CP936 text surfaces','public subpath and root exports','source laser origin factory','source gameplay passes and owner callback priorities','shared projectile collision and cancellation owners','scene transition ownership and early selection callback','generic Boss phase cues and fixed charge clock','bankless Boss defeat and cancellation wave owners',
     'custom Boss outcomes, body holds and reusable escape owners','nearby bullet cancellation and public game defeat lifecycle','optional dialogue entrance profiles and staged events','dialogue exit profiles and early handoff callbacks','stage-clear rewards and bankless normal stage transitions','bankless music fading and source volume conversion','player stage visibility and transient reset lifecycle',
-    'application scene registry and selection pages','custom character banks and portrait/continue policies','shared world and configurable system factories','fixed-frame phase sequencing and player/item profiles','cached music transport and application game-over interruptions'],
+    'application scene registry and selection pages','default and authored application scene generics','custom character banks and portrait/continue policies','shared world and configurable system factories','fixed-frame phase sequencing and player/item profiles','cached music transport and application game-over interruptions'],
   rejectedMisuses:[...[source,...extraFixtures.map(file=>readFileSync(join(consumer,file),'utf8'))].join('\n').matchAll(/@ts-expect-error/g)].length,workspaceLinks:false,ambientPlatformTypes:false};
 }
 

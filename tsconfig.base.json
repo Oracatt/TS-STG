@@ -1,0 +1,3 @@
+{
+  "extends": "./packages/thlib/tsconfig.base.json"
+}

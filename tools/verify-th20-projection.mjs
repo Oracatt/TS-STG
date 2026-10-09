@@ -1,6 +1,6 @@
 import fs from 'node:fs';import path from 'node:path';import crypto from 'node:crypto';import {spawnSync} from 'node:child_process';
 import {AnmBank} from '../games/touhou20/src/anm.js';import {projectedAnmWorld,createTh20Camera} from '../games/touhou20/src/anm-projection.js';import {PI,div} from '../games/touhou20/src/math.js';
-import {projectedAnmBillboard} from '../packages/thlib/src/touhou/anm-projection.js';
+import {projectedAnmBillboard} from '../packages/thlib/dist/touhou/anm-projection.js';
 const root=path.resolve(import.meta.dirname,'..'),reference=path.resolve(process.argv[2]??'D:/AIWorkspace/Touhou20Reconstruction'),src=path.join(reference,'source_reconstruction'),dir=path.join(root,'build/th20-projection-oracle');fs.mkdirSync(dir,{recursive:true});const unix=p=>p.replaceAll('\\','/'),bits=x=>new Uint32Array(new Float32Array([x]).buffer)[0],hash=x=>crypto.createHash('sha256').update(x).digest('hex');
 function body(text,name){const start=text.search(new RegExp('^[A-Za-z_:][A-Za-z0-9_:<>*& ]+ '+name+'\\(', 'm')),begin=start;if(start<0)throw Error('Missing source function '+name);let i=text.indexOf('{',begin),depth=1;for(i++;depth;i++){if(text[i]==='{')depth++;if(text[i]==='}')depth--;}return text.slice(start,i);}
 const projected=fs.readFileSync(path.join(src,'sprite_renderer/projected_draw.cpp'),'utf8'),anm=fs.readFileSync(path.join(src,'sprite_renderer/anm_vm.cpp'),'utf8');

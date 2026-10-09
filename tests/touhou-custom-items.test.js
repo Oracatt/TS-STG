@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {TouhouPlayer} from '../packages/thlib/src/touhou/player.js';
-import {TouhouItems} from '../packages/thlib/src/touhou/items.js';
-import {getTouhouPlayerData} from '../packages/thlib/src/touhou/player-data.js';
+import {TouhouPlayer} from '../packages/thlib/dist/touhou/player.js';
+import {TouhouItems} from '../packages/thlib/dist/touhou/items.js';
+import {getTouhouPlayerData} from '../packages/thlib/dist/touhou/player-data.js';
 
 const create=()=>new TouhouPlayer({sht:getTouhouPlayerData(0),y:100});
 

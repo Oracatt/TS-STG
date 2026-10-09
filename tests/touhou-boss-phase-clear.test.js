@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { clearTouhouBossPhase } from '@ts-stg/thlib/touhou';
-import { TouhouBulletField } from '../packages/thlib/src/touhou/bullets.js';
-import { TouhouLaserField } from '../packages/thlib/src/touhou/lasers.js';
+import { TouhouBulletField } from '../packages/thlib/dist/touhou/bullets.js';
+import { TouhouLaserField } from '../packages/thlib/dist/touhou/lasers.js';
 import { bulletTestBank, bulletTestStyles } from './fixtures/th20-bullet-bank.js';
 
 test('ordinary Boss handoff stops old tasks before the two source-radius cancellation passes', () => {

@@ -12,8 +12,8 @@ const root=path.resolve(import.meta.dirname,'..'),folder=path.join(root,'build/r
 const out=path.join(root,'reports/rushboss/screen-shake'),binary=path.join(root,'build/Release/ts-stg.exe');
 fs.mkdirSync(folder,{recursive:true});fs.mkdirSync(out,{recursive:true});
 const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-const sources=['packages/thlib/src/touhou/gameplay-compositor.js','packages/thlib/src/touhou/boss-death.js',
-  'packages/thlib/src/touhou/boss-presentation.js','packages/thlib/src/touhou/screen-shake.js',
+const sources=['packages/thlib/dist/touhou/gameplay-compositor.js','packages/thlib/dist/touhou/boss-death.js',
+  'packages/thlib/dist/touhou/boss-presentation.js','packages/thlib/dist/touhou/screen-shake.js',
   'games/rushboss/src/runtime.js','games/rushboss/src/shared-presentation.js','games/rushboss/src/graphics-portrait.js'];
 const hashes=()=>Object.fromEntries(sources.map(file=>[file,sha(path.join(root,file))]));
 const sourceHashes=hashes(),results=[];

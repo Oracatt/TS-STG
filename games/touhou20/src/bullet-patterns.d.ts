@@ -1,1 +1,0 @@
-export * from '@ts-stg/thlib/touhou/bullet-patterns'; export { TouhouRandom as Th20Random, TouhouTrajectoryParameters as Th20TrajectoryParameters, TouhouBulletStyle as Th20BulletStyle, touhouShotTrajectory as th20ShotTrajectory, touhouStyle as th20Style } from '@ts-stg/thlib/touhou/bullet-patterns';

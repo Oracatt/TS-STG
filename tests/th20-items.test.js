@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import { Th20Items } from '../games/touhou20/src/items.js';
 import { f32, PI, sub, div } from '../games/touhou20/src/math.js';
 import { AnmBank } from '../games/touhou20/src/anm.js';
-import { DrawList } from '../packages/thlib/src/render.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 
 const vectors = JSON.parse(fs.readFileSync(new URL('./fixtures/th20-player-vectors.json', import.meta.url)));
 const bits = value => { const view = new DataView(new ArrayBuffer(4)); view.setFloat32(0, value, true); return view.getUint32(0, true); };

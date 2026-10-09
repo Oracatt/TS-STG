@@ -1,6 +1,6 @@
 # 月折「借光的纸鹤」
 
-[moonfold.spell.js](moonfold.spell.js) 是一张可以直接编辑的 JavaScript 符卡示例：`spellCard` 定义名称、时长、血量和初始位置，`createSpell(context)` 用普通函数与逐帧逻辑编排攻击。弹幕、弹雾、判定、聚能和音效调用公共 thlib；不需要事件编辑器或额外素材。
+[moonfold.spell.ts](moonfold.spell.ts) 是一张可以直接编辑的 JavaScript 符卡示例：`spellCard` 定义名称、时长、血量和初始位置，`createSpell(context)` 用普通函数与逐帧逻辑编排攻击。弹幕、弹雾、判定、聚能和音效调用公共 thlib；不需要事件编辑器或额外素材。
 
 ## 在编辑器中打开
 

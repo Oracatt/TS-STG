@@ -8,7 +8,7 @@ import {createTouhouResources} from '@ts-stg/thlib/touhou';
 import {createRestoredPlayerFixture,RESTORED_PLAYER_FRAMES} from '../tests/fixtures/rushboss-restored-player.js';
 const root=resolve(import.meta.dirname,'..'),out=join(root,'build/rushboss-runtime');mkdirSync(out,{recursive:true});
 const codeFiles=['games/rushboss/src/runtime.js','games/rushboss/src/player-adapter.js','games/rushboss/src/bullet-visuals.js',
-  'tests/fixtures/rushboss-restored-player.js',...readdirSync(join(root,'packages/thlib/src/touhou')).filter(f=>f.endsWith('.js')).map(f=>`packages/thlib/src/touhou/${f}`)];
+  'tests/fixtures/rushboss-restored-player.js',...readdirSync(join(root,'packages/thlib/dist/touhou')).filter(f=>f.endsWith('.js')).map(f=>`packages/thlib/dist/touhou/${f}`)];
 const hashSources=()=>Object.fromEntries(codeFiles.map(f=>[f,createHash('sha256').update(readFileSync(join(root,f))).digest('hex')]));
 const hashes=hashSources(),textures=new Map(),host={readText:f=>readFileSync(join(root,f),'utf8'),loadTexture:f=>{
   if(!textures.has(f))textures.set(f,textures.size+1);return textures.get(f);}};

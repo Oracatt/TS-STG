@@ -1,6 +1,6 @@
 // Identical original bitmap text through cold and warm geometry caches.
 import {Th20BitmapFont} from '../../../games/touhou20/src/font.js';
-import {DrawList} from '../../../packages/thlib/src/render.js';
+import {DrawList} from '../../../packages/thlib/dist/render.js';
 const host=globalThis.tsstg,data=JSON.parse(host.readText('games/touhou20/assets/anm/ascii_960.json')),textures=new Map();
 const loadTexture=(path,...size)=>{if(!textures.has(path))textures.set(path,host.loadTexture(path,...size));return textures.get(path);};
 const cold=new Th20BitmapFont(data,{loadTexture}),warm=new Th20BitmapFont(data,{loadTexture}),targets=[host.createRenderTarget(448,448),host.createRenderTarget(448,448)];

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DrawList} from '../packages/thlib/src/render.js';
-import {PerspectiveCamera,PerspectiveSprite,TexturedRing,presentationQuaternion,multiplyPresentationQuaternion,presentationWorldMatrix} from '../packages/thlib/src/spell-presentation.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
+import {PerspectiveCamera,PerspectiveSprite,TexturedRing,presentationQuaternion,multiplyPresentationQuaternion,presentationWorldMatrix} from '../packages/thlib/dist/spell-presentation.js';
 
 test('perspective screen positions round-trip at original charge/magic depth planes',()=>{
   const camera=new PerspectiveCamera({canvasWidth:960,canvasHeight:720,viewport:{x:0,y:0,width:960,height:720}});

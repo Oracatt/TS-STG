@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TouhouBossDefeat, TOUHOU_BOSS_DEFEAT_PRESET } from '../packages/thlib/src/touhou/boss-defeat.js';
-import { TouhouRNG, PI, f32, add, mul } from '../packages/thlib/src/touhou/math.js';
+import { TouhouBossDefeat, TOUHOU_BOSS_DEFEAT_PRESET } from '../packages/thlib/dist/touhou/boss-defeat.js';
+import { TouhouRNG, PI, f32, add, mul } from '../packages/thlib/dist/touhou/math.js';
 
 test('Boss defeat preserves moving bullets outside the fixed-origin wave until its frame60 whole-field clear', () => {
   const bullets = [{ x: 10, y: 128 }, { x: 100, y: 128 }, { x: 450, y: 128 }];

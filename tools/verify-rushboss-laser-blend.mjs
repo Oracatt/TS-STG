@@ -23,7 +23,7 @@ const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const sourceFiles=dir=>readdirSync(join(root,dir),{withFileTypes:true}).flatMap(entry=>
   entry.isDirectory()?sourceFiles(`${dir}/${entry.name}`):entry.name.endsWith('.js')?[`${dir}/${entry.name}`]:[]);
 const sourceHashes=()=>Object.fromEntries([
-  ...sourceFiles('packages/thlib/src'),...sourceFiles('games/rushboss/src'),
+  ...sourceFiles('packages/thlib/dist'),...sourceFiles('games/rushboss/src'),
   'packages/thlib/assets/reference-common/manifest.json','packages/thlib/assets/touhou-common/manifest.json',
 ].map(file=>[file,hash(readFileSync(join(root,file)))]));
 const before=sourceHashes(),states={},files={},fixtures=[];

@@ -9,8 +9,8 @@ fs.mkdirSync(out,{recursive:true});fs.mkdirSync(scratch,{recursive:true});
 const sha=p=>createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 const files=['games/rushboss/src/runtime.js','games/rushboss/src/player-adapter.js','games/rushboss/src/projectiles.js',
   'games/rushboss/src/bullet-visuals.js','games/rushboss/src/portrait-application.js','games/rushboss/src/boss-phase-entry.js',
-  'games/rushboss/src/dialogue.js','packages/thlib/src/touhou/dialogue.js',
-  'packages/thlib/src/touhou/boss-defeat.js','packages/thlib/src/touhou/bullet-clear-wave.js'];
+  'games/rushboss/src/dialogue.js','packages/thlib/dist/touhou/dialogue.js',
+  'packages/thlib/dist/touhou/boss-defeat.js','packages/thlib/dist/touhou/bullet-clear-wave.js'];
 const hashes=()=>Object.fromEntries(files.map(p=>[p,sha(path.join(root,p))])),sourceHashes=hashes(),results=[];
 for(const scene of [
   {name:'standalone-entry',kind:'gap',offset:0},

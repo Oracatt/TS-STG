@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {TouhouItems,TouhouItemType,TouhouRNG} from '@ts-stg/thlib/touhou';
-import {PI,div,polar,f32} from '../packages/thlib/src/touhou/math.js';
+import {PI,div,polar,f32} from '../packages/thlib/dist/touhou/math.js';
 
 const player=()=>({x:0,y:400,state:1,power:100,lives:2,bombs:2});
 

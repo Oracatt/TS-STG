@@ -1,6 +1,6 @@
 // Independent DirectXMath values, not a JS round-trip or a second copy of the
 // portable formulas. This verifier runs unchanged in Node and native QuickJS.
-import {PerspectiveCamera,presentationQuaternion,multiplyPresentationQuaternion,presentationWorldMatrix} from '../../packages/thlib/src/spell-presentation.js';
+import {PerspectiveCamera,presentationQuaternion,multiplyPresentationQuaternion,presentationWorldMatrix} from '../../packages/thlib/dist/spell-presentation.js';
 
 export function verifyPresentationVectors(data,{diagnostic=false}={}) {
   const camera=new PerspectiveCamera({canvasWidth:960,canvasHeight:720,viewport:{x:0,y:0,width:960,height:720}}),buffer=new ArrayBuffer(4),f=new Float32Array(buffer),u=new Uint32Array(buffer),categories={};

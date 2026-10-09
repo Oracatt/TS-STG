@@ -1,4 +1,4 @@
-import { Game, Keys, stateHash } from '../../packages/thlib/src/index.js';
+import { Game, Keys, stateHash } from '../../packages/thlib/dist/index.js';
 import { createStage } from '../../examples/danmaku/stage.js';
 
 const game = new Game({ seed: 78421, stageFactory: createStage, player: { lives: 20 } });

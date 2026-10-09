@@ -7,8 +7,9 @@
   "scripts": {
     "setup": "install-electron",
     "start": "electron .",
-    "build": "node build.mjs",
-    "prestart": "node build.mjs"
+    "build": "node build.mts",
+    "prestart": "node build.mts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
     "electron": "44.5.1",

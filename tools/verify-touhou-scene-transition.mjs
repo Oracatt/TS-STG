@@ -8,7 +8,7 @@ import {decodeRgbaPng} from './import-touhou-common-assets.mjs';
 const root=path.resolve(import.meta.dirname,'..'),out=path.join(root,'reports/touhou/scene-transition'),scratch=path.join(root,'build/touhou-scene-transition');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(scratch,{recursive:true});
 const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-const sources=['packages/thlib/src/touhou/scene-transition.js','packages/thlib/src/touhou/application.js',
+const sources=['packages/thlib/dist/touhou/scene-transition.js','packages/thlib/dist/touhou/application.js',
   'packages/thlib/assets/touhou-common/anm/screenswitch.json','packages/thlib/assets/touhou-common/anm/ascii_960.json'];
 const hashes=()=>Object.fromEntries(sources.map(file=>[file,sha(path.join(root,file))]));
 const sourceHashes=hashes(),results=[];

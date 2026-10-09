@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { TouhouGame, TouhouItems, TouhouBulletField, TouhouLaserField, createTouhouResources } from '../packages/thlib/src/touhou/index.js';
-import { TouhouPhaseSequence } from '../packages/thlib/src/touhou/phase-sequence.js';
+import { TouhouGame, TouhouItems, TouhouBulletField, TouhouLaserField, createTouhouResources } from '../packages/thlib/dist/touhou/index.js';
+import { TouhouPhaseSequence } from '../packages/thlib/dist/touhou/phase-sequence.js';
 
 const fixture = (options = {}) => {
   const resources = createTouhouResources({ readText: file => fs.readFileSync(new URL('../' + file, import.meta.url), 'utf8'), loadTexture: () => 1 });

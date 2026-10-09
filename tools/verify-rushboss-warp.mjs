@@ -5,7 +5,7 @@ import {readFileSync,writeFileSync,mkdirSync,existsSync} from 'node:fs';
 import {resolve,join,relative} from 'node:path';
 import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 import {RushWarpPass} from '../games/rushboss/src/warp-pass.js';
 import {decodeRgbaPng} from './import-touhou-common-assets.mjs';
 const root=resolve(import.meta.dirname,'..'),args=process.argv.slice(2);

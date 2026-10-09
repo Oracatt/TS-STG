@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Game } from '../packages/thlib/src/game.js';
-import { Stage } from '../packages/thlib/src/stage.js';
-import { Enemy } from '../packages/thlib/src/enemy.js';
-import { Boss } from '../packages/thlib/src/boss.js';
-import { Bullet } from '../packages/thlib/src/bullets.js';
-import { Laser } from '../packages/thlib/src/lasers.js';
-import { Keys } from '../packages/thlib/src/input.js';
+import { Game } from '../packages/thlib/dist/game.js';
+import { Stage } from '../packages/thlib/dist/stage.js';
+import { Enemy } from '../packages/thlib/dist/enemy.js';
+import { Boss } from '../packages/thlib/dist/boss.js';
+import { Bullet } from '../packages/thlib/dist/bullets.js';
+import { Laser } from '../packages/thlib/dist/lasers.js';
+import { Keys } from '../packages/thlib/dist/input.js';
 
 const makeGame = (options = {}) => new Game({ seed: 42, stageFactory: () => new Stage({ autoFinish: false }), ...options }).start();
 

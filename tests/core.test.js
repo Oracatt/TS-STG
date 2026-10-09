@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RNG, TAU, distanceToSegmentSq, approachAngle } from '../packages/thlib/src/math.js';
-import { Input, Keys } from '../packages/thlib/src/input.js';
-import { TaskRunner, wait } from '../packages/thlib/src/task.js';
-import { World, Entity } from '../packages/thlib/src/world.js';
-import { Bullet } from '../packages/thlib/src/bullets.js';
-import { Laser } from '../packages/thlib/src/lasers.js';
-import { Patterns } from '../packages/thlib/src/patterns.js';
-import { DrawList, rgba, withAlpha } from '../packages/thlib/src/render.js';
+import { RNG, TAU, distanceToSegmentSq, approachAngle } from '../packages/thlib/dist/math.js';
+import { Input, Keys } from '../packages/thlib/dist/input.js';
+import { TaskRunner, wait } from '../packages/thlib/dist/task.js';
+import { World, Entity } from '../packages/thlib/dist/world.js';
+import { Bullet } from '../packages/thlib/dist/bullets.js';
+import { Laser } from '../packages/thlib/dist/lasers.js';
+import { Patterns } from '../packages/thlib/dist/patterns.js';
+import { DrawList, rgba, withAlpha } from '../packages/thlib/dist/render.js';
 
 const near = (actual, expected, epsilon = 1e-9) => assert.ok(Math.abs(actual - expected) < epsilon, `${actual} != ${expected}`);
 const world = (seed = 1) => new World({ bounds: { x: 0, y: 0, width: 100, height: 100 }, seed, cellSize: 10 });

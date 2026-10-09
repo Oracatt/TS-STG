@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {AnmBank} from '../games/touhou20/src/anm.js';
 import {Th20BossHud} from '../games/touhou20/src/boss-hud.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 const load=name=>new AnmBank(JSON.parse(fs.readFileSync(new URL(`../games/touhou20/assets/anm/${name}.json`,import.meta.url))),{loadTexture:()=>1});
 const create=()=>new Th20BossHud({bank:load('front'),textBank:load('ascii_960')});
 test('original timer preserves seconds-based clamp, truncation and warning sound boundaries',()=>{

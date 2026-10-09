@@ -1,4 +1,4 @@
-import {DrawList} from '../../../packages/thlib/src/render.js';
+import {DrawList} from '../../../packages/thlib/dist/render.js';
 const host=globalThis.tsstg,draw=new DrawList(),target=host.createRenderTarget(320,128);
 const texture=host.createTexture(4,1,new Uint8Array([240,32,80,0,240,32,80,1,240,32,80,2,240,32,80,128]));
 const blendTexture=host.createTexture(1,1,new Uint8Array([64,160,224,128]));

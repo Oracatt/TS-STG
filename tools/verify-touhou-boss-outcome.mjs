@@ -20,9 +20,9 @@ const out = path.resolve(root, output), scratch = path.join(root, 'build/touhou-
 const binary = path.resolve(root, executable), results = [], fixtures = [];
 fs.mkdirSync(out, { recursive: true }); fs.mkdirSync(scratch, { recursive: true });
 const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-const files = ['packages/thlib/src/touhou/game.js', 'packages/thlib/src/touhou/enemy.js',
-  'packages/thlib/src/touhou/boss-escape.js', 'packages/thlib/src/touhou/boss-defeat.js',
-  'packages/thlib/src/touhou/boss-presentation.js', 'tests/fixtures/touhou-boss-outcome-native.js'];
+const files = ['packages/thlib/dist/touhou/game.js', 'packages/thlib/dist/touhou/enemy.js',
+  'packages/thlib/dist/touhou/boss-escape.js', 'packages/thlib/dist/touhou/boss-defeat.js',
+  'packages/thlib/dist/touhou/boss-presentation.js', 'tests/fixtures/touhou-boss-outcome-native.js'];
 const hashes = () => Object.fromEntries(files.map(file => [file, hash(path.join(root, file))]));
 const sourceHashes = hashes();
 const scenes = [{ name: 'held', frames: 60 }, { name: 'flight', frames: 90 },

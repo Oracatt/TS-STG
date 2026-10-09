@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { AnmBank } from '../packages/thlib/src/touhou/anm.js';
-import { TouhouBossHud } from '../packages/thlib/src/touhou/boss-hud.js';
-import { TouhouBossPhasePlan } from '../packages/thlib/src/touhou/boss-phase-plan.js';
-import { DrawList } from '../packages/thlib/src/render.js';
+import { AnmBank } from '../packages/thlib/dist/touhou/anm.js';
+import { TouhouBossHud } from '../packages/thlib/dist/touhou/boss-hud.js';
+import { TouhouBossPhasePlan } from '../packages/thlib/dist/touhou/boss-phase-plan.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 
 const data = name => JSON.parse(fs.readFileSync(new URL(`../packages/thlib/assets/touhou-common/anm/${name}.json`, import.meta.url)));
 const bank = name => new AnmBank(data(name), { loadTexture: () => 1 });

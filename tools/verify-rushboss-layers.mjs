@@ -22,7 +22,7 @@ const out=resolve(root,output),scratch=join(root,'build/rushboss-layer-verificat
 mkdirSync(out,{recursive:true});mkdirSync(scratch,{recursive:true});
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const sourceFiles=dir=>readdirSync(join(root,dir),{withFileTypes:true}).flatMap(e=>e.isDirectory()?sourceFiles(`${dir}/${e.name}`):e.name.endsWith('.js')?[`${dir}/${e.name}`]:[]);
-const sourceHashes=()=>Object.fromEntries([...sourceFiles('packages/thlib/src'),...sourceFiles('games/rushboss/src')].map(file=>[file,hash(readFileSync(join(root,file)))]));
+const sourceHashes=()=>Object.fromEntries([...sourceFiles('packages/thlib/dist'),...sourceFiles('games/rushboss/src')].map(file=>[file,hash(readFileSync(join(root,file)))]));
 const before=sourceHashes(),results=[];
 const contrast=[];
 // Independently specified colored geometry exposes occlusion and stale-capture

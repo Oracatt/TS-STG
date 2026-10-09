@@ -16,7 +16,7 @@
 
 ## Demo 的数据边界
 
-私有 [`boss-phase-entry.js`](../games/rushboss/src/boss-phase-entry.js) 选择与当前 HP 映射一致的四个包装：
+私有 [`boss-phase-entry.js`](../games/rushboss/src/boss-phase-entry.ts) 选择与当前 HP 映射一致的四个包装：
 
 | Demo 下一阶段 | 原作包装 | 完整保护 | 等待 | 卡开始时剩余保护 |
 | --- | --- | ---: | ---: | ---: |
@@ -27,7 +27,7 @@
 
 表中最后一列是 t160 执行新卡前的值。所有包装都有90帧、模式9的归位移动。Artia 12 前面虽然是 Rush 多出来的非符，当前原作血量映射选用的仍是独立 `Boss6` 包装；不能只检查相邻两阶段是否都有符卡名来选择等待。
 
-公共 [`TouhouBossPhaseTimeline`](../packages/thlib/src/touhou/boss-phase-timeline.js) 提供固定帧等待和事件时钟。具体 Boss、阶段编号、原作行号及移动目标是 Demo 数据。进入包装时建立下一血组和完整保护，让归位、玩家与结果动画继续运行；等待结束后才启动新符卡和弹幕初始化。不要先调用 `beginSpell` 再冻结画面，也不要只扣除160保护而省略160帧实际等待。
+公共 [`TouhouBossPhaseTimeline`](../packages/thlib/src/touhou/boss-phase-timeline.ts) 提供固定帧等待和事件时钟。具体 Boss、阶段编号、原作行号及移动目标是 Demo 数据。进入包装时建立下一血组和完整保护，让归位、玩家与结果动画继续运行；等待结束后才启动新符卡和弹幕初始化。不要先调用 `beginSpell` 再冻结画面，也不要只扣除160保护而省略160帧实际等待。
 
 单卡练习和命令行直接指定某张卡的入口，直接进入所选 `BossCardN`，跳过普通通关路径的包装。原作普通非符转配对符卡继续在同一帧进入，并保留共用血环。新非符自身的准备和第一发弹幕时间见 [阶段切换节奏](rushboss-phase-rhythm.md)，不能拿这个160帧等待替换那套准备时序。
 

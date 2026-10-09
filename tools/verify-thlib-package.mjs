@@ -24,7 +24,7 @@ assert.ok(packed.files.some(file=>file.path==='assets/touhou-common/manifest.jso
 assert.ok(packed.files.some(file=>file.path==='assets/touhou-common/locales/zh-CN/anm/front.json'),'Chinese common UI locale must be present in the isolated package');
 assert.ok(packed.files.some(file=>file.path==='assets/spell-common/manifest.json'),'Shared spell/charge/aura pack is required');
 assert.ok(!packed.files.some(file=>/(?:^|\/)(?:th20|games|examples|tests)(?:\/|$)/.test(file.path)),'Library tarball contains game-specific files');
-assert.ok(!packed.files.some(file=>/^src\/touhou\/spellcard\.(?:js|d\.ts)$/.test(file.path)),'Removed event-document module returned to the library tarball');
+assert.ok(!packed.files.some(file=>/^(?:src|dist)\/touhou\/spellcard\.(?:js|d\.ts|ts)$/.test(file.path)),'Removed event-document module returned to the library tarball');
 assert.ok(!packed.files.some(file=>/(?:^|\/)(?:tools|spellcard-editor|node_modules)(?:\/|$)/.test(file.path)),'Editor tooling or dependencies leaked into the library tarball');
 writeFileSync(join(app,'package.json'),JSON.stringify({name:'independent-thlib-consumer',private:true,type:'module'}));
 run(process.execPath,[npmCli,'install','--offline','--ignore-scripts','--no-audit','--no-fund',join(temporary,packed.filename)],app);
@@ -45,7 +45,7 @@ function inspect(directory){for(const entry of readdirSync(directory,{withFileTy
     assert.ok(relative(installed,resolve(dirname(path),match[1])).split(/[\\/]/)[0]!=='..','Library imports application code');
   }
 }}
-inspect(join(installed,'src'));
+inspect(join(installed,'dist'));
 const completeCommon=verifyCommonPack(join(installed,'assets/touhou-common'));
 const manifest=JSON.parse(readFileSync(join(installed,'assets/manifest.json'),'utf8'));
 for(const sound of Object.values(manifest.sounds))assert.ok(existsSync(join(installed,'assets',sound.file)));

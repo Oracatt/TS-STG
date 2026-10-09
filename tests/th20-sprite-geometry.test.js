@@ -4,7 +4,7 @@ import {AnmBank} from '../games/touhou20/src/anm-vm.js';
 import {anmSpriteVertices,drawAnm} from '../games/touhou20/src/anm-render.js';
 import {anmSpriteVertices as reference,referenceWorldPosition} from './fixtures/th20/sprite-geometry-reference.js';
 import {Th20RenderQueue} from '../games/touhou20/src/render-queue.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 import {expandDrawCommands} from './fixtures/th20/quad.js';
 
 test('partial render flush retains sorted entries and reorders newly enqueued priorities',()=>{

@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "metadata.ts", "source.ts", "protocol.ts", "native-preview.ts", "controller.ts",
+    "frame-stream.mts", "launch-options.mts", "server.mts", "typescript-source.ts", "source-compiler.mts"
+  ]
+}

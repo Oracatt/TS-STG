@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SpriteAnimation, tween, Easing, Camera3D } from '../packages/thlib/src/animation.js';
-import { Resources } from '../packages/thlib/src/resources.js';
+import { SpriteAnimation, tween, Easing, Camera3D } from '../packages/thlib/dist/animation.js';
+import { Resources } from '../packages/thlib/dist/resources.js';
 
 test('resource cache releases each owned native handle once and reloads after release', () => {
   let next = 0; const released = [];

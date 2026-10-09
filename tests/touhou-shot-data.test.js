@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Keys} from '../packages/thlib/src/input.js';
-import {TouhouPlayer} from '../packages/thlib/src/touhou/player.js';
-import {getTouhouPlayerData} from '../packages/thlib/src/touhou/player-data.js';
-import {validateTouhouShots} from '../packages/thlib/src/touhou/shot-data.js';
+import {Keys} from '../packages/thlib/dist/input.js';
+import {TouhouPlayer} from '../packages/thlib/dist/touhou/player.js';
+import {getTouhouPlayerData} from '../packages/thlib/dist/touhou/player-data.js';
+import {validateTouhouShots} from '../packages/thlib/dist/touhou/shot-data.js';
 
 function customData(levels){
   const data=structuredClone(getTouhouPlayerData(0)),row={...data.patterns[0][0],period:1,phase:0,source:0};

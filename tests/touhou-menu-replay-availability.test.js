@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {AnmBank} from '../packages/thlib/src/touhou/anm-vm.js';
-import {TouhouPause} from '../packages/thlib/src/touhou/pause.js';
-import {TouhouGameOver} from '../packages/thlib/src/touhou/game-over.js';
-import {TouhouPlayer} from '../packages/thlib/src/touhou/player.js';
-import {TouhouItems} from '../packages/thlib/src/touhou/items.js';
-import {TOUHOU_PLAYER_DATA} from '../packages/thlib/src/touhou/player-data.js';
-import {DrawList} from '../packages/thlib/src/render.js';
-import {Keys} from '../packages/thlib/src/input.js';
+import {AnmBank} from '../packages/thlib/dist/touhou/anm-vm.js';
+import {TouhouPause} from '../packages/thlib/dist/touhou/pause.js';
+import {TouhouGameOver} from '../packages/thlib/dist/touhou/game-over.js';
+import {TouhouPlayer} from '../packages/thlib/dist/touhou/player.js';
+import {TouhouItems} from '../packages/thlib/dist/touhou/items.js';
+import {TOUHOU_PLAYER_DATA} from '../packages/thlib/dist/touhou/player-data.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
+import {Keys} from '../packages/thlib/dist/input.js';
 
 const base=new URL('../packages/thlib/assets/touhou-common/',import.meta.url);
 const manifest=JSON.parse(fs.readFileSync(new URL('manifest.json',base),'utf8'));

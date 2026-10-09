@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {TouhouGameOver} from '../packages/thlib/src/touhou/game-over.js';
-import {TouhouMusic} from '../packages/thlib/src/touhou/music.js';
-import {TouhouPlayer} from '../packages/thlib/src/touhou/player.js';
-import {AnmBank} from '../packages/thlib/src/touhou/anm.js';
-import {Keys} from '../packages/thlib/src/input.js';
+import {TouhouGameOver} from '../packages/thlib/dist/touhou/game-over.js';
+import {TouhouMusic} from '../packages/thlib/dist/touhou/music.js';
+import {TouhouPlayer} from '../packages/thlib/dist/touhou/player.js';
+import {AnmBank} from '../packages/thlib/dist/touhou/anm.js';
+import {Keys} from '../packages/thlib/dist/input.js';
 
 const read=file=>JSON.parse(fs.readFileSync(new URL(`../packages/thlib/assets/touhou-common/${file}.json`,import.meta.url)));
 function fixture(){

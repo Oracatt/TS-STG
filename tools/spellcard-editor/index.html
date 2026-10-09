@@ -1,21 +1,21 @@
 <!doctype html>
 <html lang="zh-CN"><head>
 <meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-src 'none'">
-<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>TS-STG · JavaScript 符卡工作台</title><link rel="stylesheet" href="/editor/styles.css">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><title>TS-STG · TypeScript 符卡工作台</title><link rel="stylesheet" href="/editor/styles.css">
 </head><body>
 <header class="app-header">
   <div class="brand"><span class="brand-symbol" aria-hidden="true">✦</span><strong>TS-STG</strong><span class="brand-divider"></span><span>符卡工作台</span></div>
   <nav class="file-actions" aria-label="文件"><button id="new-document">新建</button><button id="import-document">打开</button><button id="save-source" title="保存 Ctrl+S">保存</button><button id="export-document">另存为</button></nav>
   <div class="run-actions"><label class="auto-preview"><input id="auto-preview" type="checkbox" checked>自动运行</label><button id="apply-source" class="primary" title="运行当前源码 Ctrl+Enter">▶ 运行 <kbd>Ctrl ↵</kbd></button></div>
-  <input id="import-file" type="file" accept=".js,.mjs,text/javascript,application/javascript" hidden>
+  <input id="import-file" type="file" accept=".ts,.mts,.js,.mjs,text/javascript,application/javascript" hidden>
 </header>
 <div id="notice" class="notice" role="status" hidden><span id="notice-text"></span><button id="dismiss-notice" aria-label="关闭提示">×</button></div>
 <main id="workspace" class="workspace">
-  <section class="source-panel" aria-label="JavaScript 编辑器">
-    <header class="pane-heading"><div class="file-tab"><span class="language-icon">JS</span><span id="file-name">untitled.spell.js</span><span id="file-dirty" class="dirty-dot" title="文件有未保存修改" hidden></span></div><div class="editor-actions"><button id="undo" title="撤销 Ctrl+Z" disabled>↶</button><button id="redo" title="重做 Ctrl+Shift+Z" disabled>↷</button><button id="search-source" title="搜索与替换 Ctrl+F">搜索</button><button id="goto-line" title="跳转到行 Ctrl+G">行号</button><button id="fold-source" title="折叠所有代码块">折叠</button></div></header>
+  <section class="source-panel" aria-label="TypeScript / JavaScript 编辑器">
+    <header class="pane-heading"><div class="file-tab"><span id="language-icon" class="language-icon">TS</span><span id="file-name">untitled.spell.ts</span><span id="file-dirty" class="dirty-dot" title="文件有未保存修改" hidden></span></div><div class="editor-actions"><button id="undo" title="撤销 Ctrl+Z" disabled>↶</button><button id="redo" title="重做 Ctrl+Shift+Z" disabled>↷</button><button id="search-source" title="搜索与替换 Ctrl+F">搜索</button><button id="goto-line" title="跳转到行 Ctrl+G">行号</button><button id="fold-source" title="折叠所有代码块">折叠</button></div></header>
     <div id="source-code" class="code-editor"></div>
     <section id="source-errors" class="source-errors" role="alert" hidden><div class="error-heading"><strong>运行错误</strong><span>修改后重新运行</span><button id="error-goto" hidden>定位源码 ↗</button></div><pre id="source-error"></pre></section>
-    <footer class="editor-status"><span id="source-position">Ln 1, Col 1</span><span>空格: 2</span><span>UTF-8</span><span>JavaScript</span><span id="save-status">本地草稿</span></footer>
+    <footer class="editor-status"><span id="source-position">Ln 1, Col 1</span><span>空格: 2</span><span>UTF-8</span><span id="source-language">TypeScript</span><span id="save-status">本地草稿</span></footer>
   </section>
   <div id="pane-divider" class="pane-divider" role="separator" aria-label="调整源码与预览宽度" aria-orientation="vertical" aria-valuemin="32" aria-valuemax="68" aria-valuenow="54" tabindex="0"></div>
   <section class="preview-panel" aria-label="TS-STG 原生引擎预览">

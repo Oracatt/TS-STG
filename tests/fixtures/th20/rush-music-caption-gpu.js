@@ -1,6 +1,6 @@
 // Real imported Rush dialogue → public caption. Freeze at120 caption ticks for
 // deterministic visual inspection; do not synthesize a dialogue/music event.
-import {Keys,SaveStore} from '../../../packages/thlib/src/index.js';
+import {Keys,SaveStore} from '../../../packages/thlib/dist/index.js';
 import {createRushPortraitGame} from '../../../games/rushboss/src/portrait-application.js';
 const reads=[],raster=[];
 const host={...tsstg,readText(path){reads.push(path);return tsstg.readText(path);},

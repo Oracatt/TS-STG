@@ -13,7 +13,7 @@ for(let i=0;i<args.length;i++){
   if(args[i]==='--out')output=args[++i];else if(args[i]==='--scene')selection=args[++i];else if(args[i]==='--exe')binary=args[++i];else throw Error(`Unknown option ${args[i]}`);
 }
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex'),hashFile=path=>hash(readFileSync(path));
-const watched=readdirSync(join(root,'packages/thlib/src/touhou')).filter(name=>name.endsWith('.js')).map(name=>`packages/thlib/src/touhou/${name}`);
+const watched=readdirSync(join(root,'packages/thlib/dist/touhou')).filter(name=>name.endsWith('.js')).map(name=>`packages/thlib/dist/touhou/${name}`);
 watched.push('packages/thlib/assets/touhou-common/manifest.json');
 const sourceHashes=()=>Object.fromEntries(watched.map(file=>[file,hashFile(join(root,file))]));
 const before=sourceHashes(),executable=resolve(root,binary),destination=resolve(root,output),fixtures=join(root,'build/touhou-common-graphics');

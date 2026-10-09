@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {TouhouMusic} from '../packages/thlib/src/touhou/music.js';
-import {touhouMusicVolume} from '../packages/thlib/src/touhou/audio.js';
+import {TouhouMusic} from '../packages/thlib/dist/touhou/music.js';
+import {touhouMusicVolume} from '../packages/thlib/dist/touhou/audio.js';
 
 const gain=(volume,attenuation=0)=>10**(touhouMusicVolume(attenuation,volume*100)/2000);
 function fixture(options){

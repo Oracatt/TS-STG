@@ -3,8 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/thlib", "games/touhou20", "games/rushboss"],
+  "workspaces": [
+    "packages/thlib",
+    "games/touhou20",
+    "games/rushboss"
+  ],
   "scripts": {
+    "build": "npm run build:thlib && npm run build:examples && npm run build:games && npm run build:editor-host",
+    "build:thlib": "tsc -p packages/thlib/tsconfig.json",
+    "build:examples": "tsc -p examples/tsconfig.json",
+    "build:games": "tsc -p games/tsconfig.json",
+    "build:editor-host": "tsc -p tools/spellcard-editor/tsconfig.runtime.json",
+    "typecheck": "tsc -p packages/thlib/tsconfig.json --noEmit && tsc -p examples/tsconfig.json --noEmit && tsc -p games/tsconfig.json --noEmit && tsc -p tools/spellcard-editor/tsconfig.runtime.json --noEmit",
+    "typecheck:editor": "tsc -p tools/spellcard-editor/tsconfig.json --noEmit",
+    "pretest": "npm run build",
     "editor": "npm --prefix tools/spellcard-editor start",
     "test": "node --test tests/*.test.js",
     "test:integration": "node tools/verify-integration.mjs",
@@ -22,5 +34,11 @@
     "benchmark": "node tools/benchmark.mjs",
     "benchmark:native": "node tools/benchmark-native.mjs"
   },
-  "engines": { "node": ">=24" }
+  "engines": {
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "typescript": "5.9.3"
+  }
 }

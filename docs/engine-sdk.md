@@ -38,6 +38,13 @@ The engine defaults to the project's `main.js` when no entry is supplied.
 It supports relative application modules, the public `@ts-stg/thlib` entry and
 module subpaths such as `@ts-stg/thlib/touhou`.
 The native runtime needs no Node.js. Node/npm is optional for managing dependencies.
+
+The library is authored in TypeScript. Its `src/` contains `.ts`; exports and
+the native resolver load the compiled `dist/` JS and generated declarations.
+Both directories, source maps and a standalone compiler configuration are
+included. To write a TypeScript game, compile it before passing its emitted JS
+entry to the engine; neither QuickJS nor V8 parses TypeScript syntax directly.
+Existing JavaScript games continue using the same public package imports.
 Windows x64 builds normally contain both V8 JIT and QuickJS-NG, embedded in the
 executable. Auto selects V8 when available. Pass `--backend quickjs` or
 `--backend v8` to select explicitly; a QuickJS-only build rejects V8 with a

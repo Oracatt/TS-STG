@@ -26,7 +26,7 @@ const fileHash=file=>sha256(fs.readFileSync(file));
 const portableFiles=directory=>fs.readdirSync(path.join(root,directory),{withFileTypes:true})
   .flatMap(entry=>entry.isDirectory()?portableFiles(`${directory}/${entry.name}`):entry.name.endsWith('.js')?[`${directory}/${entry.name}`]:[]);
 const watched=[...new Set([
-  ...portableFiles('packages/thlib/src'),
+  ...portableFiles('packages/thlib/dist'),
   ...['runtime','player-adapter','shared-presentation','bullet-visuals','bullet-styles','random','sunny','monstone','artia']
     .map(name=>`games/rushboss/src/${name}.js`),
   'tools/verify-rushboss-portrait-runtime.mjs',

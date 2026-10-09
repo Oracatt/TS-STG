@@ -1,1 +1,0 @@
-export * from '@ts-stg/thlib/touhou/spell'; export { encodeTouhouSpellTime as encodeTh20SpellTime, invalidTouhouSpellTime as invalidTh20SpellTime, quantizeTouhouSpellTime as quantizeTh20SpellTime, TouhouSpellRecord as Th20SpellRecord, TouhouSpellResult as Th20SpellResult, TouhouSpellContext as Th20SpellContext, TouhouSpell as Th20Spell } from '@ts-stg/thlib/touhou/spell';

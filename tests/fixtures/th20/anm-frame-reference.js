@@ -1,7 +1,7 @@
 // Frozen pre-optimization animation tick. This deliberately keeps instruction
 // lookup/dispatch and per-tick flag checks, to validate the idle fast path.
-import {add,sub,f32,wrapAngle} from '../../../packages/thlib/src/touhou/math.js';
-import {UnsupportedAnmError} from '../../../packages/thlib/src/touhou/anm-vm.js';
+import {add,sub,f32,wrapAngle} from '../../../packages/thlib/dist/touhou/math.js';
+import {UnsupportedAnmError} from '../../../packages/thlib/dist/touhou/anm-vm.js';
 const interpolationOrder=['position','rgb','alpha','scale','scale2','uvScale','rotation','rotationZ','rgb2','alpha2','uvSpeedX','uvSpeedY'];
 export function referenceExecuteFrame(){
   if(!this.alive||this.stopped)return;

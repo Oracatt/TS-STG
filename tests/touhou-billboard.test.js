@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {AnmInstance} from '../packages/thlib/src/touhou/anm.js';
-import {projectedAnmBillboard} from '../packages/thlib/src/touhou/anm-projection.js';
+import {AnmInstance} from '../packages/thlib/dist/touhou/anm.js';
+import {projectedAnmBillboard} from '../packages/thlib/dist/touhou/anm-projection.js';
 
 // Expected vertices come from unmodified prepare_projected_billboard compiled
 // against the OS D3DXVec3Project, not from another implementation of the JS.

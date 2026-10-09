@@ -15,7 +15,7 @@ const directory=resolve(root,output),fixtures=join(root,'build/rushboss-spell-in
 mkdirSync(directory,{recursive:true});mkdirSync(fixtures,{recursive:true});
 const exe=resolve(root,binary);assert.ok(existsSync(exe));
 const hash=path=>createHash('sha256').update(readFileSync(path)).digest('hex'),results=[];
-const codePaths=['games/rushboss/src','packages/thlib/src','packages/thlib/src/touhou'].flatMap(directory=>
+const codePaths=['games/rushboss/src','packages/thlib/dist','packages/thlib/dist/touhou'].flatMap(directory=>
   readdirSync(join(root,directory)).filter(name=>name.endsWith('.js')).map(name=>`${directory}/${name}`));
 const sourceHashes=()=>Object.fromEntries(codePaths.map(path=>[path,hash(join(root,path))]));
 for(const boss of ['sunny','monstone','artia'].filter(b=>!selection||selection===b)){

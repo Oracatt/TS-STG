@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 const root=path.resolve(import.meta.dirname,'..'),out=path.join(root,'reports/rushboss/damage-protection'),scratch=path.join(root,'build/rushboss-damage-protection');
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(scratch,{recursive:true});
 const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-const sources=['packages/thlib/src/touhou/damage.js','packages/thlib/src/touhou/enemy.js','packages/thlib/src/touhou/boss-hud.js',
+const sources=['packages/thlib/dist/touhou/damage.js','packages/thlib/dist/touhou/enemy.js','packages/thlib/dist/touhou/boss-hud.js',
   'games/rushboss/src/runtime.js','games/rushboss/src/boss-health-profile.js','games/rushboss/src/shared-presentation.js','games/rushboss/src/portrait-application.js'];
 const sourceHashes=()=>Object.fromEntries(sources.map(file=>[file,sha(path.join(root,file))]));
 const before=sourceHashes(),results=[];

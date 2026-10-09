@@ -8,7 +8,7 @@ import {dirname,join,relative,resolve} from 'node:path';
 import {spawn} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {decodeRgbaPng} from './import-touhou-common-assets.mjs';
-import {invalidTouhouSpellTime} from '../packages/thlib/src/touhou/spell.js';
+import {invalidTouhouSpellTime} from '../packages/thlib/dist/touhou/spell.js';
 
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..'),args=process.argv.slice(2);
 let output='reports/rushboss/end-feedback-native',binary='build/Release/ts-stg.exe',backend=null,chosen=null,prepareOnly=false;
@@ -42,7 +42,7 @@ mkdirSync(out,{recursive:true});mkdirSync(scratch,{recursive:true});
 const hash=file=>createHash('sha256').update(readFileSync(file)).digest('hex');
 const sourceFiles=dir=>readdirSync(join(root,dir),{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?
   sourceFiles(`${dir}/${entry.name}`):entry.name.endsWith('.js')?[`${dir}/${entry.name}`]:[]);
-const sourceHashes=()=>Object.fromEntries([...sourceFiles('packages/thlib/src'),...sourceFiles('games/rushboss/src'),
+const sourceHashes=()=>Object.fromEntries([...sourceFiles('packages/thlib/dist'),...sourceFiles('games/rushboss/src'),
   'games/rushboss/main.js',
   'packages/thlib/assets/touhou-common/anm/effect.json','packages/thlib/assets/touhou-common/anm/front.json',
   'packages/thlib/assets/touhou-common/anm/ascii_960.json','packages/thlib/assets/touhou-common/audio/manifest.json',

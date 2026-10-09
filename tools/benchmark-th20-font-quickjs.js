@@ -1,6 +1,6 @@
 // Isolated original HUD/spell bitmap text workload in the actual QuickJS host.
 // Draw commands are retained; timings exclude native decoding and the GPU.
-import { DrawList } from '../packages/thlib/src/render.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 import { Th20BitmapFont,th20GroupedScore } from '../games/touhou20/src/font.js';
 const host=globalThis.tsstg,config=globalThis.__TH20_FONT_PERF??{},warmup=config.warmup??30,frames=config.frames??300,repeats=config.repeats??4;
 const data=JSON.parse(host.readText('games/touhou20/assets/anm/ascii_960.json'));

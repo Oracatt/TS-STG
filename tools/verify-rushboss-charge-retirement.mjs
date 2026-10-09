@@ -11,7 +11,7 @@ const entry=path.join(root,'build/charge-retirement-native.js'),binary=path.join
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(path.dirname(entry),{recursive:true});
 const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const sources=['games/rushboss/src/runtime.js','games/rushboss/src/shared-presentation.js',
-  'games/rushboss/src/boss-phase-timing.js','packages/thlib/src/touhou/boss-presentation.js'];
+  'games/rushboss/src/boss-phase-timing.js','packages/thlib/dist/touhou/boss-presentation.js'];
 const hashes=()=>Object.fromEntries(sources.map(file=>[file,sha(path.join(root,file))]));
 const sourceHashes=hashes(),results=[];
 const pipe=`\\\\.\\pipe\\ts-stg-charge-retirement-${process.pid}`,sockets=new Set();

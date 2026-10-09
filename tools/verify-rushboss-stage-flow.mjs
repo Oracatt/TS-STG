@@ -10,9 +10,9 @@ const root=path.resolve(import.meta.dirname,'..'),out=path.resolve(root,values.o
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(scratch,{recursive:true});
 const sha=p=>createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 const files=['games/rushboss/src/portrait-application.js','games/rushboss/src/graphics-portrait.js','games/rushboss/src/music.js',
-  'games/rushboss/src/player-adapter.js','games/rushboss/src/bullet-visuals.js','packages/thlib/src/touhou/dialogue.js',
-  'packages/thlib/src/touhou/stage-clear.js','packages/thlib/src/touhou/stage-transition.js','packages/thlib/src/touhou/player.js',
-  'packages/thlib/src/touhou/music-fade.js','packages/thlib/assets/touhou-common/anm/front.json'];
+  'games/rushboss/src/player-adapter.js','games/rushboss/src/bullet-visuals.js','packages/thlib/dist/touhou/dialogue.js',
+  'packages/thlib/dist/touhou/stage-clear.js','packages/thlib/dist/touhou/stage-transition.js','packages/thlib/dist/touhou/player.js',
+  'packages/thlib/dist/touhou/music-fade.js','packages/thlib/assets/touhou-common/anm/front.json'];
 const hashes=()=>Object.fromEntries(files.map(p=>[p,sha(path.join(root,p))])),sourceHashes=hashes(),results=[];
 const scenes=[
   {name:'dialogue-visible',frame:239},{name:'dialogue-exit',frame:240},{name:'clear-with-portraits',frame:255},

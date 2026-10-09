@@ -25,7 +25,7 @@ const cases=[
  {name:'unsupported-cp932',text:'STG 😀 Ω',width:512,height:40},
 ].map(value=>({font:4,spacing:0,color:0xffffff,shadowColor:0xff000000,outline:true,...value}));
 const fixture=path.join(root,'build/touhou-text-native.js'),snapshot=path.join(out,'native.json');
-fs.writeFileSync(fixture,`import {TouhouTextRenderer} from '../packages/thlib/src/touhou/text-renderer.js';
+fs.writeFileSync(fixture,`import {TouhouTextRenderer} from '../packages/thlib/dist/touhou/text-renderer.js';
 const renderer=new TouhouTextRenderer({host:tsstg,bank:{}}),cases=${JSON.stringify(cases)};
 const results=[];let frame=0;
 globalThis.__tsstg_game={update(){const c=cases[frame++];if(c){const image=renderer.rasterize(c.text,c);results.push({name:c.name,...image,pixels:Array.from(image.pixels)});}},render(){return[];},snapshot(){return{modern:renderer.modern,mincho:renderer.mincho,results};}};
@@ -43,7 +43,7 @@ for(const test of cases){
  console.log(`${result.passed?'PASS':'FAIL'} ${test.name}: ${differences} differing bytes; max ${maxError}`);
 }
 const hash=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-const report={passed:results.every(result=>result.passed),hostSha256:hash(host),oracleSha256:hash(oracle),publicTextRendererSha256:hash(path.join(root,'packages/thlib/src/touhou/text-renderer.js')),modern:actual.modern,mincho:actual.mincho,
+const report={passed:results.every(result=>result.passed),hostSha256:hash(host),oracleSha256:hash(oracle),publicTextRendererSha256:hash(path.join(root,'packages/thlib/dist/touhou/text-renderer.js')),modern:actual.modern,mincho:actual.mincho,
  sourceHashes:Object.fromEntries(['text_renderer/bitmap.cpp','text_renderer/raster.cpp','platform_window/fonts.cpp','text_renderer/centered_constants.hpp'].map(file=>[file,hash(path.join(reference,file))])),
  oracle:'Win32 build of original bitmap.cpp, fonts.cpp and exact rasterize_text function; only the application mutex is removed. Original game executable is never run.',results};
 fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));if(!report.passed)process.exitCode=1;

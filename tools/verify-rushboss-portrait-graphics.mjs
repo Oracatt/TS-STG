@@ -56,7 +56,7 @@ const scenes=[
 assert.ok(scenes.length,'Unknown scene');assert.ok(existsSync(exe),'Build native host first');
 mkdirSync(out,{recursive:true});mkdirSync(fixtures,{recursive:true});
 const hash=file=>createHash('sha256').update(readFileSync(file)).digest('hex');
-const files=['games/rushboss/src','packages/thlib/src','packages/thlib/src/touhou'].flatMap(dir=>
+const files=['games/rushboss/src','packages/thlib/dist','packages/thlib/dist/touhou'].flatMap(dir=>
   readdirSync(join(root,dir)).filter(file=>file.endsWith('.js')).map(file=>`${dir}/${file}`));
 const codeHashes=()=>Object.fromEntries(files.map(file=>[file,hash(join(root,file))]));
 const before=codeHashes(),results=[];

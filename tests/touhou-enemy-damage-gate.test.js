@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TouhouHealth, TouhouTimer, applyTouhouEnemyDamage } from '../packages/thlib/src/touhou/index.js';
+import { TouhouHealth, TouhouTimer, applyTouhouEnemyDamage } from '../packages/thlib/dist/touhou/index.js';
 
 for (const spell of [false, true]) {
   test(`ECL 515 protects ${spell ? 'spell' : 'normal'} HP through the final positive timer frame`, () => {

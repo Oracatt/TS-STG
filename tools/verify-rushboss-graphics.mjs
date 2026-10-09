@@ -53,7 +53,7 @@ const fixtures = resolve(root, 'build/rushboss-graphics');
 mkdirSync(fixtures, { recursive: true });
 mkdirSync(directory, { recursive: true });
 const hash = path => createHash('sha256').update(readFileSync(path)).digest('hex');
-const codePaths = ['games/rushboss/src','packages/thlib/src','packages/thlib/src/touhou'].flatMap(directory=>
+const codePaths = ['games/rushboss/src','packages/thlib/dist','packages/thlib/dist/touhou'].flatMap(directory=>
   readdirSync(join(root,directory)).filter(name=>name.endsWith('.js')).map(name=>`${directory}/${name}`));
 const sourceHashes = () => Object.fromEntries(codePaths.map(name => [name, hash(join(root,name))]));
 const results = [];

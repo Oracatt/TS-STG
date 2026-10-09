@@ -1,6 +1,6 @@
 # 魔理沙魔炮结束时的 ANM 生命周期
 
-公共实现位于 [`bombs.js`](../packages/thlib/src/touhou/bombs.js) 的 `TouhouMarisaBomb`，两个 Demo 使用同一份实现。
+公共实现位于 [`bombs.js`](../packages/thlib/src/touhou/bombs.ts) 的 `TouhouMarisaBomb`，两个 Demo 使用同一份实现。
 
 只读原作参考 `D:/AIWorkspace/Touhou20Reconstruction/source_reconstruction/bomb_system/marisa.cpp` 在计时器 300 帧调用 `env::interrupt(beam_handle)` 和 `env::interrupt(handle_74)`。`character_environment.cpp` 的这个函数实际调用 `sprite::interrupt_animation_children(..., 1)`，通过 `sprite_renderer/loading_interrupt.cpp` 通知父动画及其子动画。原作在 300 帧后不再更新魔炮的跟随位置和转向，但 ANM 自己的退出动画继续执行。
 

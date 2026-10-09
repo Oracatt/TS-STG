@@ -1,9 +1,16 @@
 # @ts-stg/thlib
 
-Portable JavaScript application framework, restored entities, effects and common
+Portable TypeScript application framework, restored entities, effects and common
 assets for Touhou-style STG games.
 No Node, DOM or native-global dependency. The application supplies platform adapters,
 game-specific rules, configuration, stages, interface skins and resource locations.
+
+Authored implementation lives in `src/**/*.ts`. `npm run build` generates ES2022
+modules, declarations and source maps in `dist/`; package exports resolve there.
+Both TypeScript and JavaScript games consume the same public imports. No compiler
+is needed at runtime, and installing the packed library does not run a build.
+To rebuild the included source independently, install development dependencies
+and run `npm run build`; the package includes its own compiler configuration.
 
 The restored common implementation previously developed in the touhou20 demo now
 lives in `src/touhou/`, exported by both `@ts-stg/thlib/touhou` and the package root.

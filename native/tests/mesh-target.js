@@ -1,4 +1,4 @@
-import { DrawList } from '../../packages/thlib/src/render.js';
+import { DrawList } from '../../packages/thlib/dist/render.js';
 import { Th20EnemyDistortion } from '../../games/touhou20/src/distortion.js';
 const target = tsstg.createRenderTarget(640, 480);
 const distortion = new Th20EnemyDistortion({ radius: 112, currentRadius: 112, color: 0xffa0c8ff });

@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {AnmBank} from '../packages/thlib/src/touhou/anm.js';
-import {anmSpriteVertices} from '../packages/thlib/src/touhou/anm-render.js';
-import {TouhouBitmapFont} from '../packages/thlib/src/touhou/font.js';
-import {TouhouHud,TOUHOU_HUD_LAYOUT,TOUHOU_HUD_LABEL_SCRIPTS} from '../packages/thlib/src/touhou/hud.js';
-import {TouhouRenderQueue} from '../packages/thlib/src/touhou/render-queue.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {AnmBank} from '../packages/thlib/dist/touhou/anm.js';
+import {anmSpriteVertices} from '../packages/thlib/dist/touhou/anm-render.js';
+import {TouhouBitmapFont} from '../packages/thlib/dist/touhou/font.js';
+import {TouhouHud,TOUHOU_HUD_LAYOUT,TOUHOU_HUD_LABEL_SCRIPTS} from '../packages/thlib/dist/touhou/hud.js';
+import {TouhouRenderQueue} from '../packages/thlib/dist/touhou/render-queue.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 
 const data=name=>JSON.parse(fs.readFileSync(new URL(`../packages/thlib/assets/touhou-common/anm/${name}.json`,import.meta.url)));
 const advance=(hud,count=100)=>{for(let frame=0;frame<count;frame++)hud.update();};

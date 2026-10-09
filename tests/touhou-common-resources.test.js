@@ -4,11 +4,11 @@ import {readFileSync,existsSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {buildTouhouCommonAssets,decodeRgbaPng,normalizeTouhouPlayerData,proceduralRingSprites} from '../tools/import-touhou-common-assets.mjs';
 import {verifyCommonPack} from '../tools/verify-common-pack.mjs';
-import {createTouhouResources} from '../packages/thlib/src/touhou/resources.js';
-import {getTouhouPlayerData} from '../packages/thlib/src/touhou/player-data.js';
-import {TouhouPlayer} from '../packages/thlib/src/touhou/player.js';
-import {AnmBank} from '../packages/thlib/src/touhou/anm.js';
-import {DrawList,Keys} from '../packages/thlib/src/index.js';
+import {createTouhouResources} from '../packages/thlib/dist/touhou/resources.js';
+import {getTouhouPlayerData} from '../packages/thlib/dist/touhou/player-data.js';
+import {TouhouPlayer} from '../packages/thlib/dist/touhou/player.js';
+import {AnmBank} from '../packages/thlib/dist/touhou/anm.js';
+import {DrawList,Keys} from '../packages/thlib/dist/index.js';
 
 const source='games/touhou20/assets',available=existsSync(`${source}/anm/pl00.json`)&&existsSync(`${source}/audio/manifest.json`);
 let built;const pack=()=>built??=buildTouhouCommonAssets();

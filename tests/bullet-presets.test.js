@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Bullet, StandardBulletPresets, getBulletPreset, bulletIntersectsCircle } from '../packages/thlib/src/index.js';
+import { Bullet, StandardBulletPresets, getBulletPreset, bulletIntersectsCircle } from '../packages/thlib/dist/index.js';
 
 test('standard bullet presets are immutable and colours are not geometry names', () => {
   assert.equal(Object.keys(StandardBulletPresets).length,26);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {TouhouHud,TOUHOU_HUD_LABEL_SCRIPTS} from '../packages/thlib/src/touhou/hud.js';
+import {TouhouHud,TOUHOU_HUD_LABEL_SCRIPTS} from '../packages/thlib/dist/touhou/hud.js';
 
 function fixture(options={}){
   const created=[],text=[];

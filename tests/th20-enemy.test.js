@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {Th20Enemy,Th20Motion,th20EnemyDeathScript} from '../games/touhou20/src/enemy.js';
 import {AnmBank} from '../games/touhou20/src/anm.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 const stubBank={create(scriptId,options={}){return {scriptId,...options,alive:true,width:24,height:24,scaleX:1,scaleY:1,update(){},destroy(){this.alive=false;}};}};
 
 test('enemy spawn defaults preserve original base-script death effect and parity sound',()=>{

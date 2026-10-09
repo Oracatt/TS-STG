@@ -3,7 +3,7 @@ import {Th20TitleBackground} from '../games/touhou20/src/title-background.js';
 import {applyPauseNoise,copyPauseSurface,Th20PauseCapture} from '../games/touhou20/src/pause-capture.js';
 import {Th20RNG} from '../games/touhou20/src/math.js';
 import {AnmBank} from '../games/touhou20/src/anm.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 const evidence=JSON.parse(fs.readFileSync(new URL('./fixtures/th20/background.json',import.meta.url)));
 const hash=words=>crypto.createHash('sha256').update(Buffer.from(new Uint32Array(words).buffer)).digest('hex'),bits=x=>new Uint32Array(new Float32Array([x]).buffer)[0];
 const argb=p=>Array.from({length:p.length/4},(_,n)=>{const j=n*4;return((p[j+3]<<24)|(p[j]<<16)|(p[j+1]<<8)|p[j+2])>>>0;});

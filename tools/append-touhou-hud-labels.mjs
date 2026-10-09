@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {TOUHOU_HUD_LABEL_SCRIPTS} from '../packages/thlib/src/touhou/hud-label-data.js';
+import {TOUHOU_HUD_LABEL_SCRIPTS} from '../packages/thlib/dist/touhou/hud-label-data.js';
 
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const word=value=>{const bytes=Buffer.alloc(4);bytes.writeFloatLE(value);return bytes.readUInt32LE();};

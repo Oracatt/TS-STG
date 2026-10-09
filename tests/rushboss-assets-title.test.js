@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DrawList } from '../packages/thlib/src/index.js';
+import { DrawList } from '../packages/thlib/dist/index.js';
 import { createRushAssets, screenX, screenY } from '../games/rushboss/src/assets.js';
 import { drawTitle, TITLE_OPTIONS } from '../games/rushboss/src/title.js';
 

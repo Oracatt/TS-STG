@@ -1,15 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { AnmBank } from '../packages/thlib/src/touhou/anm.js';
-import { TouhouHud } from '../packages/thlib/src/touhou/hud.js';
-import { TouhouItems } from '../packages/thlib/src/touhou/items.js';
-import { TouhouSpell, encodeTouhouSpellTime } from '../packages/thlib/src/touhou/spell.js';
-import { TouhouGame } from '../packages/thlib/src/touhou/game.js';
-import { createTouhouResources } from '../packages/thlib/src/touhou/resources.js';
-import { TouhouRenderQueue } from '../packages/thlib/src/touhou/render-queue.js';
-import { DrawList } from '../packages/thlib/src/render.js';
-import { anmSpriteVertices } from '../packages/thlib/src/touhou/anm-render.js';
+import { AnmBank } from '../packages/thlib/dist/touhou/anm.js';
+import { TouhouHud } from '../packages/thlib/dist/touhou/hud.js';
+import { TouhouItems } from '../packages/thlib/dist/touhou/items.js';
+import { TouhouSpell, encodeTouhouSpellTime } from '../packages/thlib/dist/touhou/spell.js';
+import { TouhouGame } from '../packages/thlib/dist/touhou/game.js';
+import { createTouhouResources } from '../packages/thlib/dist/touhou/resources.js';
+import { TouhouRenderQueue } from '../packages/thlib/dist/touhou/render-queue.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
+import { anmSpriteVertices } from '../packages/thlib/dist/touhou/anm-render.js';
 
 const data=name=>JSON.parse(fs.readFileSync(new URL(`../packages/thlib/assets/touhou-common/anm/${name}.json`,import.meta.url)));
 const bank=name=>new AnmBank(data(name),{loadTexture:()=>11});

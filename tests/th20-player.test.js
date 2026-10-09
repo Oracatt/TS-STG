@@ -6,8 +6,8 @@ import { Th20ReimuBomb, Th20MarisaBomb } from '../games/touhou20/src/bombs.js';
 import { parseTh20Sht } from '../games/touhou20/src/shot-data.js';
 import { Th20RNG, Th20Timer, f32 } from '../games/touhou20/src/math.js';
 import { AnmBank } from '../games/touhou20/src/anm.js';
-import { Keys } from '../packages/thlib/src/input.js';
-import { DrawList } from '../packages/thlib/src/render.js';
+import { Keys } from '../packages/thlib/dist/input.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 
 const data = character => JSON.parse(fs.readFileSync(new URL(`../games/touhou20/assets/shots/pl0${character}.json`, import.meta.url)));
 const create = (character = 0, options = {}) => new Th20Player({ character, sht: data(character), ...options });

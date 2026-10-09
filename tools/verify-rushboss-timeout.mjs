@@ -25,7 +25,7 @@ mkdirSync(out,{recursive:true});mkdirSync(fixtures,{recursive:true});
 const hash=file=>createHash('sha256').update(readFileSync(file)).digest('hex');
 const sources=dir=>readdirSync(join(root,dir),{withFileTypes:true}).flatMap(entry=>entry.isDirectory()?
   sources(`${dir}/${entry.name}`):entry.name.endsWith('.js')?[`${dir}/${entry.name}`]:[]);
-const files=[...sources('packages/thlib/src'),...sources('games/rushboss/src'),'tools/verify-rushboss-timeout.mjs',
+const files=[...sources('packages/thlib/dist'),...sources('games/rushboss/src'),'tools/verify-rushboss-timeout.mjs',
   'packages/thlib/assets/touhou-common/manifest.json','packages/thlib/assets/touhou-common/audio/manifest.json'].sort();
 const sourceHashes=()=>Object.fromEntries(files.map(file=>[file,hash(join(root,file))]));
 const before=sourceHashes(),binarySha256=hash(exe);

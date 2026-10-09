@@ -3,6 +3,18 @@
 /dist/
 /userdata/
 node_modules/
+/packages/thlib/dist/
+/examples/**/*.js
+/examples/**/*.js.map
+/games/**/*.js
+/games/**/*.js.map
+/tools/spellcard-editor/*.js
+/tools/spellcard-editor/*.js.map
+/tools/spellcard-editor/*.mjs
+/tools/spellcard-editor/*.mjs.map
+/tools/spellcard-editor/*.cjs
+/tools/spellcard-editor/*.cjs.map
+!/tools/spellcard-editor/verify-desktop.mjs
 *.log
 /.cache/
 

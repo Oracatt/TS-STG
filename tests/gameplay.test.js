@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Game, Stage, Enemy, Boss, Bullet, Laser, PlayerShot, Item, Keys, ReplayPlayer,
-  ReplayRecorder, SaveStore, stateHash, wait, Menu, Input } from '../packages/thlib/src/index.js';
+  ReplayRecorder, SaveStore, stateHash, wait, Menu, Input } from '../packages/thlib/dist/index.js';
 
 const game = (options = {}) => new Game({ seed: 444, stageFactory: () => new Stage({ autoFinish: false }),
   player: { invulnerableFrames: 0 }, ...options }).start();

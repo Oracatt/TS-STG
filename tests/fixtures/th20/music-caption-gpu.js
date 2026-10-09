@@ -1,7 +1,7 @@
 // Public dynamic-caption native fixture. No PNGs, ANM files or private demo
 // assets are loaded. Run120 frames, then inspect the original footer rectangle.
-import {DrawList} from '../../../packages/thlib/src/index.js';
-import {TouhouMusicCaption} from '../../../packages/thlib/src/touhou/index.js';
+import {DrawList} from '../../../packages/thlib/dist/index.js';
+import {TouhouMusicCaption} from '../../../packages/thlib/dist/touhou/index.js';
 const caption=new TouhouMusicCaption({host:tsstg,text:'BGM. 恩惠Summer Rain',codePage:936});
 let frame=0;
 globalThis.__tsstg_game={update(){frame++;if(frame<=120)caption.update();},render(){

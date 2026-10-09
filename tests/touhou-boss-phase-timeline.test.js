@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TouhouBossPhaseTimeline } from '../packages/thlib/src/touhou/boss-phase-timeline.js';
+import { TouhouBossPhaseTimeline } from '../packages/thlib/dist/touhou/boss-phase-timeline.js';
 
 test('phase preparation and pattern lead-in share one fixed frame clock', () => {
   const events = [];

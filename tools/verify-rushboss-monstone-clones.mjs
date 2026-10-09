@@ -9,7 +9,7 @@ const scratch=path.join(root,'build/rushboss-monstone-clones'),binary=path.join(
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(scratch,{recursive:true});
 const hash=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const files=['games/rushboss/src/monstone.js','games/rushboss/src/runtime.js','games/rushboss/src/projectiles.js',
-  'games/rushboss/src/portrait-application.js','games/rushboss/src/boss-artwork.js','packages/thlib/src/world.js'];
+  'games/rushboss/src/portrait-application.js','games/rushboss/src/boss-artwork.js','packages/thlib/dist/world.js'];
 const hashes=()=>Object.fromEntries(files.map(file=>[file,hash(path.join(root,file))]));
 const sourceHashes=hashes(),results=[];
 for(const scene of [

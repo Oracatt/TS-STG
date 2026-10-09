@@ -24,7 +24,7 @@ const out = path.resolve(root, output), scratch = path.join(root, 'build/touhou-
 const binary = path.resolve(root, executable), results = [], fixtures = [];
 fs.mkdirSync(out, { recursive: true }); fs.mkdirSync(scratch, { recursive: true });
 const hash = file => createHash('sha256').update(fs.readFileSync(file)).digest('hex');
-const files = ['packages/thlib/src/touhou/player.js', 'packages/thlib/src/touhou/shots.js',
+const files = ['packages/thlib/dist/touhou/player.js', 'packages/thlib/dist/touhou/shots.js',
   'tests/fixtures/touhou-marisa-power-native.js'];
 const hashes = () => Object.fromEntries(files.map(file => [file, hash(path.join(root, file))]));
 const sourceHashes = hashes();

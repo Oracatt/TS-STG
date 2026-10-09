@@ -5,6 +5,15 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath($PSScriptRoot)
+Push-Location $projectRoot
+try {
+    & npm run build:thlib
+    if ($LASTEXITCODE -ne 0) { throw 'TypeScript build failed; no package was created.' }
+    if ($WithReferenceAssets) {
+        & npm run build:games
+        if ($LASTEXITCODE -ne 0) { throw 'Demo TypeScript build failed; no package was created.' }
+    }
+} finally { Pop-Location }
 $binary = Join-Path $projectRoot "build/$Configuration/ts-stg.exe"
 if (-not (Test-Path -LiteralPath $binary)) { $binary = Join-Path $projectRoot 'build/ts-stg.exe' }
 if (-not (Test-Path -LiteralPath $binary)) { throw 'Build the engine with ./build.ps1 first.' }
@@ -59,16 +68,17 @@ foreach ($bankName in @('pl00','pl01','bullet','effect','enemy','ascii_960','fro
 }
 foreach ($module in @('application','scene-transition','stage-clear','stage-transition','game','gameplay-compositor','render-order','render-queue','menu','title-background','stage-selection','dialogue','pause','game-over','hud','boss-hud','boss-phase-plan','boss-phase-timeline','boss-presentation','boss-entrance','boss-death','boss-defeat','boss-phase-clear','bullet-clear-wave','screen-shake','text-renderer','music','music-caption','music-fade','prefabs','bullet-collision','laser-collision','laser-cancellation')) {
     foreach ($extension in @('js','d.ts')) {
-        if (-not (Test-Path -LiteralPath (Join-Path $librarySource "src/touhou/$module.$extension"))) { throw "Missing public framework module: $module.$extension" }
+        if (-not (Test-Path -LiteralPath (Join-Path $librarySource "dist/touhou/$module.$extension"))) { throw "Missing public framework module: $module.$extension" }
     }
 }
 if (-not (Test-Path -LiteralPath (Join-Path $librarySource 'assets/spell-common/manifest.json'))) {
     throw 'The versioned shared spell/charge/aura resource pack is missing. Restore packages/thlib/assets/spell-common from Git.'
 }
 New-Item -ItemType Directory -Path $libraryTarget | Out-Null
-foreach ($directory in @('src','assets')) { Copy-OwnedTree (Join-Path $librarySource $directory) $libraryTarget }
-foreach ($file in @('package.json','README.md','LICENSE')) { Copy-Item -LiteralPath (Join-Path $librarySource $file) -Destination $libraryTarget }
+foreach ($directory in @('src','dist','assets')) { Copy-OwnedTree (Join-Path $librarySource $directory) $libraryTarget }
+foreach ($file in @('package.json','README.md','LICENSE','tsconfig.json','tsconfig.base.json')) { Copy-Item -LiteralPath (Join-Path $librarySource $file) -Destination $libraryTarget }
 New-Item -ItemType Directory -Path (Join-Path $staging 'docs') | Out-Null
+Copy-Item -LiteralPath (Join-Path $projectRoot 'docs/typescript.md') -Destination (Join-Path $staging 'docs')
 foreach ($document in @('native-api.md','thlib-guide.md','touhou-prefabs.md','touhou-scene-transition.md','touhou-stage-flow.md','touhou-dialogue.md','touhou-rendering.md','touhou-end-feedback.md','touhou-boss-death.md','touhou-boss-defeat.md','touhou-boss-entrance.md','touhou-boss-hud.md','touhou-item-drops.md','touhou-projectile-rules.md','touhou-marisa-bomb-release.md','touhou-reimu-bomb-release.md','touhou-music.md','touhou-player-stage-visibility.md')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot "docs/$document") -Destination (Join-Path $staging 'docs')
 }
@@ -193,7 +203,7 @@ Arrow keys: move/select; Z: shoot/confirm; X: bomb/back; Shift: focus; Esc: paus
 
 $resourceNotice
 
-Portable JS library: packages/thlib/src/. Common assets: packages/thlib/assets/.
+TypeScript source: packages/thlib/src/. Compiled library: packages/thlib/dist/. Common assets: packages/thlib/assets/.
 Source repository build tools and verification fixtures are not release payload.
 Read docs/native-api.md for the platform boundary. Saves go to userdata/.
 The compiler's Microsoft Visual C++ x64 runtime may be required on another machine.

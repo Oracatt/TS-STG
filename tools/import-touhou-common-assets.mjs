@@ -3,8 +3,8 @@ import {readFileSync,writeFileSync,mkdirSync,existsSync,readdirSync} from 'node:
 import {resolve,dirname,join,relative,sep} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {inflateSync,deflateSync} from 'node:zlib';
-import {TOUHOU_PLAYER_DATA} from '../packages/thlib/src/touhou/player-data.js';
-import {TOUHOU_BULLET_STYLES} from '../packages/thlib/src/touhou/bullet-style-data.js';
+import {TOUHOU_PLAYER_DATA} from '../packages/thlib/dist/touhou/player-data.js';
+import {TOUHOU_BULLET_STYLES} from '../packages/thlib/dist/touhou/bullet-style-data.js';
 import {appendTouhouHudLabels} from './append-touhou-hud-labels.mjs';
 import {appendTouhouChineseAssets} from './build-touhou-zh-assets.mjs';
 

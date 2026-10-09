@@ -1,32 +1,47 @@
 {
   "name": "@ts-stg/thlib",
   "version": "0.1.0",
-  "description": "Portable JavaScript Touhou-style STG gameplay library for TS-STG",
+  "description": "Portable TypeScript Touhou-style STG gameplay library for TS-STG",
   "type": "module",
-  "main": "./src/index.js",
-  "types": "./src/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepack": "npm run build"
+  },
   "exports": {
     ".": {
-      "types": "./src/index.d.ts",
-      "import": "./src/index.js",
-      "default": "./src/index.js"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./assets/*": "./assets/*",
-    "./*": "./src/*.js",
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js",
+      "default": "./dist/*.js"
+    },
     "./touhou": {
-      "types": "./src/touhou/index.d.ts",
-      "import": "./src/touhou/index.js",
-      "default": "./src/touhou/index.js"
+      "types": "./dist/touhou/index.d.ts",
+      "import": "./dist/touhou/index.js",
+      "default": "./dist/touhou/index.js"
     },
     "./touhou/*": {
-      "types": "./src/touhou/*.d.ts",
-      "import": "./src/touhou/*.js",
-      "default": "./src/touhou/*.js"
+      "types": "./dist/touhou/*.d.ts",
+      "import": "./dist/touhou/*.js",
+      "default": "./dist/touhou/*.js"
     }
   },
   "files": [
     "src",
-    "assets"
+    "dist",
+    "assets",
+    "tsconfig.json",
+    "tsconfig.base.json"
   ],
-  "license": "SEE LICENSE IN LICENSE"
+  "license": "SEE LICENSE IN LICENSE",
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
 }

@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
-import {createTouhouResources} from '../packages/thlib/src/touhou/resources.js';
-import {TouhouHud,TOUHOU_HUD_LABEL_SCRIPTS} from '../packages/thlib/src/touhou/hud.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {createTouhouResources} from '../packages/thlib/dist/touhou/resources.js';
+import {TouhouHud,TOUHOU_HUD_LABEL_SCRIPTS} from '../packages/thlib/dist/touhou/hud.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 
 // Small decoded-bank fixtures test descriptor selection and handle ownership;
 // they do not stand in for the separate original-artwork/pixel audit.

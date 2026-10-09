@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {RepeatingInput} from '../packages/thlib/src/repeating-input.js';
+import {RepeatingInput} from '../packages/thlib/dist/repeating-input.js';
 
 test('repeat channels have independent delay/period and exact first-repeat frames',()=>{
  const input=new RepeatingInput({channels:{fast:{delay:3,interval:2},slow:{delay:6,interval:11},immediate:{delay:0,interval:4}},defaultChannel:'fast'});

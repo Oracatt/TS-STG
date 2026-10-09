@@ -10,7 +10,7 @@ const root=path.resolve(import.meta.dirname,'..'),out=path.join(root,'reports/ru
 fs.mkdirSync(out,{recursive:true});fs.mkdirSync(scratch,{recursive:true});
 const sha=file=>createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const sources=['games/rushboss/src/runtime.js','games/rushboss/src/boss-drop-profile.js','games/rushboss/src/projectiles.js',
-  'games/rushboss/src/player-adapter.js','games/rushboss/src/graphics-portrait.js','packages/thlib/src/touhou/items.js','packages/thlib/src/touhou/boss-presentation.js'];
+  'games/rushboss/src/player-adapter.js','games/rushboss/src/graphics-portrait.js','packages/thlib/dist/touhou/items.js','packages/thlib/dist/touhou/boss-presentation.js'];
 const sourceHashes=Object.fromEntries(sources.map(file=>[file,sha(path.join(root,file))]));
 const results=[];
 for(const [scene,frames]of [['nonspell-handoff',121],['spell-drops',121],['spell-drops-flight',151],

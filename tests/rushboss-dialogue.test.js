@@ -1,8 +1,8 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';
 import {RUSH_DIALOGUE_DATA,RushDialogue} from '../games/rushboss/src/dialogue.js';
 import {importRushDialogue} from '../tools/import-rushboss-dialogue.mjs';
-import {createTouhouResources,TouhouDialogue,wrapTouhouDialogue,AnmBank,decodeAnm,anmSpriteVertices,TOUHOU_DIALOGUE_PORTRAITS} from '../packages/thlib/src/touhou/index.js';
-import {DrawList,Keys} from '../packages/thlib/src/index.js';
+import {createTouhouResources,TouhouDialogue,wrapTouhouDialogue,AnmBank,decodeAnm,anmSpriteVertices,TOUHOU_DIALOGUE_PORTRAITS} from '../packages/thlib/dist/touhou/index.js';
+import {DrawList,Keys} from '../packages/thlib/dist/index.js';
 const source='D:/c++/TouhouRushBoss-main';
 function fixture(){
   const writes=[],handles=new Map();let next=1;

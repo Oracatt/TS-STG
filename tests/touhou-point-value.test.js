@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {TouhouPlayer} from '../packages/thlib/src/touhou/player.js';
-import {TOUHOU_PLAYER_DATA} from '../packages/thlib/src/touhou/player-data.js';
-import {TouhouItems} from '../packages/thlib/src/touhou/items.js';
-import {TOUHOU_POINT_VALUE_PROFILES,clampTouhouPointValue,addTouhouPointValueForGraze,touhouPointItemValue} from '../packages/thlib/src/touhou/point-value.js';
-import {TOUHOU_PLAYER_RULES,resolveTouhouPlayerRules} from '../packages/thlib/src/touhou/player-rules.js';
-import {continueTouhouGame} from '../packages/thlib/src/touhou/game-over.js';
-import {TouhouGame,createTouhouResources,TOUHOU_POINT_VALUE_PROFILES as PUBLIC_PROFILES} from '../packages/thlib/src/touhou/index.js';
-import {Keys} from '../packages/thlib/src/input.js';
+import {TouhouPlayer} from '../packages/thlib/dist/touhou/player.js';
+import {TOUHOU_PLAYER_DATA} from '../packages/thlib/dist/touhou/player-data.js';
+import {TouhouItems} from '../packages/thlib/dist/touhou/items.js';
+import {TOUHOU_POINT_VALUE_PROFILES,clampTouhouPointValue,addTouhouPointValueForGraze,touhouPointItemValue} from '../packages/thlib/dist/touhou/point-value.js';
+import {TOUHOU_PLAYER_RULES,resolveTouhouPlayerRules} from '../packages/thlib/dist/touhou/player-rules.js';
+import {continueTouhouGame} from '../packages/thlib/dist/touhou/game-over.js';
+import {TouhouGame,createTouhouResources,TOUHOU_POINT_VALUE_PROFILES as PUBLIC_PROFILES} from '../packages/thlib/dist/touhou/index.js';
+import {Keys} from '../packages/thlib/dist/input.js';
 import fs from 'node:fs';
 
 const create=(rules=TOUHOU_POINT_VALUE_PROFILES.classic)=>new TouhouPlayer({sht:TOUHOU_PLAYER_DATA[0],rules,seed:1234});

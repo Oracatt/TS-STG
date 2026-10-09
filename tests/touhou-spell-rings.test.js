@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { AnmBank } from '../packages/thlib/src/touhou/anm.js';
-import { TouhouSpell } from '../packages/thlib/src/touhou/spell.js';
-import { DrawList } from '../packages/thlib/src/render.js';
+import { AnmBank } from '../packages/thlib/dist/touhou/anm.js';
+import { TouhouSpell } from '../packages/thlib/dist/touhou/spell.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 
 const effectData = JSON.parse(fs.readFileSync(new URL('../packages/thlib/assets/touhou-common/anm/effect.json', import.meta.url)));
 function fixture(duration = 600) {

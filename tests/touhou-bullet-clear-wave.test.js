@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TouhouBulletClearWave, TOUHOU_BULLET_CLEAR_WAVE_PRESET } from '../packages/thlib/src/touhou/bullet-clear-wave.js';
-import { TouhouBulletField } from '../packages/thlib/src/touhou/bullets.js';
-import { TouhouLaserField } from '../packages/thlib/src/touhou/lasers.js';
+import { TouhouBulletClearWave, TOUHOU_BULLET_CLEAR_WAVE_PRESET } from '../packages/thlib/dist/touhou/bullet-clear-wave.js';
+import { TouhouBulletField } from '../packages/thlib/dist/touhou/bullets.js';
+import { TouhouLaserField } from '../packages/thlib/dist/touhou/lasers.js';
 import { bulletTestBank, bulletTestStyles } from './fixtures/th20-bullet-bank.js';
 
 const bullets = () => new TouhouBulletField({ bank: bulletTestBank(), styles: bulletTestStyles() });

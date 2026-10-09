@@ -10,6 +10,8 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = $PSScriptRoot
 Push-Location $projectRoot
 try {
+    & npm run build
+    if ($LASTEXITCODE -ne 0) { throw 'TypeScript build failed. Run npm ci before building a fresh checkout.' }
     if (-not (Get-Command cmake -ErrorAction SilentlyContinue)) { throw 'CMake is required. Install CMake and a C/C++ compiler, then add CMake to PATH.' }
     $configureArgs = @('-S', '.', '-B', 'build', "-DCMAKE_BUILD_TYPE=$Configuration")
     $configureArgs += "-DTSSTG_ENABLE_V8=$(if ($QuickJSOnly) { 'OFF' } else { 'ON' })"

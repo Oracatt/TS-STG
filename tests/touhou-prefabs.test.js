@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
-import {AnmBank,SUPPORTED_ANM_OPCODES} from '../packages/thlib/src/touhou/anm.js';
-import {createTouhouResources} from '../packages/thlib/src/touhou/resources.js';
-import {createTouhouPrefabCatalog,TOUHOU_ENEMY_PRESETS,TOUHOU_EFFECT_PRESETS,TOUHOU_BULLET_PRESETS,TouhouEffectPreset} from '../packages/thlib/src/touhou/prefabs.js';
-import {TouhouEnemy} from '../packages/thlib/src/touhou/enemy.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {AnmBank,SUPPORTED_ANM_OPCODES} from '../packages/thlib/dist/touhou/anm.js';
+import {createTouhouResources} from '../packages/thlib/dist/touhou/resources.js';
+import {createTouhouPrefabCatalog,TOUHOU_ENEMY_PRESETS,TOUHOU_EFFECT_PRESETS,TOUHOU_BULLET_PRESETS,TouhouEffectPreset} from '../packages/thlib/dist/touhou/prefabs.js';
+import {TouhouEnemy} from '../packages/thlib/dist/touhou/enemy.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 const base='packages/thlib/assets/touhou-common',original='games/touhou20/assets/anm';
 const available=existsSync(`${base}/manifest.json`)&&existsSync(`${original}/enemy.json`);
 const read=file=>JSON.parse(readFileSync(file,'utf8'));

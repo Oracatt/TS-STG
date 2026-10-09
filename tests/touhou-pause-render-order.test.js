@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {AnmBank} from '../packages/thlib/src/touhou/anm-vm.js';
-import {TouhouPause} from '../packages/thlib/src/touhou/pause.js';
-import {TouhouGameOver} from '../packages/thlib/src/touhou/game-over.js';
-import {Keys} from '../packages/thlib/src/input.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {AnmBank} from '../packages/thlib/dist/touhou/anm-vm.js';
+import {TouhouPause} from '../packages/thlib/dist/touhou/pause.js';
+import {TouhouGameOver} from '../packages/thlib/dist/touhou/game-over.js';
+import {Keys} from '../packages/thlib/dist/input.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 
 const data=JSON.parse(fs.readFileSync(new URL('../packages/thlib/assets/touhou-common/anm/front.json',import.meta.url),'utf8'));
 const ticks=(menu,count)=>{for(let i=0;i<count;i++)menu.update(0);};

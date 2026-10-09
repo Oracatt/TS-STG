@@ -1,7 +1,7 @@
 import { performance } from 'node:perf_hooks';
-import { World } from '../packages/thlib/src/world.js';
-import { Bullet } from '../packages/thlib/src/bullets.js';
-import { DrawList } from '../packages/thlib/src/render.js';
+import { World } from '../packages/thlib/dist/world.js';
+import { Bullet } from '../packages/thlib/dist/bullets.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 
 const count = Number(process.argv[2] ?? 5000), frames = Number(process.argv[3] ?? 240);
 if (!Number.isInteger(count) || count < 1 || count > 100000 || !Number.isInteger(frames) || frames < 1)

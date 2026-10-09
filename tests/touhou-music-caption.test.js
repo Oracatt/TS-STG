@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync,readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {DrawList} from '../packages/thlib/src/index.js';
-import {AnmBank,TouhouMusicCaption,TOUHOU_MUSIC_CAPTION_VIEW,anmSpriteVertices} from '../packages/thlib/src/touhou/index.js';
+import {DrawList} from '../packages/thlib/dist/index.js';
+import {AnmBank,TouhouMusicCaption,TOUHOU_MUSIC_CAPTION_VIEW,anmSpriteVertices} from '../packages/thlib/dist/touhou/index.js';
 
 function textHost(){
   let next=10;const calls=[],surfaces=new Map(),unloaded=[];

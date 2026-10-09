@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { AnmBank } from '../games/touhou20/src/anm.js';
-import { DrawList } from '../packages/thlib/src/render.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 import {expandDrawCommands} from './fixtures/th20/quad.js';
 const data=JSON.parse(fs.readFileSync(new URL('../games/touhou20/assets/anm/pl00.json',import.meta.url)));
 

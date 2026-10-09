@@ -1,8 +1,8 @@
 // Native-host entry. Run directly for the default 2,000-bullet workload, or use
 // benchmark-native.mjs to set counts and also measure complete process wall time.
-import { World } from '../packages/thlib/src/world.js';
-import { Bullet } from '../packages/thlib/src/bullets.js';
-import { DrawList } from '../packages/thlib/src/render.js';
+import { World } from '../packages/thlib/dist/world.js';
+import { Bullet } from '../packages/thlib/dist/bullets.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 
 const config = globalThis.__tsstg_benchmark_config ?? {};
 const count = config.count ?? 2000;

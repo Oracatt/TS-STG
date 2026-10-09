@@ -13,8 +13,8 @@ file(WRITE "${case_root}/outside-module.js" "export const escaped = true;\n")
 if(TEST_CASE STREQUAL library-escape)
   # A selected library's relative imports must remain inside its own src root,
   # even when the escaped file would otherwise be within the game's root.
-  file(MAKE_DIRECTORY "${project}/packages/thlib/src")
-  file(WRITE "${project}/packages/thlib/src/index.js" "import '../outside-module.js';\n")
+  file(MAKE_DIRECTORY "${project}/packages/thlib/dist")
+  file(WRITE "${project}/packages/thlib/dist/index.js" "import '../outside-module.js';\n")
   file(WRITE "${project}/packages/thlib/outside-module.js" "export const escaped = true;\n")
   file(WRITE "${project}/library-escape.js" "import '@ts-stg/thlib';\n")
 else()

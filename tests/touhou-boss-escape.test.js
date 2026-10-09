@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TouhouBossEscape, TOUHOU_BOSS_ESCAPE_PRESET } from '../packages/thlib/src/touhou/boss-escape.js';
-import { f32, add, sub, mul, div } from '../packages/thlib/src/touhou/math.js';
+import { TouhouBossEscape, TOUHOU_BOSS_ESCAPE_PRESET } from '../packages/thlib/dist/touhou/boss-escape.js';
+import { f32, add, sub, mul, div } from '../packages/thlib/dist/touhou/math.js';
 
 test('source Boss escape uses float32 quadratic ease-out and leaves at frame60', () => {
   const moves = [], events = [];

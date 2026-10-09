@@ -1,4 +1,4 @@
-import { Game, Keys } from '../../packages/thlib/src/index.js';
+import { Game, Keys } from '../../packages/thlib/dist/index.js';
 import { createStage } from '../../examples/danmaku/stage.js';
 import { background, hud } from '../../examples/danmaku/art.js';
 

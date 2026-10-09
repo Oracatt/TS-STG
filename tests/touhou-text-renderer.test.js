@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {AnmBank,TouhouTextRenderer} from '../packages/thlib/src/touhou/index.js';
+import {AnmBank,TouhouTextRenderer} from '../packages/thlib/dist/touhou/index.js';
 
 test('source text keeps CP932 by default and isolates caller-selected Chinese bitmap caches',()=>{
   const calls=[],writes=[],bank=new AnmBank(JSON.parse(readFileSync(new URL('../packages/thlib/assets/touhou-common/anm/text.json',import.meta.url))),{resolveTexture:()=>1});

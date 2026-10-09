@@ -15,12 +15,12 @@ assert.deepEqual(readdirSync(sdk).sort(),topLevel.sort(),'Release payload must o
 assert.deepEqual(readdirSync(join(sdk,'packages')),['thlib']);
 assert.deepEqual(readdirSync(join(sdk,'docs')).sort(),['native-api.md','thlib-guide.md','touhou-boss-death.md','touhou-boss-defeat.md','touhou-boss-entrance.md','touhou-boss-hud.md','touhou-dialogue.md','touhou-end-feedback.md','touhou-item-drops.md','touhou-marisa-bomb-release.md','touhou-music.md','touhou-player-stage-visibility.md','touhou-prefabs.md','touhou-projectile-rules.md','touhou-reimu-bomb-release.md','touhou-rendering.md','touhou-scene-transition.md','touhou-stage-flow.md']);
 assert.deepEqual(readdirSync(join(sdk,'packages/thlib')).sort(),['LICENSE','README.md','assets','package.json','src'].sort());
-assert.ok(!existsSync(join(sdk,'packages/thlib/src/th20')));
-assert.ok(existsSync(join(sdk,'packages/thlib/src/touhou/player.js')),'SDK must contain the restored shared player');
+assert.ok(!existsSync(join(sdk,'packages/thlib/dist/th20')));
+assert.ok(existsSync(join(sdk,'packages/thlib/dist/touhou/player.js')),'SDK must contain the restored shared player');
 assert.ok(existsSync(join(sdk,'packages/thlib/assets/touhou-common/manifest.json')),'SDK must contain complete shared character/animation assets');
 const completeCommon=verifyCommonPack(join(sdk,'packages/thlib/assets/touhou-common'));
 for(const module of ['application','scene-transition','stage-clear','stage-transition','game','gameplay-compositor','render-order','render-queue','menu','title-background','stage-selection','dialogue','pause','game-over','hud','boss-hud','boss-phase-plan','boss-phase-timeline','boss-presentation','boss-entrance','boss-death','boss-defeat','boss-phase-clear','bullet-clear-wave','screen-shake','text-renderer','music','music-caption','music-fade','prefabs','bullet-collision','laser-collision','laser-cancellation','world','phase-sequence','player-profile','player-rules'])
- for(const extension of ['js','d.ts'])assert.ok(existsSync(join(sdk,`packages/thlib/src/touhou/${module}.${extension}`)),`Missing public framework ${module}.${extension}`);
+ for(const extension of ['js','d.ts'])assert.ok(existsSync(join(sdk,`packages/thlib/dist/touhou/${module}.${extension}`)),`Missing public framework ${module}.${extension}`);
 const graphics=JSON.parse(readFileSync(join(sdk,'packages/thlib/assets/reference-common/manifest.json'),'utf8'));
 assert.equal(graphics.format,'ts-stg-sprite-pack-v1');
 assert.ok(graphics.sprites['bomb.orb']&&graphics.sprites['bullet.rice.red'],'SDK must include common bullet and Bomb materials');

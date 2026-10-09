@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SpriteAtlas, SpriteClip } from '../packages/thlib/src/sprite-atlas.js';
-import { DrawList } from '../packages/thlib/src/render.js';
+import { SpriteAtlas, SpriteClip } from '../packages/thlib/dist/sprite-atlas.js';
+import { DrawList } from '../packages/thlib/dist/render.js';
 
 function pack() {
   return {

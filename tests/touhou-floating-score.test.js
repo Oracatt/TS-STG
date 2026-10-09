@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {TouhouItems,TouhouBitmapFont,TouhouFloatingScores,TouhouRenderQueue,TouhouGame,createTouhouResources,TouhouRNG} from '@ts-stg/thlib/touhou';
-import {Keys} from '../packages/thlib/src/input.js';
-import {DrawList} from '../packages/thlib/src/render.js';
+import {Keys} from '../packages/thlib/dist/input.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 
 const data=JSON.parse(fs.readFileSync(new URL('../packages/thlib/assets/touhou-common/anm/ascii_960.json',import.meta.url)));
 const font=()=>new TouhouBitmapFont(data,{loadTexture:()=>71});

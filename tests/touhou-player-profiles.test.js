@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {Keys} from '../packages/thlib/src/input.js';
-import {TouhouPlayer} from '../packages/thlib/src/touhou/player.js';
-import {TouhouItems} from '../packages/thlib/src/touhou/items.js';
-import {TouhouShot,fireTouhouPlayerWeapons} from '../packages/thlib/src/touhou/shots.js';
-import {TouhouReimuBomb,TouhouMarisaBomb} from '../packages/thlib/src/touhou/bombs.js';
-import {TOUHOU_PLAYER_PROFILES} from '../packages/thlib/src/touhou/player-profile.js';
-import {TOUHOU_PLAYER_RULES} from '../packages/thlib/src/touhou/player-rules.js';
-import {getTouhouPlayerData} from '../packages/thlib/src/touhou/player-data.js';
-import {TouhouWorld} from '../packages/thlib/src/touhou/world.js';
+import {Keys} from '../packages/thlib/dist/input.js';
+import {TouhouPlayer} from '../packages/thlib/dist/touhou/player.js';
+import {TouhouItems} from '../packages/thlib/dist/touhou/items.js';
+import {TouhouShot,fireTouhouPlayerWeapons} from '../packages/thlib/dist/touhou/shots.js';
+import {TouhouReimuBomb,TouhouMarisaBomb} from '../packages/thlib/dist/touhou/bombs.js';
+import {TOUHOU_PLAYER_PROFILES} from '../packages/thlib/dist/touhou/player-profile.js';
+import {TOUHOU_PLAYER_RULES} from '../packages/thlib/dist/touhou/player-rules.js';
+import {getTouhouPlayerData} from '../packages/thlib/dist/touhou/player-data.js';
+import {TouhouWorld} from '../packages/thlib/dist/touhou/world.js';
 
 const sht=getTouhouPlayerData(0);
 const create=options=>new TouhouPlayer({sht,...options});

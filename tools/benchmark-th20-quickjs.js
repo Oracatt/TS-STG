@@ -1,6 +1,6 @@
 // Real QuickJS/native-host benchmark of imported title assets. Rendering is
 // unchanged; wrappers measure nested phases without suppressing any commands.
-import {DrawList} from '../packages/thlib/src/render.js';
+import {DrawList} from '../packages/thlib/dist/render.js';
 import {AnmBank} from '../games/touhou20/src/anm.js';
 import {Th20BitmapFont} from '../games/touhou20/src/font.js';
 import {Th20TitleMenu} from '../games/touhou20/src/menu.js';

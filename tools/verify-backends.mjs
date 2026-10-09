@@ -23,7 +23,7 @@ mkdirSync(out,{recursive:true});mkdirSync(scratch,{recursive:true});
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex'),fileHash=file=>hash(readFileSync(file));
 const portableFiles=directory=>readdirSync(join(root,directory),{withFileTypes:true}).flatMap(e=>
   e.isDirectory()?portableFiles(`${directory}/${e.name}`):e.name.endsWith('.js')?[`${directory}/${e.name}`]:[]);
-const files=[...portableFiles('packages/thlib/src'),...portableFiles('games/rushboss/src')].sort();
+const files=[...portableFiles('packages/thlib/dist'),...portableFiles('games/rushboss/src')].sort();
 const sourceHashes=()=>Object.fromEntries(files.map(file=>[file,fileHash(join(root,file))]));
 const before=sourceHashes(),binarySha256=fileHash(exe),started=new Date().toISOString();
 const report={format:'ts-stg-backends-v1',started,scope,binary:relative(root,exe),binarySha256,
