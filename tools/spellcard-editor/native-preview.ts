@@ -47,6 +47,7 @@ export function createSpellCardPreview(host: PreviewHost,source: unknown,{silent
     for(const bullet of game.bullets.bullets)game.bullets.cancel(bullet,0);
     for(const laser of game.lasers.lasers)game.lasers.erase(laser);
     game.stopBossCombat();
+    game.setBossEffects({aura:false,distortion:false});
   }
   function buildScene(nextDocument: SpellMetadata,nextFactory: SpellFactory,nextInvincible: boolean): PreviewScene{
     if(typeof nextFactory!=='function')throw new TypeError('createSpell must be a function');
@@ -74,6 +75,7 @@ export function createSpellCardPreview(host: PreviewHost,source: unknown,{silent
       const boss=current.boss=game.spawnEnemy({script:0,x:nextDocument.boss.x,y:nextDocument.boss.y,hp:nextDocument.hp,radius:12,autoBounds:false});
       boss.prepareSpellHealth(nextDocument.hp);game.enterBoss(boss);game.setBossHud({name:'Preview Boss',remainingSpells:0});
       game.beginSpell({name:nextDocument.name,duration:nextDocument.duration,boss,id:0});
+      game.setBossEffects({aura:true,distortion:true});
       const context={boss,player:game.player,bullets:game.bullets,lasers:game.lasers,game,random:new TouhouRNG(nextDocument.seed),
         presentation:game.bossPresentation!,sound:game.context.sound,
         clear:()=>{for(const bullet of game.bullets.bullets)game.bullets.cancel(bullet,0);for(const laser of game.lasers.lasers)game.lasers.erase(laser);}};

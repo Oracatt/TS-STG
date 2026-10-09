@@ -31,6 +31,7 @@ export function createTouhouBossPresentationFixture(host, { assets = 'shared', p
     screenView: { ...TOUHOU_BOSS_SCREEN_VIEW, x: shifted ? 144 : 0 },
     distortion: { viewOffsetX: shifted ? 320 : 224 } });
   owner.enter(boss); if (!warpOnly) owner.beginSpell({ id: 1, name: '霊符「夢想封印」', duration: 1800 });
+  owner.setEffects({ aura: !warpOnly, distortion: true });
   const pixels = new Uint8Array(960 * 720 * 4);
   for (let y = 0; y < 720; y++) for (let x = 0; x < 960; x++) {
     const p = (y * 960 + x) * 4, tile = (Math.floor(x / 24) + Math.floor(y / 24)) & 1;

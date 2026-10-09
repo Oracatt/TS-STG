@@ -182,7 +182,7 @@ test('a stage may wait after HP zero and then explicitly choose visible retreat 
   let calls = 0, attacks = 0, defeats = 0, sequence;
   const f = fixture({ onBossDefeated: () => calls++, onEvent: (name, data) => events.push({ name, data }) });
   const g = f.game, boss = bossFor(g, { onUpdate: () => attacks++, onDefeat: () => defeats++, drop: [{ type: 5 }] });
-  g.beginSpell({ boss, duration: 600 });
+  g.beginSpell({ boss, duration: 600 }); g.setBossEffects({aura:true,distortion:true});
   const bullet = g.bullets.emit({ x: 100, y: 100, speed: 0, shotSound: -1 })[0];
   try {
     g.update();
@@ -192,13 +192,16 @@ test('a stage may wait after HP zero and then explicitly choose visible retreat 
     for (let frame = 0; frame < 20; frame++) g.update();
     assert.equal(calls, 1); assert.equal(attacks, attacksBefore);
     assert.equal(boss.x, 0); assert.equal(boss.y, 128);
+    const aura=g.bossPresentation.aura.slice(),warp=g.bossPresentation.distortion;
     const source = { type: 'stage-choice' };
     sequence = g.beginBossEscape(boss, { source });
     assert.ok(sequence?.alive);
-    assert.equal(g.context.boss, null);
-    assert.equal(g.bossPresentation.boss, null);
-    assert.equal(g.bossPresentation.aura.length, 0);
-    assert.equal(g.bossPresentation.distortion, null);
+    assert.equal(g.context.boss, boss);
+    assert.equal(g.bossPresentation.boss, boss);
+    assert.deepEqual(g.bossPresentation.aura, aura);
+    assert.strictEqual(g.bossPresentation.distortion, warp);
+    assert.equal(g.bossPresentation.combatActive, false);
+    assert.ok(aura.every(vm=>vm.alive));
     assert.equal(boss.alive, true); assert.equal(boss.animation.alive, true);
     for (let frame = 0; frame < 30; frame++) g.update();
     assert.equal(boss.x, -168, 'the source 60-frame easing4 reaches 75% at its midpoint');
@@ -207,6 +210,8 @@ test('a stage may wait after HP zero and then explicitly choose visible retreat 
     assert.equal(events.filter(event => event.name === 'bossescape').length, 0);
     for (let frame = 0; frame < 30; frame++) g.update();
     assert.equal(boss.alive, false); assert.equal(boss.animation.alive, false);
+    assert.ok(aura.every(vm=>!vm.alive)); assert.equal(g.bossPresentation.distortion, null);
+    assert.equal(g.context.boss, null);
     assert.equal(sequence.alive, false);
     assert.equal(boss.x, -224); assert.equal(boss.y, -80);
     const escaped = events.filter(event => event.name === 'bossescape');

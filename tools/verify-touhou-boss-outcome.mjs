@@ -46,6 +46,16 @@ for (const scene of scenes.filter(scene => !selected || scene.name === selected)
     assert.equal(current.outcomes, 1); assert.equal(current.outcomeFrame, 20);
     assert.equal(current.attacks, 20, 'The exhausted phase must stop before actor attacks tick again');
     assert.equal(current.items, 0);
+    if (scene.name === 'held' || scene.name === 'flight') {
+      assert.equal(state.presentation.auraActive, true); assert.equal(state.presentation.distortionActive, true);
+      assert.deepEqual(state.presentation.auraScripts, [99, 108]); assert.equal(state.presentation.distortion.ready, true);
+      assert.equal(current.hudHidden, true);
+    } else {
+      assert.equal(state.presentation.auraActive, false); assert.equal(state.presentation.distortionActive, false);
+      assert.deepEqual(state.presentation.auraScripts, []);
+      if (scene.name === 'finished') assert.equal(state.presentation.distortion, null);
+      else assert.equal(state.presentation.distortion?.ready ?? false, false, 'an exploded body cannot keep rendering its disabled warp');
+    }
     if (scene.name === 'exploded') {
       assert.equal(current.sequence.age, 60); assert.equal(current.sequence.burst, true);
       assert.equal(current.boss.alive, false); assert.equal(current.boss.bodyAlive, false);

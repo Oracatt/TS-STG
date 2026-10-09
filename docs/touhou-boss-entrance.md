@@ -67,14 +67,21 @@ The read-only reference is `D:/AIWorkspace/Touhou20Reconstruction`:
   over 100 frames using ECL401 mode4, and it starts a three-stream effect
   after 40 frames. The entrance preset does not hardcode those stage actions
   or any concrete Boss identity. That midboss has no dialogue wait and
-  explicitly enables its aura/warp before moving; a stage can call
-  `startCombat()` during a fly-in when reproducing such a script.
+  explicitly enables aura99 and radius128 distortion before moving. The
+  stage therefore enables those effects independently of combat activation.
+- `st01mbs.ecl.txt` and `st02mbs.ecl.txt` call
+  `EffChargePoint3(1.5707964f,-0.5235988f,8,2,8,10)`. The `halfFog` preset
+  preserves its attached scripts153/159/161, rotations `A+B`, `A`, `A-B`
+  with float32 arithmetic (approximately60/90/120 degrees), and single
+  sound54 request. Three streams produce600 particles. This is a visible
+  body with converging mist; it does not use the full-fog101-frame reveal.
 
 ## Public ownership and timing
 
 The black-fog preset starts with the body hidden. At age101,
 `revealed === true` and `ready === true`; `onReveal` fires once. The common
-aura and distortion remain inactive until the stage calls `startCombat()`.
+aura and distortion each remain inactive until explicitly enabled with
+`setEffects()`; entrance readiness does not select their timing.
 The particles continue after the body appears. With the unchanged source scripts, the last particles
 finish and `onComplete` fires at age192. `alive` means that the entrance
 still has a waiting interval or a visual tail; it must not be used as the
@@ -82,11 +89,11 @@ combat-start gate. `ready` / `presentation.entranceReady` only means the
 appearance has reached the stage-defined readiness point; it does not
 mean that dialogue has ended or an attack has started.
 
-`enter()` binds the Boss and marks its aura pending. It does not construct
-the aura until the first eligible **update after `startCombat()`**. A black
-fog entry also holds it through the body's reveal tick, so age102 is the
-earliest possible activation if the stage starts combat immediately. A
-longer dialogue delays creation correspondingly. This is significant because aura108
+`enter()` binds the Boss. `setEffects({aura:true})` requests aura creation
+on the next update; neither combat state nor the entrance's body visibility
+implicitly delays it. To reproduce the main-Boss scripts above, the stage
+enables effects only at their dialogue/combat signal. To reproduce the
+midboss, it enables them before flying in. This matters because aura108
 immediately creates child105, whose frame-zero instructions consume three
 ANM random values. Creating an invisible aura early would change every mist
 trajectory. The creation tick runs each new root's frame zero once; later
@@ -95,7 +102,11 @@ random values, so skipped frames and screenshot masks cannot change a replay.
 
 `flyIn` shows the body immediately and creates no mist or sound. Its default
 ready frame is zero. A stage may set `readyFrame` to the duration of its own
-movement. `follow` updates the mist's center if the Boss moves; it does not
+movement. `halfFog` also shows the body and is ready immediately by default,
+but starts the original three mist streams and sound54. Its `readyFrame`
+can be overridden without truncating the particle tail. The preset does not
+choose a flight duration, a delay before starting mist, or an attack time.
+`follow` updates the mist's center if the Boss moves; it does not
 move the Boss. `revealFrame`, `readyFrame`, `streams`, and the two callbacks
 allow timing and appearance variants without copying the implementation.
 
@@ -105,12 +116,13 @@ call does not overwrite that replacement, and cancellation suppresses the
 old owner's pending `onComplete`. `beginEntrance()` returns the instance it
 created, which may already be cancelled if a callback replaced it. For a
 standalone `new TouhouBossEntrance(...)`, `ready` is immediately readable,
-while zero-duration callbacks are delivered by its first `update()` at age0;
-an owning framework can explicitly call `dispatchEvents()` after assigning
-the instance. Constructors do not call user lifecycle callbacks before the
-caller can store the object.
+while callbacks are delivered by `update()`; an owning framework can call
+`dispatchEvents()` after assigning the instance to deliver an age-zero reveal
+before advancing any particles. Otherwise a live mist's first update delivers
+that reveal after advancing to age1. Constructors do not call user lifecycle
+callbacks before the caller can store the object.
 
-The owner advances its four ANM roots and only their own detached particles.
+The owner advances its selected ANM roots and only their own detached particles.
 New particles already execute frame zero at creation and are not advanced
 again that frame. They are removed from the bank's `updateDetached` and
 `drawDetached` paths, preventing a consumer's ordinary detached-effect pass
@@ -122,17 +134,25 @@ all its roots and particles. It does not release unrelated bank instances.
 An explicitly started death animation continues according to its separate
 owner. Pausing the presentation also pauses the entrance.
 
-`startCombat()` is idempotent: starting successive nonspells and spells on
-the same Boss preserves the same aura roots, distortion radius and phase.
-`beginSpell()` and `beginCharge()` are explicit attack operations and also
-start combat. `update({combatActive:true/false})` can synchronize a stage's
-own lifecycle instead. `stopCombat()` removes the aura, resets distortion
-to its initial radius and cancels pending charges; it does not award or
-fail a spell and does not cancel independent death effects. Call
-`finishSpell()` for the intended result before ending a spell encounter.
-`beginEntrance()`, attaching a different Boss, and `clearBoss()` stop the
-previous combat presentation. A paused update ignores combat-state changes
-as well as elapsed time; normal pause therefore retains existing roots.
+`presentation.setEffects({aura?:boolean,distortion?:boolean})` controls two
+independent switches, both initially false. An omitted switch retains its
+current state. `game.setBossEffects()` exposes the same contract. Repeating
+an enabled value preserves that effect's existing animation/phase; changing
+it to false releases that effect. `startCombat()` and `stopCombat()` only
+change combat state, and `beginEntrance()` does not reset either effect.
+The stage can stop attacks while preserving aura/distortion through a pause
+between phases or a retreat. `clearCharges()` explicitly cancels attack
+charge effects; `finishSpell()` explicitly settles the card.
+
+`beginBossEscape()` preserves the actor's effects while it moves. The final
+`removeBoss()` releases them; callers may explicitly disable either earlier.
+This follows the source ownership: ECL303 attaches aura to the enemy,
+ECL621 controls its mesh, and ECL512 changes its Boss registration without
+deleting either. `enemy_update.cpp` keeps both following the actor and
+`enemy_entity.cpp` releases them on destruction. `st01mbs` retains both
+through its retreat; `default.ecl.txt`'s `BossEscapeNoDead` instead explicitly
+deletes aura slots1/2 and disables distortion. These are stage choices, not
+an automatic rule attached to ending combat or starting an entrance.
 
 ## Stage integration
 
@@ -151,7 +171,10 @@ function update() {
 
 // Called by the dialogue's attack-start event, or directly by a stage
 // without dialogue. Readiness alone must never invoke this automatically.
-function beginAttacks() { presentation.startCombat(); }
+function beginAttacks() {
+  presentation.startCombat();
+  presentation.setEffects({ aura: true, distortion: true });
+}
 
 function draw(queue) {
   presentation.drawBody(queue, target => drawBossBody(target, boss));
@@ -183,11 +206,18 @@ For a visible fly-in, a stage can instead call:
 
 ```js
 presentation.enter(boss);
+presentation.setEffects({ aura: true, distortion: true });
 presentation.beginEntrance({ mode: 'flyIn', readyFrame: 100 });
 // Move boss with the stage's selected trajectory each update; the public
 // entrance neither chooses nor overwrites that movement.
 // At the stage's actual attack-start event: presentation.startCombat().
 ```
+
+To combine a60-frame visible fly-in with the three-stream mist, use
+`beginEntrance({mode:'halfFog',follow:boss,readyFrame:60})` instead. Movement
+still belongs to the stage and the mist continues naturally after frame60.
+This is a caller-selected composition; the original `st01mbs` starts the
+mist40 frames into a100-frame flight, rather than at flight frame0.
 
 The isolated regression `tests/touhou-boss-entrance.test.js` compares the
 entire emitted command stream against the unfiltered source ANM bank at
@@ -198,12 +228,18 @@ An independent full-bank oracle constructs the four source fog roots and
 only creates source99/108 at the combat signal (frame102 or frame320 after a
 longer dialogue), then compares every frame's ANM RNG, all live fog geometry,
 and aura state through140 subsequent frames. Direct attachment and fly-in
-also wait360 frames without constructing aura or advancing distortion.
+also wait360 frames without constructing aura or advancing distortion when
+the caller leaves their effect switches off.
 Additional tests
 exercise immediate and delayed callback cancellation/replacement, including
 destroying the presentation from the real black-fog age101 reveal callback.
 This is source-data equivalence, not a claim of comparison against running
 the original executable.
+
+`tests/touhou-boss-half-fog.test.js` independently checks the three original
+float32 rotations, visible body, one sound54 request,600 particle births,
+caller-defined readiness, and unfiltered source-ANM command/RNG equivalence
+through a moving center and the complete192-frame tail.
 
 `tests/touhou-boss-entrance-order.test.js` additionally pins SHA-256 for all
 seven original Boss ANM archives, verifies the source layer/registration

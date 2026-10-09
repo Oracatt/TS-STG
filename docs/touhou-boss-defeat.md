@@ -39,7 +39,7 @@ game.startBossCombat();
 
 `TouhouBossEscape` 是独立的移动 owner，不依赖资源。默认移动来自 `default.ecl.txt:22–57`：60 帧、缓动 4（outQuad）、目标 `(-224,-80)`；可自定义 `target`、`duration`、`easing`。它不发出反色、音效或任何战斗结算。
 
-`game.beginBossEscape(boss, options)` 将移动预设与身体生命周期组合：停止该身体的旧攻击、解绑 HUD/法阵/扭曲，继续绘制身体，结束时移除并发出 `bossescape` 事件。结算符卡、清弹、道具、等待时间和对话都由调用方明确安排；它不是全套道中击破脚本。重复调用返回同一个正在进行的 owner；离场前 `removeBoss()` 或销毁场景会取消移动，不再报告成功撤退。
+`game.beginBossEscape(boss, options)` 将移动预设与身体生命周期组合：停止该身体的旧攻击和战斗 HUD，保留 Boss 绑定，身体、法阵和扭曲继续随飞行更新，结束时移除并发出 `bossescape` 事件。需要提前关闭特效时，由游戏调用 `game.setBossEffects({aura:false,distortion:false})`；不要用 `setBoss(null)` 代替停战，它会同时释放焦点演出。结算符卡、清弹、道具、等待时间和对话都由调用方明确安排；它不是全套道中击破脚本。重复调用返回同一个正在进行的 owner；离场前 `removeBoss()` 或销毁场景会取消移动，不再报告成功撤退。
 
 具体原作例子：一面 `st01mbs.ecl.txt:176–211`、二面 `st02mbs.ecl.txt:196–232` 的击破分支会结算、掉落、消弹、生成 script58 碎片，停留 120 帧，再用 60 帧飞到 `(192,-32)`，不生成 script25 反色圈。它们的超时分支、公共 `BossEscapeNoDead`、练习用 `BossEscapeSpell` 的清弹/扭曲时序也不同，不能合并成一种“所有 Boss 撤退规则”。需要这类完整演出时，在关卡组合公共结算、消弹、特效与撤退接口。
 

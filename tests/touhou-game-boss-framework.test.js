@@ -33,10 +33,14 @@ test('public Game integrates entry ownership, visual metadata and protection wit
   assert.ok(hiddenCommands.some(c=>c[0]==='statefulQuad'&&c[17][3]==='reverseSubtract'),'Game actually draws the owned black mist');
   game.update();game.render();assert.equal(bodies,1);assert.equal(display.entrance.age,101);
   assert.equal(game.bossHud.name,'Reusable Boss');assert.equal(game.bossHud.remainingSpells,1);
+  assert.equal(game.bossHud.state.hidden,true,'revealing the body alone does not show combat HUD');
   assert.equal(display.distortionReady,false);game.update();assert.equal(display.distortionReady,false);
   assert.equal(game.context.damageEnemy(boss,100,'test'),0,'revealed Boss still awaits the attack signal');
-  game.startBossCombat();game.update();assert.equal(display.distortionReady,true);
-  game.enterBoss(boss);assert.equal(display.entrance.age,103,'phase attachment never restarts entry');
+  game.startBossCombat();game.update();assert.equal(display.distortionReady,false,'combat alone does not select visual effects');
+  assert.equal(game.bossHud.name,'Reusable Boss');assert.equal(game.bossHud.remainingSpells,1);
+  assert.equal(game.bossHud.state.hidden,false);
+  game.setBossEffects({aura:true,distortion:true});game.update();assert.equal(display.distortionReady,true);
+  game.enterBoss(boss);assert.equal(display.entrance.age,104,'phase attachment never restarts entry');
   game.setBoss(null);assert.deepEqual(game.bossHudState,{});assert.equal(display.entrance,null);
   const fly=game.enterBoss(boss,{entrance:{mode:'flyIn'}});assert.equal(fly.bossVisible,true);assert.equal(fly.entranceReady,true);
   const charge=fly.beginCharge();let chargeDraws=0;const drawCharge=charge.draw.bind(charge);

@@ -37,6 +37,10 @@ globalThis.__tsstg_game=createTouhouBossPresentationFixture(tsstg,${JSON.stringi
   }
   const original = JSON.parse(readFileSync(artifacts.original.snapshot)), shared = JSON.parse(readFileSync(artifacts.shared.snapshot));
   assert.deepEqual(shared, original, `${scene.name}: complete presentation state differs`);
+  assert.equal(shared.presentation.distortionActive, true, `${scene.name}: the fixture must explicitly select the warp`);
+  assert.equal(shared.presentation.distortion.ready, true, `${scene.name}: comparing two absent warps is not a rendering check`);
+  assert.equal(shared.presentation.distortion.currentRadius, Math.min(scene.profile === 'midboss' ? 128 : 160, 16 + scene.frames * 2));
+  assert.deepEqual(shared.presentation.auraScripts, scene.warpOnly ? [] : scene.profile === 'midboss' ? [99] : [99, 108]);
   const left = decodeRgbaPng(readFileSync(artifacts.original.screenshot)), right = decodeRgbaPng(readFileSync(artifacts.shared.screenshot));
   assert.equal(left.width, right.width); assert.equal(left.height, right.height);
   assert.deepEqual(right.rgba, left.rgba, `${scene.name}: original/shared pixels differ`);

@@ -2,7 +2,7 @@ import type {TouhouConvergingParticles} from './converging-particles.js';
 import type {AnmDrawList as DrawList} from './anm.js';
 import type {AnmBank,AnmInstance,AnmView} from './anm.js';
 
-export type TouhouBossEntranceMode = 'blackFog' | 'flyIn';
+export type TouhouBossEntranceMode = 'blackFog' | 'halfFog' | 'flyIn';
 
 export interface TouhouBossEntranceStream { script:number;rotation:number; }
 
@@ -18,12 +18,18 @@ export interface TouhouBossEntranceOptions {
   onComplete?:((entrance:TouhouBossEntrance)=>void)|null;
 }
 
-import { PI, mul } from './math.js';
+import { PI, f32, add, sub, mul } from './math.js';
+
+// st01mbs/st02mbs call EffChargePoint3(A, B, 8, 2, 8, 10).
+// Preserve the ECL float32 argument and arithmetic boundaries.
+const halfFogAngle = f32(1.5707964), halfFogSpread = f32(-0.5235988);
 
 /** st02bs..st07bs Boss(): two EffChargePoint2 calls, 101-frame wait,
  * then the Boss body is attached. The four streams use EffectInf1's original
  * two Hermite paths and effect149 subtractive / effect150 additive particles.
  * st01bs varies the two outer angles; callers may supply their own streams.
+ * halfFog is the three-stream EffChargePoint3 used by st01mbs/st02mbs;
+ * it keeps the body visible and leaves movement/readiness to the stage.
  * Fly-in movement belongs to the stage: it need not summon any black fog. */
 export const TOUHOU_BOSS_ENTRANCE_PRESETS: Readonly<Record<TouhouBossEntranceMode,Readonly<{
   revealFrame:number;readyFrame:number;sound:number|null;streams:readonly Readonly<TouhouBossEntranceStream>[];
@@ -34,6 +40,12 @@ export const TOUHOU_BOSS_ENTRANCE_PRESETS: Readonly<Record<TouhouBossEntranceMod
       Object.freeze({ script: 157, rotation: 0 }),
       Object.freeze({ script: 158, rotation: mul(PI, .5) }),
       Object.freeze({ script: 154, rotation: PI }),
+    ]) }),
+  halfFog: Object.freeze({ revealFrame: 0, readyFrame: 0, sound: 54,
+    streams: Object.freeze([
+      Object.freeze({ script: 153, rotation: add(halfFogAngle, halfFogSpread) }),
+      Object.freeze({ script: 159, rotation: halfFogAngle }),
+      Object.freeze({ script: 161, rotation: sub(halfFogAngle, halfFogSpread) }),
     ]) }),
   flyIn: Object.freeze({ revealFrame: 0, readyFrame: 0, sound: null, streams: Object.freeze([]) }),
 });

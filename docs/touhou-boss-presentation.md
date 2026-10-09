@@ -20,6 +20,7 @@ import { TouhouBossPresentation } from '@ts-stg/thlib/touhou';
 
 const presentation = new TouhouBossPresentation({ banks, player, font });
 presentation.enter(boss);
+presentation.setEffects({ aura: true, distortion: true });
 presentation.beginSpell({ boss, id: 1, name: '霊符「夢想封印」', duration: 1800 });
 
 // 每个模拟帧一次；paused: true 保持全部动画和随机数不变。
@@ -33,6 +34,8 @@ presentation.draw(renderQueue); // 与自机/敌机一起按原始 ANM 优先级
 默认逻辑坐标为 `x: -192..192, y: 0..448`，960×720 输出下游戏视图原点 `(336,24)`、比例 `1.5`。`view`、`screenView`、`distortion` 的视图偏移以及 `auraView` 均可配置。三维法阵保留原作 416×480 投影相机，再映射至指定游戏视口，使其中心跟随同一 Boss；不会直接固定在整个窗口中心。
 
 嵌入已有游戏时，`spellState` 可以同步应用自己的 Bonus、收取状态、经过帧数和记录，`remainingFrames` 控制计时显示。预置体不选择攻击、不改变 Boss HP、不推进应用的符卡列表。已有 `TouhouSpell` 和 `TouhouBossHud` 可以作为 `spell`、`hud` 传入，默认由外层更新；`TouhouGame` 通过这个方式避免一帧执行两次。
+
+`setEffects({aura,distortion})` 独立开关法阵和背景扭曲，省略的字段保持当前状态。`startCombat/stopCombat`、入场、开卡和收卡均不覆盖它们；重复开启保留同一动画和扭曲时钟。游戏可在飞入时开启，破卡后保留到飞离结束，或显式提前关闭。新绑定 Boss 默认关闭效果，`clearBoss/destroy` 会释放效果。
 
 `finishSpell` 保留原退出动画。前后两张符卡连续开始时，上一张标题继续执行退出动画直至原脚本自行销毁。`destroy` 只销毁预置体拥有的动画，不销毁共享 bank，也不清除自机/Bomb 的动画。
 

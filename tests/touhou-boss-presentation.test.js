@@ -26,7 +26,7 @@ test('original Boss combat profile explicitly attaches effect99/108 and ECL621 r
   assert.equal(owner.auraPending, true); assert.deepEqual(owner.aura, []);
   assert.deepEqual(owner.snapshot().distortion, { columns: 17, rows: 17, radius: 160, currentRadius: 16,
     color: 0x00f00f80, phaseX: 0, phaseY: 0, ready: false });
-  owner.startCombat(); owner.update();
+  owner.startCombat(); owner.setEffects({aura:true,distortion:true}); owner.update();
   assert.deepEqual(owner.snapshot().auraScripts, [99, 108]);
   assert.equal(owner.aura[0].renderType, 8, 'source99 uses the original projected magic-square ANM');
   assert.equal(owner.aura[0].time, 1, 'creation executes frame0 exactly once');
@@ -38,12 +38,12 @@ test('original Boss combat profile explicitly attaches effect99/108 and ECL621 r
   owner.update(); assert.strictEqual(owner.distortion, original); assert.equal(original.currentRadius, 20);
   owner.destroy();
   const mid = fixture({ profile: 'midboss' }).owner;
-  mid.startCombat(); mid.update();
+  mid.startCombat(); mid.setEffects({aura:true,distortion:true}); mid.update();
   assert.deepEqual(mid.snapshot().auraScripts, [99]); assert.equal(mid.distortion.radius, 128); assert.equal(mid.distortion.color, 0x008080ff); mid.destroy();
   assert.deepEqual(TOUHOU_BOSS_PROFILES.boss.auraScripts, [99, 108]);
 });
 
-test('appearance and attack start are independent; dialogue never advances the combat aura or warp', () => {
+test('appearance and combat alone never activate caller-owned aura or distortion', () => {
   for (const entranceMode of [null, 'flyIn']) {
     const { owner, banks } = fixture();
     if (entranceMode) owner.beginEntrance({ mode: entranceMode, readyFrame: 40 });
@@ -56,16 +56,20 @@ test('appearance and attack start are independent; dialogue never advances the c
     assert.equal(owner.hud.timerVisible, false); assert.deepEqual(owner.hud.panels[0].animations, []);
     const draw = new DrawList(); owner.drawAura(draw); owner.drawDistortion(draw, 77);
     assert.deepEqual(draw.commands, []); assert.equal(banks.effect.rng.state, random);
-    owner.startCombat(); assert.deepEqual(owner.aura, []);
+    owner.startCombat(); owner.update({ remainingFrames: 1800 });
+    assert.deepEqual(owner.aura, []); assert.equal(owner.distortionReady, false);
+    assert.equal(banks.effect.rng.state, random);
+    owner.setEffects({aura:true,distortion:true});
     owner.update({ remainingFrames: 1800 });
     assert.deepEqual(owner.aura.map(vm => vm.scriptId), [99, 108]); assert.equal(owner.distortion.currentRadius, 18);
     owner.destroy();
   }
 });
 
-test('combat start is idempotent; pause retains roots and stop/clear cancel combat without consuming death tails', () => {
+test('combat and effects remain independent through pause, explicit effect stop and owner cleanup', () => {
   const { owner, boss } = fixture();
-  owner.beginEntrance({ mode: 'flyIn', readyFrame: 100 }); owner.startCombat(); owner.update();
+  owner.beginEntrance({ mode: 'flyIn', readyFrame: 100 });
+  owner.startCombat(); owner.setEffects({aura:true,distortion:true}); owner.update();
   assert.equal(owner.entranceReady, false, 'a stage may explicitly fight during a midboss fly-in');
   assert.equal(owner.distortionReady, true);
   const aura = owner.aura.slice(), warp = owner.distortion;
@@ -73,25 +77,34 @@ test('combat start is idempotent; pause retains roots and stop/clear cancel comb
   assert.deepEqual(owner.aura, aura); assert.strictEqual(owner.distortion, warp);
   const paused = JSON.stringify(owner.snapshot()); owner.update({ paused: true, combatActive: false });
   assert.equal(JSON.stringify(owner.snapshot()), paused, 'paused update cannot stop or reset combat presentation');
-  const charge = owner.beginCharge(), death = owner.beginDeath({ delayFrames: 0 });
+  const charge = owner.beginCharge(), death = owner.beginDeath({ delayFrames: 0 }), time = aura[0].time;
   owner.update({ combatActive: false });
-  assert.equal(owner.combatActive, false); assert.ok(aura.every(vm => !vm.alive));
+  assert.equal(owner.combatActive, false); assert.ok(aura.every(vm => vm.alive));
+  assert.equal(aura[0].time, time + 1); assert.strictEqual(owner.distortion, warp);
+  assert.equal(owner.distortionReady, true, 'stopping attacks cannot erase a separately enabled warp');
   assert.equal(charge.alive, true, 'stopping combat leaves the independent charge tail alive');
   owner.clearCharges(); assert.equal(charge.alive, false); assert.equal(death.alive, true);
+  owner.setEffects({aura:false,distortion:false});
+  assert.ok(aura.every(vm => !vm.alive)); assert.deepEqual(owner.aura, []);
   assert.equal(owner.distortionReady, false); assert.equal(owner.distortion.currentRadius, 16);
   owner.update({ combatActive: true });
+  assert.deepEqual(owner.aura, []); assert.equal(owner.distortionReady, false);
+  owner.setEffects({aura:true,distortion:true}); owner.update();
   assert.equal(owner.aura[0].time, 1); assert.equal(owner.distortion.currentRadius, 18);
   assert.notStrictEqual(owner.aura[0], aura[0]);
   owner.enter({ x: 20, y: 160, hp: 900 }); owner.update();
   assert.equal(owner.combatActive, false); assert.deepEqual(owner.aura, []);
-  owner.startCombat(); owner.clearBoss();
-  assert.equal(owner.combatActive, false); assert.equal(owner.distortion, null); assert.equal(death.alive, true);
+  owner.startCombat(); owner.setEffects({aura:true,distortion:true}); owner.update();
+  const outgoing = owner.aura.slice(); owner.clearBoss();
+  assert.ok(outgoing.every(vm => !vm.alive)); assert.equal(owner.combatActive, false);
+  assert.equal(owner.distortion, null); assert.equal(death.alive, true);
   assert.throws(() => owner.startCombat(), /Attach a Boss/);
   owner.destroy(); assert.equal(death.alive, false);
 });
 
 test('spell uses unmodified source32-segment ANM double rings and source10 strip/four circle attack cohort', () => {
   const { owner } = fixture(); owner.beginSpell({ duration: 1800 });
+  assert.equal(owner.combatActive, true); assert.deepEqual(owner.aura, []); assert.equal(owner.distortionReady, false);
   const [inner, outer] = owner.spell.effect.children;
   assert.deepEqual([inner.scriptId, outer.scriptId], [4, 5]);
   assert.deepEqual([inner.U(0x444), outer.U(0x444)], [32, 32]);
@@ -103,12 +116,13 @@ test('spell uses unmodified source32-segment ANM double rings and source10 strip
   assert.deepEqual(attack.children.slice(4, 8).map(vm => vm.F(0x488)), [48, 80, 112, 144]);
   for (let frame = 0; frame < 150; frame++) owner.update();
   assert.equal(attack.alive, false); assert.equal(owner.spell.effect.alive, true);
+  assert.deepEqual(owner.aura, []); assert.equal(owner.distortionReady, false, 'a spell does not implicitly enable Boss background effects');
   owner.destroy();
 });
 
 test('full source presentation draws real texture/mesh3d commands and owns only its animation roots', () => {
   const { owner, banks } = fixture(), unrelated = banks.effect.create(14);
-  owner.beginSpell({ duration: 600 });
+  owner.beginSpell({ duration: 600 }); owner.setEffects({aura:true,distortion:true});
   for (let frame = 0; frame < 80; frame++) owner.update({ remainingFrames: 600 - frame });
   const frozen = JSON.stringify(owner.snapshot()), random = banks.effect.rng.state, queue = new TouhouRenderQueue(), draw = new DrawList();
   owner.draw(queue); queue.flush(draw); owner.drawDistortion(draw, 77);
@@ -122,7 +136,7 @@ test('full source presentation draws real texture/mesh3d commands and owns only 
 });
 
 test('projected magic-square centers follow configured playfield instead of fixed framebuffer center', () => {
-  const { owner } = fixture(); owner.startCombat();
+  const { owner } = fixture(); owner.startCombat(); owner.setEffects({aura:true,distortion:true});
   for (let frame = 0; frame < 60; frame++) owner.update();
   const vm = owner.aura[0];
   for (const view of [{ x: 336, y: 24, scale: 1.5, screenScale: 1 }, { x: 480, y: 24, scale: 1.5, screenScale: 1 }]) {
@@ -240,7 +254,7 @@ test('shared Boss presentation commands equal original unfiltered ANM on the aud
     screenView: { ...TOUHOU_BOSS_SCREEN_VIEW, x: 144 }, distortion: { viewOffsetX: 320 } }]) {
     const source = fromRoot('../games/touhou20/assets', options), shared = fromRoot('../packages/thlib/assets/touhou-common', options);
     const boss = { x: -48, y: 128, z: 0, hp: 8000, maximumHp: 8000 }; source.enter(boss); shared.enter(boss);
-    for (const owner of [source, shared]) owner.beginSpell({ id: 42, name: 'Reusable spell', duration: 1800 });
+    for (const owner of [source, shared]) { owner.beginSpell({ id: 42, name: 'Reusable spell', duration: 1800 }); owner.setEffects({aura:true,distortion:true}); }
     for (let frame = 1; frame <= 181; frame++) {
       if (frame === 150) for (const owner of [source, shared]) owner.finishSpell({ captured: true });
       if (frame === 151) for (const owner of [source, shared]) owner.beginSpell({ duration: 1800 });
@@ -262,7 +276,7 @@ test('public full Game adopts the identical Boss prefab and advances spell/HUD o
     readText: file => fs.readFileSync(new URL(file, root), 'utf8'), loadTexture: () => 11,
   });
   const game = new TouhouGame({ banks: resources.banks, font: resources.font, sht: resources.shots[0], styles: resources.styles, renderTarget: 77 });
-  const boss = game.spawnEnemy({ x: 0, y: 128, hp: 8000, script: 0 }); game.beginSpell({ boss, duration: 1800 });
+  const boss = game.spawnEnemy({ x: 0, y: 128, hp: 8000, script: 0 }); game.beginSpell({ boss, duration: 1800 }); game.setBossEffects({aura:true,distortion:true});
   assert.ok(game.bossPresentation instanceof TouhouBossPresentation);
   assert.strictEqual(game.bossPresentation.spell, game.spell); assert.strictEqual(game.bossPresentation.hud, game.bossHud);
   game.update(); assert.equal(game.spell.age.current, 1); assert.equal(game.bossPresentation.distortion.currentRadius, 18);

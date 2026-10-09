@@ -359,6 +359,7 @@ export class RushBattle {
       moving:false,vx:0,vy:0,fx:0,fy:0});
     this.playerAdapter.health.set(100000,false);this.combatStarted=false;
     this.presentation.shared?.stopCombat();
+    this.presentation.shared?.setEffects({aura:false,distortion:false});
   }
   completePhase(reason: string) {
     const p=this.phase;

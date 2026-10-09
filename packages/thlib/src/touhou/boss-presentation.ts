@@ -21,6 +21,9 @@ export interface TouhouBossChargeOptions {
 
 export interface TouhouBossDisplayState {bonus?:number;captureEligible?:boolean;elapsedFrames?:number;records?:Record<number,TouhouSpellRecord>;}
 
+/** Persistent, entity-owned effects. Omitted fields retain their current state. */
+export interface TouhouBossEffectsState {aura?:boolean;distortion?:boolean;}
+
 export interface TouhouBossPresentationState extends TouhouBossHudState {
   boss?:TouhouBossHudEnemy|null;player?:TouhouSpellPlayer;timerRate?:number;clockScale?:number;spellState?:TouhouBossDisplayState;
   /** Optional stage-owned attack-start/stop signal. Appearance readiness alone never starts combat. */
@@ -166,7 +169,7 @@ export class TouhouBossPresentation {
   declare font: TouhouBitmapFont | null;
   declare profile: Readonly<{ auraScripts: readonly number[]; radius: number; color: number; }>;
   declare profileName: 'boss'|'midboss';
-  declare auraView: AnmView | AnmView | null;
+  declare auraView: AnmView | null;
   declare distortionOptions: false | (TouhouMeshOptions & { radius?: number; currentRadius?: number; color?: number; phaseX?: number; phaseY?: number; columns?: number; rows?: number; });
 
   declare banks: TouhouBossPresentationOptions['banks'];
@@ -177,6 +180,8 @@ export class TouhouBossPresentation {
   declare auraScripts: number[];
   declare auraPending: boolean;
   declare combatActive: boolean;
+  declare auraActive: boolean;
+  declare distortionActive: boolean;
   declare charges: TouhouBossCharge[];
   declare boss: TouhouBossHudEnemy|null;
   declare frame: number;
@@ -203,7 +208,8 @@ export class TouhouBossPresentation {
     if (!TOUHOU_BOSS_PROFILES[profile]) throw new RangeError('Unknown original Boss presentation profile');
     this.profile = TOUHOU_BOSS_PROFILES[profile]; this.profileName = profile;
     this.auraScripts = (auraScripts ?? this.profile.auraScripts).slice(); this.auraView = auraView ?? createTouhouBossAuraView(view);
-    this.aura = []; this.auraPending = false; this.combatActive = false; this.charges = []; this.deaths = []; this.entrance = null; this.manageSpell = manageSpell; this.manageHud = manageHud; this.distortionOptions = distortion;
+    this.aura = []; this.auraPending = false; this.combatActive = false; this.auraActive = false; this.distortionActive = false;
+    this.charges = []; this.deaths = []; this.entrance = null; this.manageSpell = manageSpell; this.manageHud = manageHud; this.distortionOptions = distortion;
     this.hud = hud ?? new TouhouBossHud({ bank: banks.front, textBank: banks.ascii_960, font });
     const notifyHud = this.context.hudNumberInterrupt;
     this.context.hudNumberInterrupt = label => {
@@ -216,9 +222,8 @@ export class TouhouBossPresentation {
     this.distortion = null; this.distortionReady = false;
   }
   checkAlive() { if (!this.alive) throw new Error('TouhouBossPresentation has been destroyed'); }
-  /** Bind a Boss without starting combat. ECL519 waits for the active dialogue
-   * to release it before source aura99/108 and ECL621. Neither the body's reveal
-   * nor an elapsed entrance timer releases that independent dialogue gate. */
+  /** Bind a Boss without starting combat or effects. Original ECL303 aura,
+   * ECL621 mesh, appearance and Boss registration have independent lifetimes. */
   enter(boss: TouhouBossHudEnemy, { distortion = this.distortionOptions, profile = this.profileName,
     auraScripts = profile === this.profileName ? this.auraScripts : null, auraView = this.auraView }: Pick<TouhouBossPresentationOptions,'distortion'|'profile'|'auraScripts'|'auraView'> = {} as Pick<TouhouBossPresentationOptions,'distortion'|'profile'|'auraScripts'|'auraView'>): this {
     this.checkAlive();
@@ -236,6 +241,7 @@ export class TouhouBossPresentation {
     }
     if (this.boss !== boss) {
       this.stopCombat();
+      this.setEffects({ aura: false, distortion: false });
       this.clearCharges();
       this.entrance?.destroy(); this.entrance = null;
     }
@@ -245,24 +251,35 @@ export class TouhouBossPresentation {
     }
     this.boss = boss; this.context.boss = boss; return this;
   }
-  /** Stage-owned attack-start signal, equivalent to passing ECL519. Repeated
-   * calls across nonspell/spell phases retain the same aura and warp clock.
-   * Aura108 is constructed in update only, preserving the fog's RNG order. */
+  /** Stage-owned attack-start signal. It never changes persistent effects. */
   startCombat(): this {
     this.checkAlive();
     if (!this.boss) throw new Error('Attach a Boss with enter before starting combat');
     this.combatActive = true; return this;
   }
-  /** End combat presentation without awarding a capture or starting a death.
-   * An explicitly started death keeps its own lifetime; stop is not pause. */
+  /** Stop combat without removing entity-owned effects or settling a spell. */
   stopCombat(): this {
     this.checkAlive();
-    this.combatActive = false;
-    for (const vm of this.aura) vm.destroy(); this.aura.length = 0;
-    this.auraPending = !!this.boss;
-    if (this.distortionReady) this.distortion = this.distortionOptions === false ? null : new TouhouEnemyDistortion({
-      radius: this.profile.radius, color: this.profile.color, ...this.distortionOptions });
-    this.distortionReady = false; return this;
+    this.combatActive = false; return this;
+  }
+  /** ECL303 attached aura and ECL621 warp are independent of attack,
+   * spell and fog state. Repeated enables preserve the same animation clocks.
+   * Aura construction stays deferred to update to preserve source RNG order. */
+  setEffects({ aura = this.auraActive, distortion = this.distortionActive }: TouhouBossEffectsState = {}): this {
+    this.checkAlive();
+    if ((aura || distortion) && !this.boss) throw new Error('Attach a Boss with enter before enabling effects');
+    if (aura !== this.auraActive) {
+      this.auraActive = aura;
+      if (!aura) { for (const vm of this.aura) vm.destroy(); this.aura.length = 0; }
+      this.auraPending = aura;
+    }
+    if (distortion !== this.distortionActive) {
+      this.distortionActive = distortion;
+      if (!distortion && this.distortionReady) this.distortion = this.distortionOptions === false ? null : new TouhouEnemyDistortion({
+        radius: this.profile.radius, color: this.profile.color, ...this.distortionOptions });
+      this.distortionReady = false;
+    }
+    return this;
   }
   clearCharges(): this { for (const charge of this.charges) charge.destroy(); this.charges.length = 0; return this; }
   /** Start once when the stage calls for an appearance. enter/update/phase
@@ -270,13 +287,7 @@ export class TouhouBossPresentation {
   beginEntrance(options: TouhouBossEntranceOptions = {} as TouhouBossEntranceOptions): TouhouBossEntrance {
     this.checkAlive();
     if (!this.boss) throw new Error('Attach a Boss with enter before beginning its entrance');
-    this.stopCombat();
     this.entrance?.destroy();
-    if ((options.mode ?? 'blackFog') === 'blackFog') {
-      for (const vm of this.aura) vm.destroy();
-      this.aura.length = 0; this.auraPending = true;
-      this.distortionReady = false;
-    }
     const entrance = new TouhouBossEntrance(this.banks.effect, { x: this.boss.x, y: this.boss.y,
       z: this.boss.z ?? 0, follow: this.boss, sound: this.context.sound, ...options });
     this.entrance = entrance;
@@ -286,8 +297,7 @@ export class TouhouBossPresentation {
     entrance.dispatchEvents(); return entrance;
   }
   get bossVisible(): boolean { return !this.entrance?.isHidden; }
-  get bossEffectsVisible(): boolean { return this.combatActive && this.boss?.alive !== false && this.bossVisible &&
-    (this.entrance?.mode !== 'blackFog' || this.entrance.age > this.entrance.revealFrame); }
+  get bossEffectsVisible(): boolean { return !!this.boss && this.boss.alive !== false && (this.auraActive || this.distortionActive); }
   get entranceReady(): boolean { return this.entrance?.ready ?? true; }
   beginSpell(options: NonNullable<Parameters<TouhouSpell['begin']>[0]> = {}): TouhouSpell {
     this.checkAlive();
@@ -347,15 +357,16 @@ export class TouhouBossPresentation {
     if (state.spellState) this.setSpellState(state.spellState);
     if (this.manageHud) this.hud.update({ ...state, bosses: (state.bosses ?? (this.boss ? [this.boss] : [])).filter(boss => boss !== this.boss || this.bossVisible),
       player: this.player ?? undefined, spell: this.spell,
+      hidden: state.hidden || !this.combatActive,
       dialogue: state.dialogue || !this.combatActive,
       timerHidden: state.timerHidden || !this.bossVisible || !this.combatActive,
       remainingFrames: state.remainingFrames ?? (this.spell.active ? this.spell.remaining : -1),
       sound: state.sound ?? this.context.sound });
-    if (this.distortion && this.boss && this.boss.alive !== false && this.bossEffectsVisible) {
+    if (this.distortionActive && this.distortion && this.boss && this.boss.alive !== false) {
       this.distortion.update(this.boss, state.clockScale ?? 1); this.distortionReady = true;
     }
-    if (this.boss?.alive === false) this.stopCombat();
-    if (this.boss && this.bossEffectsVisible) {
+    if (this.boss?.alive === false) { this.stopCombat(); this.setEffects({ aura: false, distortion: false }); }
+    if (this.boss && this.auraActive) {
       if (this.auraPending) {
         // ECL303 uses front registration. Named spawn executes frame zero;
         // existing roots advance below only on later presentation updates.
@@ -398,7 +409,7 @@ export class TouhouBossPresentation {
     return draw;
   }
   drawAura(draw: DrawList, view: AnmView = this.auraView!): DrawList {
-    if (this.alive && this.bossEffectsVisible) for (const vm of this.aura) vm.draw(draw, view.projection ? view : createTouhouBossAuraView(view)); return draw;
+    if (this.alive && this.auraActive && this.bossEffectsVisible) for (const vm of this.aura) vm.draw(draw, view.projection ? view : createTouhouBossAuraView(view)); return draw;
   }
   drawEntrance(draw: DrawList, view: AnmView = this.view): DrawList {
     if (this.alive) this.entrance?.draw(draw, view); return draw;
@@ -413,7 +424,7 @@ export class TouhouBossPresentation {
    * For a 960×720 target use the default scale 1.5. Transparent edge vertices
    * retain the source background; no full-screen sinusoidal shader is involved. */
   drawDistortion(draw: DrawList, texture: number, { scale = 1.5, ...options }: TouhouMeshDrawing = {} as TouhouMeshDrawing): DrawList {
-    if (!this.alive || !this.distortion || !this.distortionReady || this.boss?.alive === false || !this.bossEffectsVisible) return draw;
+    if (!this.alive || !this.distortionActive || !this.distortion || !this.distortionReady || !this.bossEffectsVisible) return draw;
     draw.blendFactors('srcAlpha', 'oneMinusSrcAlpha', 'add', 'one', 'zero', 'add');
     draw.sampler(texture, 'bilinear', 'clamp', 'clamp');
     this.distortion.draw(draw, texture, { scale, ...options }); draw.blendEnd(); return draw;
@@ -426,6 +437,7 @@ export class TouhouBossPresentation {
   }
   clearBoss(updateHud: boolean = true): this {
     this.stopCombat();
+    this.setEffects({ aura: false, distortion: false });
     this.clearCharges();
     this.entrance?.destroy(); this.entrance = null;
     for (const vm of this.aura) vm.destroy(); this.aura.length = 0;
@@ -435,7 +447,8 @@ export class TouhouBossPresentation {
     return this;
   }
   snapshot(): Record<string,unknown> {
-    return { frame: this.frame, alive: this.alive, combatActive: this.combatActive, profile: this.profileName, spell: this.spell.snapshot(), hud: this.hud.snapshot(),
+    return { frame: this.frame, alive: this.alive, combatActive: this.combatActive, auraActive: this.auraActive, distortionActive: this.distortionActive,
+      profile: this.profileName, spell: this.spell.snapshot(), hud: this.hud.snapshot(),
       distortion: this.distortion ? { columns: this.distortion.mesh.columns, rows: this.distortion.mesh.rows,
         radius: this.distortion.radius, currentRadius: this.distortion.currentRadius, color: this.distortion.color,
         phaseX: this.distortion.phaseX, phaseY: this.distortion.phaseY, ready: this.distortionReady } : null,
@@ -450,7 +463,7 @@ export class TouhouBossPresentation {
     if (!this.alive) return;
     if (this.manageSpell) this.spell.destroy(); if (this.manageHud) this.hud.destroy();
     for (const vm of this.aura) vm.destroy(); this.aura.length = 0;
-    this.auraPending = false; this.combatActive = false;
+    this.auraPending = false; this.combatActive = false; this.auraActive = false; this.distortionActive = false; this.distortionReady = false;
     for (const charge of this.charges) charge.destroy(); this.charges.length = 0;
     for (const death of this.deaths) death.destroy(); this.deaths.length = 0;
     this.entrance?.destroy(); this.entrance = null;

@@ -169,9 +169,11 @@ const sequence = new TouhouPhaseSequence([
   }},
   {name:'attack', enter(game) {
     game.startBossCombat(boss);
+    game.setBossEffects({aura:true,distortion:true});
     // 设置 HP，并由本阶段 update/run 推进业务弹幕。
   }, leave:function* (game) {
     game.stopBossCombat(boss);
+    // 法阵和背景扭曲继续运行，直到显式关闭或 removeBoss。
     yield* wait(30); // 此等待由关卡指定。
   }},
   {name:'after', run:function* (game) {

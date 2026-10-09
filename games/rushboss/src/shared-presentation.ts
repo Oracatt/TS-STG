@@ -70,6 +70,7 @@ export class RushSharedPresentation {
   beginPhase(phase:RushPhase,boss?:Point):void;
   beginPhase(phase:RushPhase) {
     this.shared?.startCombat();
+    this.shared?.setEffects({aura:true,distortion:true});
     if(this.shared?.spell.active)this.shared.finishSpell({captured:false});
     if(!phase.spell)return;
     if(!this.battle.portrait){
@@ -132,10 +133,12 @@ export class RushSharedPresentation {
     // A revealed body/name alone must not start the future-card star timeline.
     if(battle.phaseIndex<0)hudState.remainingSpells=0;
     if(battle.portrait&&battle.phase?.survival)hudState.healthBars![0]!.visible=false;
+    const combatActive=battle.combatStarted&&!battle.dialogue&&!battle.finished&&!battle.gameOver;
+    this.shared?.setEffects({aura:combatActive,distortion:combatActive});
     this.shared?.update({...hudState,boss:!battle.portrait||battle.boss.alive?this.proxyBoss:null,player:this.proxyPlayer,
       name:battle.portrait?{sunny:'Sunny Milk',monstone:'Monstone',artia:'Artia'}[battle.bossKey]:undefined,
       dialogue:battle.portrait?battle.dialogue:undefined,
-      combatActive:battle.combatStarted&&!battle.dialogue&&!battle.finished&&!battle.gameOver,
+      combatActive,
       remainingFrames:battle.phase?Math.max(0,Math.round(battle.phase.time*60)-battle.phaseTimeElapsed):-1,
       timerHidden:!!battle.transition||!!battle.phaseEntry||battle.finished||!battle.combatStarted||battle.dialogue,
       timerRate:battle.combatActive?1:0});

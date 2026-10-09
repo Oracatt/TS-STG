@@ -26,7 +26,10 @@ const app=new TouhouApplication({resources,pixels:host,ownResources:true,
         boss.keepOffscreen=true;game.enterBoss(boss);
       }
       const boss=game.context.boss;
-      if(frame===90&&boss?.alive)game.beginSpell({boss,id:0,name:'共通符「星の軌跡」',duration:1800});
+      if(frame===90&&boss?.alive){
+        game.beginSpell({boss,id:0,name:'共通符「星の軌跡」',duration:1800});
+        game.setBossEffects({aura:true,distortion:true});
+      }
       if(boss?.alive&&frame>150&&frame%36===0)game.bullets.emit({x:boss.x,y:boss.y,
         type:Math.floor(frame/180)%50,color:Math.floor(frame/36)%16,
         pattern:3,count:12,rows:1,speed:1.6,angle:frame*.015,angleStep:.12});

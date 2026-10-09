@@ -46,7 +46,7 @@ test('entrance source149/150 positions, blend modes, colors and Hermite phases m
   }
 });
 
-test('presentation owns detached fog once, keeps aura/warp inactive until combat, and phase attachment never replays entry', () => {
+test('presentation owns detached fog once, keeps aura/warp inactive until explicitly enabled, and phase attachment never replays entry', () => {
   const banks = { effect: bank('effect'), front: bank('front'), ascii_960: bank('ascii_960') };
   const presentation = new TouhouBossPresentation({ banks, player: { x: 0, y: 400, bomb: null } });
   const boss = { x: 0, y: 128, hp: 2000, alive: true };
@@ -61,7 +61,7 @@ test('presentation owns detached fog once, keeps aura/warp inactive until combat
   presentation.update({ paused: true }); assert.equal(entrance.age, 60);
   for (let frame = 60; frame < 101; frame++) presentation.update();
   assert.equal(presentation.bossVisible, true); assert.equal(presentation.entranceReady, true); assert.equal(presentation.distortionReady, false);
-  presentation.startCombat(); presentation.update(); assert.equal(presentation.distortionReady, true); assert.equal(presentation.bossEffectsVisible, true);
+  presentation.startCombat(); presentation.setEffects({aura:true,distortion:true}); presentation.update(); assert.equal(presentation.distortionReady, true); assert.equal(presentation.bossEffectsVisible, true);
   presentation.enter(boss); assert.equal(presentation.entrance, entrance); assert.equal(entrance.age, 102);
   presentation.clearBoss(); assert.equal(entrance.alive, false); assert.equal(presentation.entrance, null);
   assert.equal(unrelated.alive, true); assert.equal(detached.alive, true);
@@ -82,7 +82,7 @@ test('fly-in stays visible without fog and lets a stage own movement and readine
   assert.throws(() => new TouhouBossEntrance(effect, { revealFrame: 40, readyFrame: 30 }), /integer frames/);
 });
 
-for (const combatFrame of [102, 320]) test(`presentation defers aura108 RNG until the explicit combat signal at frame${combatFrame}`, () => {
+for (const combatFrame of [102, 320]) test(`presentation defers aura108 RNG until the explicit effect signal at frame${combatFrame}`, () => {
   const source = bank('effect', true), banks = { effect: bank('effect'), front: bank('front'), ascii_960: bank('ascii_960') };
   const boss = { x: 18, y: 128, hp: 1000 }, presentation = new TouhouBossPresentation({ banks });
   presentation.enter(boss); const entrance = presentation.beginEntrance();
@@ -97,7 +97,7 @@ for (const combatFrame of [102, 320]) test(`presentation defers aura108 RNG unti
     source.update();
     if (frame === combatFrame) {
       aura = [99, 108].map(script => source.create(script, { x: boss.x, y: boss.y, front: true }));
-      presentation.startCombat();
+      presentation.startCombat(); presentation.setEffects({aura:true,distortion:true});
     }
     presentation.update();
     assert.equal(banks.effect.rng.state, source.rng.state, `entire effect bank RNG source frame${frame}`);

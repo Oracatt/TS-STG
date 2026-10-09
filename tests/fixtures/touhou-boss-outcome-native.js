@@ -39,6 +39,7 @@ export function createTouhouBossOutcomeFixture(host, { scene = 'held' } = {}) {
     else { owner.spell.capture(owner.context); owner.stopBossCombat(); }
   } });
   game.beginSpell({ boss, id: 12, name: 'Caller-owned conclusion', duration: 600 });
+  game.setBossEffects({ aura: true, distortion: true });
   const checkpoint = () => scene === 'held' ? outcomeFrame !== null && game.frame - 1 - outcomeFrame === 30
     : scene === 'flight' ? sequence?.age === 20
       : scene === 'finished' ? sequence?.escaped === true : sequence?.burst === true;
@@ -46,7 +47,7 @@ export function createTouhouBossOutcomeFixture(host, { scene = 'held' } = {}) {
     held: game.isBossHeld(boss), boss: { x: boss.x, y: boss.y, alive: boss.alive,
       bodyAlive: boss.animation.alive, script: boss.animation.scriptId, direction: boss.direction },
     minorAlive: minor.alive, bulletState: bullet.state,
-    spellActive: game.spell.active, combatActive: game.bossPresentation.combatActive,
+    spellActive: game.spell.active, combatActive: game.bossPresentation.combatActive, hudHidden: game.bossHud.state.hidden,
     sequence: sequence?.snapshot() ?? null,
     deaths: game.bossPresentation.deaths.map(death => ({ age: death.age, burst: death.burst,
       scripts: death.roots.map(vm => vm.scriptId) })), items: game.items.items.length });

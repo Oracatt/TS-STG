@@ -185,8 +185,8 @@ test('charge is independent of combat activation and per-encounter profile switc
     assert.equal(presentation.combatActive, false); assert.equal(g.isBossCombatReady(a), false);
     g.update(); assert.equal(charge.alive, true); assert.equal(presentation.aura.length, 0);
     g.stopBossCombat(a); assert.equal(charge.alive, true, 'a combat gate is not the owner of an independently requested charge');
-    g.startBossCombat(a); g.update(); assert.deepEqual(presentation.aura.map(vm => vm.scriptId), [99]);
-    g.enterBoss(b, { profile: 'boss' }); g.startBossCombat(b); g.update();
+    g.startBossCombat(a); g.setBossEffects({aura:true,distortion:true}); g.update(); assert.deepEqual(presentation.aura.map(vm => vm.scriptId), [99]);
+    g.enterBoss(b, { profile: 'boss' }); g.startBossCombat(b); g.setBossEffects({aura:true,distortion:true}); g.update();
     assert.equal(presentation.profileName, 'boss'); assert.deepEqual(presentation.aura.map(vm => vm.scriptId), [99, 108]);
     assert.equal(charge.alive, false, 'switching the displayed encounter retires the old encounter visual owner');
   } finally { f.dispose(); }

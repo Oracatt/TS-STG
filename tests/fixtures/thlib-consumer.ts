@@ -22,6 +22,12 @@ new TouhouMusicCaption({host,text:42});
 const view={x:336,y:24,scale:1.5,screenScale:1};
 const target=host.createRenderTarget(960,720);
 const bossEffects=new TouhouBossPresentation({banks:{effect:resources.createBank('effect'),front:resources.createBank('front'),ascii_960:resources.createBank('ascii_960')}});
+const sameBossEffects:TouhouBossPresentation=bossEffects.setEffects({aura:true});
+bossEffects.setEffects({distortion:false});
+// @ts-expect-error Aura selection must be boolean.
+bossEffects.setEffects({aura:'on'});
+// @ts-expect-error Combat state has its separate API.
+bossEffects.setEffects({combatActive:true});
 bossEffects.drawBody(new DeathQueue(),(target,bodyView)=>target.rect(bodyView.x??0,bodyView.y??0,32,32,0xffffffff));
 // @ts-expect-error External Boss body callbacks use numeric ANM layers.
 bossEffects.drawBody(draw,()=>{},{layer:'foreground'});
@@ -145,6 +151,10 @@ declare const configuredGame:HudConfiguredGame;
 configuredGame.enterBoss({x:0,y:128,hp:12000,maximumHp:12000},{entrance:{mode:'blackFog'}});
 configuredGame.setBossHud(phaseHud);
 configuredGame.startBossCombat();configuredGame.stopBossCombat();
+configuredGame.setBossEffects({aura:true,distortion:false});
+configuredGame.setBossEffects({distortion:true});
+// @ts-expect-error Distortion selection must be boolean.
+configuredGame.setBossEffects({distortion:1});
 configuredGame.enterBoss({x:0,y:128,hp:100,maximumHp:100},{entrance:{mode:'flyIn',readyFrame:90}});
 // @ts-expect-error Display health remains numeric, even when logical phase metadata is application-defined.
 phasePlan.hudState(0,{hp:'6000'});

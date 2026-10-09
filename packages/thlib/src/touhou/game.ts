@@ -25,7 +25,7 @@ import type {AnmBank} from './anm.js';
 import type {TouhouBitmapFont} from './font.js';
 import type {TouhouBossHudEnemy,TouhouBossHudState} from './boss-hud.js';
 import type {TouhouBossEntranceOptions} from './boss-entrance.js';
-import type {TouhouBossPresentationOptions} from './boss-presentation.js';
+import type {TouhouBossPresentationOptions,TouhouBossEffectsState} from './boss-presentation.js';
 import type {TouhouBossDefeatOptions} from './boss-defeat.js';
 import type {TouhouBossEscapeOptions} from './boss-escape.js';
 import type {TouhouEnemyOptions,TouhouEnemyContext} from './enemy.js';
@@ -274,6 +274,11 @@ export class TouhouGame {
   setBossHud(state: TouhouGameBossHudState={} as TouhouGameBossHudState): this{Object.assign(this.bossHudState,state);return this;}
   startBossCombat(boss: TouhouBossHudEnemy | null | undefined=this.context.boss): this{const entry=this.bossRegistry.get(boss);if(entry)entry.combatActive=true;if(boss===this.context.boss)this.bossPresentation?.startCombat();return this;}
   stopBossCombat(boss: TouhouBossHudEnemy | null | undefined=this.context.boss): this{const entry=this.bossRegistry.get(boss);if(entry)entry.combatActive=false;if(boss===this.context.boss)this.bossPresentation?.stopCombat();return this;}
+  /** Persistent aura and warp remain independent of combat, spells and entrance. */
+  setBossEffects(state: TouhouBossEffectsState): this{
+    if(!this.bossPresentation)throw new Error('Original Boss presentation requires the common ascii_960 ANM bank');
+    this.bossPresentation.setEffects(state);return this;
+  }
   isBossCombatReady(boss: object | null | undefined): boolean{
     const entry=this.bossRegistry.get(boss);if(!entry)return true;
     if(this.bossHolds.has(boss))return false;
@@ -333,7 +338,8 @@ export class TouhouGame {
     return true;
   }
   /** Basic silent fly-away preset. Settlement, rewards, cancellation, dialogue
-   * and any delay before starting it are deliberately separate stage actions. */
+   * and any delay before starting it are deliberately separate stage actions.
+   * Keep attached effects through flight; removeBoss cleans them at retirement. */
   beginBossEscape(enemy: TouhouEnemy=this.context.boss as TouhouEnemy,{source=null,...options}: Pick<TouhouBossEscapeOptions,'target'|'duration'|'easing'>&{source?:unknown}={}): TouhouBossEscape|null{
     if(this.destroyed||!enemy?.alive)return null;
     this.pruneBossSequences();
@@ -353,7 +359,7 @@ export class TouhouGame {
       }});
     // Construction only validates; no user callback can observe a half owner.
     this.holdBoss(enemy);this.bossEscapes.push({enemy,source,sequence});
-    if(this.context.boss===enemy)this.setBoss(null);
+    this.stopBossCombat(enemy);
     return sequence;
   }
   /** Final defeat keeps the body and card alive through the source clearing
@@ -470,7 +476,8 @@ export class TouhouGame {
     this.updateSpell();if(this.destroyed)return;this.grazeEffects.update(this.context);
     this.enemies=this.enemies.filter(enemy=>enemy.alive||enemy.effects.length);this.context.enemies=this.enemies;
     this.bossPresentation?.update({boss:this.context.boss??null,clockScale:this.context.clockScale});
-    this.bossHud?.update({...this.bossHudState,dialogue:!!this.bossHudState.dialogue||!this.bossPresentation?.combatActive,bosses:this.context.boss&&this.bossPresentation?.bossVisible!==false?[this.context.boss]:[],player:this.player,spell:this.spell,
+    this.bossHud?.update({...this.bossHudState,hidden:!!this.bossHudState.hidden||!this.bossPresentation?.combatActive,
+      dialogue:!!this.bossHudState.dialogue||!this.bossPresentation?.combatActive,bosses:this.context.boss&&this.bossPresentation?.bossVisible!==false?[this.context.boss]:[],player:this.player,spell:this.spell,
       remainingFrames:this.spell.active?this.spell.remaining:-1,sound:this.context.sound});
     this.hud.update(this.player);
     if(this.distortion){const center=typeof this.distortion.center==='function'?this.distortion.center(this):this.distortion.center;this.distortion.effect.update(center);}
