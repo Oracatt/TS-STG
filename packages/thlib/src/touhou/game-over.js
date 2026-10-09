@@ -54,7 +54,7 @@ export class TouhouGameOver {
     session.difficulty ??= 1; session.stage ??= 1; session.mode ??= 0; session.continues = clamp(session.continues ?? 0, 0, 9);
     session.credits ??= TOUHOU_INITIAL_CREDITS[session.difficulty] ?? 0; session.highScore ??= 0;
     this.buttons = new TouhouButtons(); this.buttons.update(initialMask); this.active = true; this.phase = completed ? 3 : 2;
-    this.age = 0; this.selection = 0; this.panel = null; this.panelVisible = true; this.excluded = new Set(); this.external = null; this.renderQueue = new TouhouRenderQueue();
+    this.age = 0; this.selection = 0; this.panel = null; this.panelVisible = true; this.excluded = new Set(); this.disabledChoices = new Set(); this.external = null; this.renderQueue = new TouhouRenderQueue();
     this.rank = -1; this.nameCursor = 0; this.playerName = String(savedName).slice(0, 8).padEnd(8, ' '); this.nameLength = this.playerName.trimEnd().length;
     if (this.playerName !== '        ') this.nameCursor = TOUHOU_NAME_CHARACTERS.length - 1;
     if (restart) { this.active = false; onScene?.(4, true); onExit?.(); return; }
@@ -76,17 +76,19 @@ export class TouhouGameOver {
   select(index) { for (let i = 0; i < 6; i++) { index = (index + 6) % 6; if (!this.excluded.has(index)) { this.selection = index; return; } index++; } }
   move(delta) { const old = this.selection; for (let i = 0; i < 6; i++) { this.selection = (this.selection + delta + 6) % 6; if (!this.excluded.has(this.selection)) break; } return old !== this.selection; }
   resultMenu(selection) {
-    this.panel?.destroy(); this.excluded.clear();
+    this.panel?.destroy(); this.excluded.clear(); this.disabledChoices.clear();
+    const disable=choice=>{this.excluded.add(choice);this.disabledChoices.add(choice);};
     const practice = this.completed || this.session.mode !== 0;
     this.panel = this.bank.create(practice ? 0x94 : 0x93); this.panelVisible = true;
-    if (practice) this.excluded.add(3);
+    if (practice) disable(3);
     else if (this.session.continues > 0) this.excluded.add(2);
-    if(!this.allowsContinue())this.excluded.add(0);
-    for (const [choice, callback] of [[1, this.onExit ?? this.onScene], [2, this.onReplay], [3, this.onManual], [4, this.onOptions], [5, this.onRestart ?? this.onScene]]) if (!callback) this.excluded.add(choice);
-    for (const choice of this.hiddenChoices) this.excluded.add(choice);
+    if(!this.allowsContinue())disable(0);
+    for (const [choice, callback] of [[1, this.onExit ?? this.onScene], [2, this.onReplay], [3, this.onManual], [4, this.onOptions], [5, this.onRestart ?? this.onScene]]) if (!callback) disable(choice);
+    for (const choice of this.hiddenChoices) disable(choice);
     this.select(selection ?? (practice && !this.completed ? 5 : this.excluded.has(0) ? 1 : 0));
     this.panel.interruptNow(3, true); this.panel.interrupt(this.selection + 7, true);
-    for (const choice of this.excluded) this.signalChoice(choice, 5);
+    // pause_system/menu.cpp::result_menu only excludes continued Replay.
+    for (const choice of this.disabledChoices) this.signalChoice(choice, 5);
     this.phaseTo(6); this.external = null;
   }
   rankScore() {

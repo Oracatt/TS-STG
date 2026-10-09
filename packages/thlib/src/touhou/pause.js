@@ -11,16 +11,22 @@ export class TouhouPause {
     this.hiddenChoices=hiddenTouhouMenuChoices(hiddenChoices);
     Object.assign(this,{bank,sound,onResume,onExit,onRestart,onReplay,onOptions,onManual,restart,continues,drawBackground,capture});this.capture?.capture();
     this.buttons=new TouhouButtons();this.buttons.update(initialMask);this.active=true;this.phase=0;this.age=1;this.selection=0;this.savedSelection=0;this.count=6;this.panelVisible=true;this.external=null;this.renderQueue=new TouhouRenderQueue();
-    this.excluded=new Set();for(const [choice,callback]of[[1,onExit],[2,onReplay],[3,onManual],[4,onOptions],[5,onRestart]])if(!callback)this.excluded.add(choice);
-    if(restart){this.excluded.add(2);this.excluded.add(3);}if(continues>0)this.excluded.add(2);
-    for(const choice of this.hiddenChoices)this.excluded.add(choice);
+    this.excluded=new Set();this.disabledChoices=new Set();
+    const disable=choice=>{this.excluded.add(choice);this.disabledChoices.add(choice);};
+    for(const [choice,callback]of[[1,onExit],[2,onReplay],[3,onManual],[4,onOptions],[5,onRestart]])if(!callback)disable(choice);
+    if(restart){disable(2);disable(3);}
+    // Source menu.cpp follows Replay's interrupt5 with recursive selection7,
+    // leaving its ordinary grey fallback opaque. A Continue excludes the row
+    // from navigation only; a missing callback still uses the disabled style.
+    if(continues>0)this.excluded.add(2);
+    for(const choice of this.hiddenChoices)disable(choice);
     this.panel=bank.create(restart?0x91:0x90,{secondary:true});this.panel.interrupt(3,true);this.sound?.(14);
   }
   phaseTo(phase){this.phase=phase;this.age=0;if(phase===18)this.capture?.hide();}
   child(script){const find=vm=>{for(const child of vm.children){if(child.scriptId===script)return child;const nested=find(child);if(nested)return nested;}return null;};return find(this.panel);}
   signalChoice(choice,label){for(const script of childrenByChoice[choice])this.child(script)?.interrupt(label,true);}
   selectPanel(bias=7){this.panel.interrupt(this.selection+bias,true);}
-  disableChoices(){for(const choice of this.excluded)this.signalChoice(choice,5);}
+  disableChoices(){for(const choice of this.disabledChoices)this.signalChoice(choice,5);}
   move(delta){let next=this.selection;for(let i=0;i<this.count;i++){next=(next+delta+this.count)%this.count;if(this.count===2||!this.excluded.has(next))break;}const changed=next!==this.selection;this.selection=next;return changed;}
   resume(){this.selection=0;this.panel.interrupt(1,true);this.phaseTo(18);}
   restoreMenu(){this.selection=this.savedSelection;this.count=6;this.phaseTo(6);this.selectPanel();this.disableChoices();this.panelVisible=true;this.external=null;}
