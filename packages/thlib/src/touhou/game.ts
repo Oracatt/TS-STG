@@ -476,7 +476,7 @@ export class TouhouGame {
     this.updateSpell();if(this.destroyed)return;this.grazeEffects.update(this.context);
     this.enemies=this.enemies.filter(enemy=>enemy.alive||enemy.effects.length);this.context.enemies=this.enemies;
     this.bossPresentation?.update({boss:this.context.boss??null,clockScale:this.context.clockScale});
-    this.bossHud?.update({...this.bossHudState,hidden:!!this.bossHudState.hidden||!this.bossPresentation?.combatActive,
+    this.bossHud?.update({...this.bossHudState,hidden:!!this.bossHudState.hidden||!!this.context.boss&&!this.bossPresentation?.combatActive,
       dialogue:!!this.bossHudState.dialogue||!this.bossPresentation?.combatActive,bosses:this.context.boss&&this.bossPresentation?.bossVisible!==false?[this.context.boss]:[],player:this.player,spell:this.spell,
       remainingFrames:this.spell.active?this.spell.remaining:-1,sound:this.context.sound});
     this.hud.update(this.player);

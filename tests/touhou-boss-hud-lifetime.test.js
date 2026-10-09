@@ -25,6 +25,16 @@ function assertSameHud(hud, before) {
   assert.ok(hud.stars.filter(Boolean).every(vm => vm.alive));
   assert.deepEqual(hud.retiringStars, [], 'hiding the HUD must not start removal animations for surviving cards');
 }
+function assertRetiredHud(hud, before) {
+  assert.equal(!!hud.state.hidden, false, 'an absent Boss must reach the HUD retirement path');
+  assert.equal(hud.panels[0].fraction, 0);
+  assert.ok(hud.panels[0].markers.every(value => value === 0));
+  assert.deepEqual(hud.panels[0].animations, []);
+  assert.ok(before.rings.every(vm => !vm.alive));
+  assert.equal(hud.name, ''); assert.equal(hud.nameAnimation, null);
+  assert.equal(hud.remainingSpells, 0); assert.ok(hud.stars.every(vm => vm === null));
+  assert.equal(hud.timerVisible, false); assert.equal(hud.pointer.visible, false);
+}
 
 function assertStopResume({ hud, update, stop, start, setHidden }) {
   for (let frame = 0; frame < 50; frame++) update();
@@ -56,6 +66,11 @@ test('standalone presentation hides its HUD during stopped combat without resett
   try {
     assertStopResume({ hud: owner.hud, update: () => owner.update(state), stop: () => owner.stopCombat(),
       start: () => owner.startCombat(), setHidden: hidden => { state.hidden = hidden; } });
+    owner.stopCombat(); owner.update(state);
+    const before = remember(owner.hud);
+    // Defer HUD work just as update({boss:null}) does internally: the next
+    // normal update must retire cached panels despite combat being stopped.
+    owner.clearBoss(false); owner.update(state); assertRetiredHud(owner.hud, before);
   } finally { owner.destroy(); }
 });
 
@@ -68,5 +83,8 @@ test('TouhouGame preserves the same HUD owners and shared health fraction across
     assertStopResume({ hud: game.bossHud, update: () => game.update(), stop: () => game.stopBossCombat(),
       start: () => game.startBossCombat(), setHidden: hidden => game.setBossHud({ hidden }) });
     assert.strictEqual(game.context.boss, boss); assert.strictEqual(game.bossPresentation.boss, boss);
+    game.stopBossCombat(); game.update(); const before = remember(game.bossHud);
+    game.removeBoss(boss); game.update();
+    assert.equal(game.context.boss, null); assertRetiredHud(game.bossHud, before);
   } finally { game.destroy(); resources.dispose(); }
 });

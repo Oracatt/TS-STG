@@ -357,7 +357,7 @@ export class TouhouBossPresentation {
     if (state.spellState) this.setSpellState(state.spellState);
     if (this.manageHud) this.hud.update({ ...state, bosses: (state.bosses ?? (this.boss ? [this.boss] : [])).filter(boss => boss !== this.boss || this.bossVisible),
       player: this.player ?? undefined, spell: this.spell,
-      hidden: state.hidden || !this.combatActive,
+      hidden: state.hidden || !!this.boss && !this.combatActive,
       dialogue: state.dialogue || !this.combatActive,
       timerHidden: state.timerHidden || !this.bossVisible || !this.combatActive,
       remainingFrames: state.remainingFrames ?? (this.spell.active ? this.spell.remaining : -1),
