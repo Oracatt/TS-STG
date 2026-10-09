@@ -3,6 +3,8 @@ import type {AnmBank,AnmInstance} from './anm.js';
 import type {TouhouPlayer,TouhouPlayerContext,TouhouView} from './player.js';
 import type {TouhouTimer,TouhouRNG} from './math.js';
 import type {TouhouWorld} from './world.js';
+import type {TouhouBitmapFont} from './font.js';
+import type {TouhouFloatingScores,TouhouFloatingScoreOptions} from './floating-score.js';
 export const TouhouItemType:Readonly<{POWER:1;POINT:2;LARGE_POWER:3;LIFE_FRAGMENT:4;LIFE:5;BOMB_FRAGMENT:6;BOMB:7;FULL_POWER:8;COUNTED_POINT:15;
   /** @deprecated Source15 counts toward an ordinary POINT; it is not a small automatically collected cancellation reward. Use COUNTED_POINT. */
   CANCEL_POINT:15}>;
@@ -31,8 +33,10 @@ export interface TouhouBossDropOptions extends TouhouEnemyDropOptions{
 }
 export interface TouhouItem{id:number;type:TouhouItemId;state:number;x:number;y:number;vx:number;vy:number;attractionSpeed:number;delay:number;sound:number;extra:number;timer:TouhouTimer;drawState:number;animation:AnmInstance|null;secondaryAnimation:AnmInstance|null;definition?:Readonly<TouhouItemDefinition>|null;}
 export interface TouhouItemContext extends TouhouPlayerContext{bossCollecting?:boolean;hudNotice?:(type:number,value:number)=>void;addScore?:(nominalAmount:number,item:TouhouItem)=>void;floatingScore?:(entry:{x:number;y:number;amount:number;color:number;item:TouhouItem})=>void;}
-export interface TouhouItemsOptions{player:TouhouPlayer;bank?:AnmBank|null;effectBank?:AnmBank|null;rng?:TouhouRNG|null;difficulty?:number;context?:TouhouItemContext;world?:TouhouWorld;bounds?:{x:number;y:number;width:number;height:number};definitions?:Iterable<readonly [TouhouItemId,TouhouItemDefinition]>;capacity?:number;}
-export class TouhouItems{constructor(options:TouhouItemsOptions);player:TouhouPlayer;world:TouhouWorld;items:TouhouItem[];definitions:Map<TouhouItemId,Readonly<TouhouItemDefinition>>;capacity:number;speedScale:number;spawnCounter:number;pointCounter:number;cancelPointIncrement:number;difficulty:number;attract:boolean;attractionCenter:{x:number;y:number};processed:number;
+export interface TouhouItemsOptions{player:TouhouPlayer;bank?:AnmBank|null;effectBank?:AnmBank|null;font?:TouhouBitmapFont|null;
+  /** Default public pickup presentation. False lets an existing floatingScore hook own drawing. */
+  floatingScores?:false|TouhouFloatingScoreOptions;rng?:TouhouRNG|null;difficulty?:number;context?:TouhouItemContext;world?:TouhouWorld;bounds?:{x:number;y:number;width:number;height:number};definitions?:Iterable<readonly [TouhouItemId,TouhouItemDefinition]>;capacity?:number;}
+export class TouhouItems{constructor(options:TouhouItemsOptions);player:TouhouPlayer;world:TouhouWorld;items:TouhouItem[];floatingScores:TouhouFloatingScores|null;definitions:Map<TouhouItemId,Readonly<TouhouItemDefinition>>;capacity:number;speedScale:number;spawnCounter:number;pointCounter:number;cancelPointIncrement:number;difficulty:number;attract:boolean;attractionCenter:{x:number;y:number};processed:number;
   register(type:TouhouItemId,definition:TouhouItemDefinition):this;supports(type:TouhouItemId):boolean;
   spawn(options?:TouhouItemOptions,context?:TouhouItemContext):TouhouItem|null;spawnMany(position:{x:number;y:number},count:number,type:TouhouItemId,context?:TouhouItemContext):TouhouItem[];
   /** Original ECL507–510 enemy reward scatter, with caller-authored counts and source movement/collection. */
@@ -40,5 +44,7 @@ export class TouhouItems{constructor(options:TouhouItemsOptions);player:TouhouPl
   /** Source BossItem eligibility and radius64 default; suppressed rewards consume no RNG. */
   spawnBossDrops(position:{x:number;y:number},options?:TouhouBossDropOptions,context?:TouhouItemContext):TouhouItem[];
   update(context?:TouhouItemContext):this;draw(draw:DrawList,view?:TouhouView):void;collect(item:TouhouItem,context?:TouhouItemContext):number;
+  /** Visual only; amount is the nominal display score, negative selects POWER UP. The hook remains an observation notification. */
+  floatingScore(item:TouhouItem,amount:number,color:number,context?:TouhouItemContext):void;destroy():void;
   retire(item:TouhouItem):void;addBombs(amount:number,context?:TouhouItemContext):void;addBombFragments(amount:number,context?:TouhouItemContext):void;extendLife(context?:TouhouItemContext):void;addLifeFragments(amount:number,context?:TouhouItemContext):void;snapshot():Record<string,unknown>;
 }

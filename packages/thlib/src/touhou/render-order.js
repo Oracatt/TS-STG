@@ -4,6 +4,6 @@ export const TOUHOU_LAYER_PRIORITIES = Object.freeze({0:5,1:7,2:9,3:10,4:11,5:13
 // Embedded animations are drawn by their owner, rather than an ANM layer
 // callback. Registered children/effects still use TOUHOU_LAYER_PRIORITIES.
 // Source: each owner's lifecycle/controller registrations, not update priorities.
-export const TOUHOU_OWNER_PRIORITIES = Object.freeze({stageBackground:3,stageForeground:6,itemBack:19,enemyOverlay:23,player:30,item:35,laser:39,bullet:41,graze:42,bomb:44,bossLabel:60,spellText:84});
+export const TOUHOU_OWNER_PRIORITIES = Object.freeze({stageBackground:3,stageForeground:6,itemBack:19,enemyOverlay:23,player:30,item:35,laser:39,bullet:41,graze:42,bomb:44,floatingScore:51,bossLabel:60,spellText:84});
 export function effectiveAnmLayer(layer,secondary=false){return secondary?(layer>=29&&layer<=36?layer+17:layer===26?45:47):(layer>=46&&layer<=53?layer-17:layer===45?26:layer);}
 export function anmDrawPriority(layer,secondary=false,priorities=TOUHOU_LAYER_PRIORITIES){return priorities[effectiveAnmLayer(layer,secondary)];}

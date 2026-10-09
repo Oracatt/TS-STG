@@ -2,6 +2,7 @@ import { f32, PI, add, sub, mul, div, polar, atan2, cos, sin, wrapAngle, trunc32
 import {TOUHOU_PLAYER_RULES} from './player-rules.js';
 import {resolveTouhouWorld} from './world.js';
 import {clampTouhouPointValue,touhouPointItemValue} from './point-value.js';
+import {TouhouFloatingScores} from './floating-score.js';
 
 // source_reconstruction/item_system/{spawn,frame,rewards,environment}.cpp.
 // IDs 9..13 and their magic-stone reward counters are deliberately outside this module.
@@ -24,11 +25,12 @@ const rulesFor=player=>player.rules??TOUHOU_PLAYER_RULES;
 /** Shared collectibles with recovered motion and selected point-value rules.
  * Score uses the original stored units (display score / 10). */
 export class TouhouItems {
-  constructor({ player, bank = null, effectBank = null, rng = null, difficulty = 1, context = {},world,bounds,definitions=[],capacity=512 } = {}) {
+  constructor({ player, bank = null, effectBank = null, font=null, floatingScores={}, rng = null, difficulty = 1, context = {},world,bounds,definitions=[],capacity=512 } = {}) {
     if (!player) throw new TypeError('TouhouItems requires a player');
     if(!Number.isSafeInteger(capacity)||capacity<0)throw new RangeError('Item capacity must be a nonnegative integer');
     this.capacity=capacity;
     this.player = player; this.bank = bank; this.effectBank = effectBank; this.rng = rng ?? player.rng ?? new TouhouRNG(1);
+    this.floatingScores=floatingScores===false?null:new TouhouFloatingScores({font,player,...floatingScores});
     this.world=resolveTouhouWorld({world:world??player.world,bounds:bounds??(world||player.world?undefined:player.bounds)});
     this.definitions=new Map();for(const [type,definition]of definitions)this.register(type,definition);
     this.difficulty = difficulty; this.context = context; this.items = []; this.effects = [];
@@ -145,6 +147,9 @@ export class TouhouItems {
     if (p.state === 4) { item.state = 1; item.vx = item.vy = 0; }
   }
   update(context = this.context) {
+    // SmallScoreInf's update callback25 precedes ItemInf39: newly collected
+    // entries remain at age0 until the following update, without changing items.
+    this.floatingScores?.update(context);
     const p = this.player, scale = context.clockScale ?? 1; this.processed = 0;
     const bounds = this.world.bounds;
     const outside = item => !(item.y <= bounds.y + bounds.height + 24) || !(item.x > bounds.x - 8 && item.x < bounds.x + bounds.width + 8);
@@ -183,7 +188,8 @@ export class TouhouItems {
     if (context.addScore) context.addScore(amount, item);
     else this.player.score = Math.min(999999999, (this.player.score ?? 0) + Math.trunc((amount >>> 0) / 10));
   }
-  floatingScore(item, amount, color, context) { context.floatingScore?.({ x: item.x, y: item.y, amount, color, item }); }
+  floatingScore(item, amount, color, context=this.context) { const entry={ x:item.x,y:item.y,amount,color,item };
+    this.floatingScores?.spawn(entry);context.floatingScore?.(entry); }
   addPower(amount, context) {
     const p = this.player; if (p.power >= p.maxPower) return false;
     p.power = iadd(p.power, amount);
@@ -258,7 +264,7 @@ export class TouhouItems {
     return amount;
   }
   draw(draw, view = { x: 336, y: 24, scale: 1.5, screenScale: 1 }, {effects=true}={}) {
-    if(draw.enqueuePriority){draw.enqueuePriority(35,target=>this.draw(target,view,{effects:false}));for(const effect of this.effects)effect.draw(draw,view);return draw;}
+    if(draw.enqueuePriority){draw.enqueuePriority(35,target=>this.draw(target,view,{effects:false}));for(const effect of this.effects)effect.draw(draw,view);this.floatingScores?.draw(draw,view);return draw;}
     for (const item of this.items) {
       if (!item.state || !item.animation?.alive || item.delay > 0) continue;
       item.animation.x = item.x; item.animation.y = item.y;
@@ -271,8 +277,11 @@ export class TouhouItems {
         item.drawState = 1;
       }
     }
-    if(effects)for (const effect of this.effects) effect.draw(draw, view);
+    if(effects){for (const effect of this.effects) effect.draw(draw, view);this.floatingScores?.draw(draw,view);}
   }
+  // Game/resources retain the existing bank destruction order. This new
+  // cleanup only retires the bankless presentation owned by this class.
+  destroy(){this.floatingScores?.destroy();}
   snapshot() { return { pointCounter: this.pointCounter, spawnCounter: this.spawnCounter, speedScale: this.speedScale,
     items: this.items.map(item => ({ id: item.id, type: item.type, state: item.state, x: item.x, y: item.y, vx: item.vx, vy: item.vy, attractionSpeed: item.attractionSpeed, delay: item.delay, time: item.timer.current })) }; }
 }

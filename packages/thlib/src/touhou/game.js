@@ -59,7 +59,7 @@ export class TouhouGame {
     this.enemies=[];this.bossDefeats=[];this.nextEnemyId=1;this.frame=0;this.buttons=new TouhouButtons();this.paused=false;this.pauseVisual=null;
     this.drawList=new DrawList();this.renderQueue=new TouhouRenderQueue();this.distortion=null;this.effects=[];this.stageVisible=true;
     this.compositor=new TouhouGameplayCompositor({renderTarget,compositeTarget,viewport,scale:view.scale??1.5});
-    this.items=itemsFactory?itemsFactory(this.player,banks):create('items',TouhouItems,{player:this.player,bank:banks.bullet,effectBank:banks.effect,rng,difficulty,world:this.world});
+    this.items=itemsFactory?itemsFactory(this.player,banks):create('items',TouhouItems,{player:this.player,bank:banks.bullet,effectBank:banks.effect,font,rng,difficulty,world:this.world});
     this.context={world:this.world,enemies:this.enemies,player:this.player,effectBank:banks.effect,deferEnemyContact:true,deferEnemyDamageFeedback:true,clockScale:1,timerRate:1,
       sound:(id,x)=>this.onSound?.(id,x),onEvent:(name,data)=>{if(name==='gameover')this.pendingGameOver=true;this.onEvent?.(name,data);},
       stopSound:id=>this.onStopSound?.(id),

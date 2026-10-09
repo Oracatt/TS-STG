@@ -495,3 +495,24 @@ stagePlayer.restoreStageVisibility().resetForStage();
 stagePlayer.drawStageVisibility('draw',view);
 // @ts-expect-error A stage reset preserves the existing player's persistent state.
 stagePlayer.resetForStage({power:400});
+
+// Public pickup visuals borrow the existing ASCII atlas and retain simulation.
+import {TouhouFloatingScores as RootFloatingScores} from '@ts-stg/thlib';
+import {TouhouFloatingScores,TouhouItems as PickupItems} from '@ts-stg/thlib/touhou';
+import {TouhouFloatingScores as SubpathFloatingScores} from '@ts-stg/thlib/touhou/floating-score';
+import type {TouhouFloatingScoreOptions,TouhouFloatingScoreEntry} from '@ts-stg/thlib/touhou/floating-score';
+const floatingScoresRoot:typeof TouhouFloatingScores=RootFloatingScores;
+const floatingScoresSubpath:typeof TouhouFloatingScores=SubpathFloatingScores;
+const pickupOptions:TouhouFloatingScoreOptions={font:resources.font??null,player:{x:0,y:400},capacity:10,lifetime:60,initialSpeed:1,drag:.95,scale:1,drawPriority:51};
+const pickupScores=new SubpathFloatingScores(pickupOptions);
+const pickupEntry:TouhouFloatingScoreEntry|null=pickupScores.spawn({x:0,y:400,amount:10000,color:0xffffff00});
+pickupScores.update({clockScale:1,timerRate:1}).draw(draw,view);pickupScores.clear().destroy();
+const sharedPickupItems=new PickupItems({player:collisionPlayer,font:resources.font,floatingScores:{scale:1.25}});
+new PickupItems({player:collisionPlayer,floatingScores:false});
+const ownedPickupScores:TouhouFloatingScores|null=sharedPickupItems.floatingScores;
+// @ts-expect-error Nominal pickup values remain numbers, not system-font text.
+pickupScores.spawn({x:0,y:400,amount:'10000'});
+// @ts-expect-error Floating score positions are numeric world coordinates.
+new TouhouFloatingScores({player:{x:'0',y:400}});
+// @ts-expect-error The opt-out is false, not an arbitrary rendering callback.
+new PickupItems({player:collisionPlayer,floatingScores:()=>{}});

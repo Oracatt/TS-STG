@@ -17,6 +17,7 @@ export * from './bombs.js';
 export * from './short-line.js';
 export * from './player.js';
 export * from './items.js';
+export * from './floating-score.js';
 export * from './enemy.js';
 export * from './distortion.js';
 export * from './font.js';
