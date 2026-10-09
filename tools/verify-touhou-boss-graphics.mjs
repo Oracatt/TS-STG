@@ -43,7 +43,24 @@ globalThis.__tsstg_game=createTouhouBossPresentationFixture(tsstg,${JSON.stringi
   assert.deepEqual(shared.presentation.auraScripts, scene.warpOnly ? [] : scene.profile === 'midboss' ? [99] : [99, 108]);
   const left = decodeRgbaPng(readFileSync(artifacts.original.screenshot)), right = decodeRgbaPng(readFileSync(artifacts.shared.screenshot));
   assert.equal(left.width, right.width); assert.equal(left.height, right.height);
-  assert.deepEqual(right.rgba, left.rgba, `${scene.name}: original/shared pixels differ`);
+  let changedPixels = 0, maximumChannelDifference = 0;
+  const bounds = { left: left.width, top: left.height, right: -1, bottom: -1 };
+  for (let offset = 0; offset < left.rgba.length; offset += 4) {
+    let changed = false;
+    for (let channel = 0; channel < 4; channel++) {
+      const difference = Math.abs(right.rgba[offset + channel] - left.rgba[offset + channel]);
+      changed ||= difference !== 0; maximumChannelDifference = Math.max(maximumChannelDifference, difference);
+    }
+    if (!changed) continue;
+    changedPixels++; const pixel = offset / 4, x = pixel % left.width, y = Math.floor(pixel / left.width);
+    bounds.left = Math.min(bounds.left, x); bounds.top = Math.min(bounds.top, y);
+    bounds.right = Math.max(bounds.right, x); bounds.bottom = Math.max(bounds.bottom, y);
+  }
+  // A Buffer assertion formats millions of channels on failure and can exhaust
+  // the verifier's memory before reporting the actual rendering difference.
+  const pixelComparison = { changedPixels, maximumChannelDifference, bounds: changedPixels ? bounds : null };
+  writeFileSync(join(folder, `${scene.name}-comparison.json`), JSON.stringify(pixelComparison, null, 2) + '\n');
+  assert.equal(changedPixels, 0, `${scene.name}: original/shared pixels differ: ${JSON.stringify(pixelComparison)}`);
   results.push({ ...scene, completeStateIdentical: true, changedPixels: 0, artifacts }); console.log(`${scene.name}: original/shared RGBA and complete state identical`);
 }
 writeFileSync(join(folder, 'report.json'), JSON.stringify({ format: 'ts-stg-touhou-boss-graphics-v1', passed: true,
