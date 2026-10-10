@@ -1,4 +1,6 @@
 import type { ReplayData, StorageAdapter } from './api-types.js';
+import { Keys } from './input.js';
+const INPUT_MASK = Object.values(Keys).reduce<number>((mask, key) => mask | key, 0);
 /** Stable integer hash for deterministic replay checkpoints. */
 export function stateHash(value: unknown): string {
   const canonical = (item: unknown): string => {
@@ -53,7 +55,7 @@ export class ReplayPlayer {
       throw new Error('Unsupported TS-STG replay');
     let total = 0;
     for (const run of data.runs) {
-      if (!Array.isArray(run) || run.length !== 2 || !Number.isInteger(run[0]) || run[0] < 0 || run[0] > 1023 ||
+      if (!Array.isArray(run) || run.length !== 2 || !Number.isInteger(run[0]) || run[0] < 0 || run[0] > INPUT_MASK ||
         !Number.isInteger(run[1]) || run[1] <= 0) throw new Error('Invalid replay input run');
       total += run[1];
       if (!Number.isSafeInteger(total) || total > 100000000) throw new Error('Replay exceeds frame limit');

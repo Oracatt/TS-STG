@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
                     "       [--input mask] [--snapshot path.json] [--screenshot path.png]\n"
                     "       [--profile path.json] [--profile-warmup N] [--benchmark]\n"
                     "       [--frame-stream local-pipe] (Windows hidden RGBA presentation)\n"
-                    "Arrows: move  Z: shoot/confirm  X: bomb/cancel  Shift: focus  Esc: pause\n"
+                    "Arrows: move  Z: shoot/confirm  X: bomb/cancel  Shift: focus  C: special  Esc: pause\n"
                     "Headless defaults to one update. Explicit --input overrides keyboard.\n";
 #ifdef TSSTG_HAS_V8
                 std::cout << "Backends: V8 (JIT, auto default), QuickJS-NG.\n";
@@ -53,7 +53,7 @@ int main(int argc, char** argv) {
             else if (arg == "--frames") options.frames = parseUnsigned(value(), arg);
             else if (arg == "--input") {
                 auto mask = parseUnsigned(value(), arg);
-                if (mask > 1023) throw std::runtime_error("--input mask must be between 0 and 1023");
+                if (mask > 2047) throw std::runtime_error("--input mask must be between 0 and 2047");
                 options.input = static_cast<std::uint32_t>(mask);
             }
             else if (arg == "--snapshot") options.snapshot = std::filesystem::u8path(value());

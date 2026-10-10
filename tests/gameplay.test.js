@@ -178,6 +178,16 @@ test('malformed replays are rejected and changed checkpoints detect desynchroniz
   assert.equal(stateHash({ b: 2, a: 1 }), stateHash({ a: 1, b: 2 }));
 });
 
+test('the C key is the public SPECIAL bit and replays keep it', () => {
+  assert.equal(Keys.SPECIAL, 1024);
+  const input = new Input().update(Keys.SPECIAL | Keys.SHOOT);
+  assert.equal(input.pressed(Keys.SPECIAL), true); assert.equal(input.down(Keys.BOMB), false);
+  const recorder = new ReplayRecorder(); recorder.record(Keys.SPECIAL | Keys.SHOOT); recorder.record(Keys.SPECIAL);
+  const playback = new ReplayPlayer(recorder.toJSON());
+  assert.deepEqual([playback.next(), playback.next()], [Keys.SPECIAL | Keys.SHOOT, Keys.SPECIAL]);
+  assert.throws(() => new ReplayPlayer({ ...recorder.toJSON(), runs: [[Keys.SPECIAL << 1, 2]] }), /input run/);
+});
+
 test('storage adapters round-trip settings and menu actions are customizable', () => {
   const data = new Map();
   const store = new SaveStore({ readText: name => data.get(name), writeText: (name, value) => data.set(name, value) });

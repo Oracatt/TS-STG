@@ -22,7 +22,7 @@ npm ci
 
 Windows x64 构建同时包含 V8 JIT 和 QuickJS。默认 `auto` 选择 V8；可在启动参数中使用 `--backend quickjs` 或 `--backend v8` 对照同一应用。只构建解释器版本：`.\build.ps1 -QuickJSOnly`。不需要安装 Node.js 运行游戏；V8 已静态链接，thlib 的游戏规则和素材不随后端改变。双后端检查：`npm run test:backends`，说明见 [后端验证](docs/backend-verification.md)。
 
-工作区的 `Play.cmd` 和 `run.ps1` 显式选择通用示例，无需原作资源。原生程序无参数启动则读取使用方项目的 `main.js`，不依赖任何 Demo。方向键移动/选择，Z 射击/确认，X Bomb/返回，Shift 低速，Esc 暂停，Enter 确认。
+工作区的 `Play.cmd` 和 `run.ps1` 显式选择通用示例，无需原作资源。原生程序无参数启动则读取使用方项目的 `main.js`，不依赖任何 Demo。方向键移动/选择，Z 射击/确认，X Bomb/返回，Shift 低速，C 特殊（`Keys.SPECIAL`，由游戏自行定义用途），Esc 暂停，Enter 确认。
 
 ## TypeScript 符卡预览
 

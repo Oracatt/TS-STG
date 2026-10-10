@@ -206,7 +206,7 @@ if(bridge){
   const canvas=$('native-frame'),context=canvas.getContext('2d',{alpha:false});
   bridge.preview.onFrame(({width,height,pixels,id})=>{if(canvas.width!==width||canvas.height!==height){canvas.width=width;canvas.height=height;}
     context!.putImageData(new ImageData(new Uint8ClampedArray(pixels),width,height),0,0);canvas.dataset.frame=String(id);$('preview-placeholder').hidden=true;});
-  const keys=new Set<keyof typeof masks>(),masks={ArrowLeft:1,ArrowRight:2,ArrowUp:4,ArrowDown:8,KeyZ:16|256,KeyX:32|512,ShiftLeft:64,ShiftRight:64,Escape:128,Enter:256};let input=0;
+  const keys=new Set<keyof typeof masks>(),masks={ArrowLeft:1,ArrowRight:2,ArrowUp:4,ArrowDown:8,KeyZ:16|256,KeyX:32|512,ShiftLeft:64,ShiftRight:64,Escape:128,Enter:256,KeyC:1024};let input=0;
   function sendInput(){const mask=[...keys].reduce((result,key)=>result|masks[key],0);if(mask!==input){input=mask;bridge!.preview.input(mask).catch(error=>notice(`输入失败：${(error as Error).message}`));}}
   canvas.addEventListener('pointerdown',()=>canvas.focus());
   for(const type of ['keydown','keyup'] as const)canvas.addEventListener(type,event=>{if(!(event.code in masks))return;

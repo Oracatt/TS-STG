@@ -179,7 +179,7 @@ $launchInstructions
 Node.js is not needed by the native runtime.
 Default JavaScript backend: $defaultBackend. Use --backend quickjs or --backend v8 when that backend was compiled in.
 Entry: $entry
-Arrow keys: move/select; Z: shoot/confirm; X: bomb/back; Shift: focus; Esc: pause.
+Arrow keys: move/select; Z: shoot/confirm; X: bomb/back; Shift: focus; C: special; Esc: pause.
 
 $resourceNotice
 

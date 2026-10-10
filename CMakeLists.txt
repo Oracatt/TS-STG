@@ -157,6 +157,11 @@ if(BUILD_TESTING)
   add_script_test(NAME native.host-smoke COMMAND ts-stg native/tests/smoke.js
     --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 4 --input 16
     --snapshot ${CMAKE_CURRENT_BINARY_DIR}/native-smoke.json)
+  add_script_test(NAME native.input-special COMMAND ts-stg native/tests/input-special.js
+    --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 2 --input 1040)
+  add_test(NAME native.reject-input-range COMMAND ts-stg native/tests/input-special.js
+    --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 1 --input 2048)
+  set_tests_properties(native.reject-input-range PROPERTIES PASS_REGULAR_EXPRESSION "between 0 and 2047" TIMEOUT 10)
   add_script_test(NAME native.default-entry COMMAND ts-stg
     --root ${CMAKE_CURRENT_SOURCE_DIR}/native/tests/default-project --headless --frames 2
     --snapshot ${CMAKE_CURRENT_BINARY_DIR}/native-default-entry.json)

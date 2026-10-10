@@ -182,7 +182,7 @@ async function start(){
   });
   handle('preview:status',readStatus);
   handle('preview:input',async mask=>{
-    if(!Number.isInteger(mask)||mask<0||mask>1023)throw Error('Invalid input mask');
+    if(!Number.isInteger(mask)||mask<0||mask>2047)throw Error('Invalid input mask');
     if(state.input!==mask){state.input=mask;state.revision++;await publish();}return{accepted:true};
   });
   const draftDirectory=path.join(root,'userdata/spellcard-editor',selfTest?session.split('/')[1]:'');

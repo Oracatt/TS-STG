@@ -1,7 +1,7 @@
 
-export const Keys: Readonly<{ LEFT: 1; RIGHT: 2; UP: 4; DOWN: 8; SHOOT: 16; BOMB: 32; FOCUS: 64; PAUSE: 128; CONFIRM: 256; CANCEL: 512 }> = Object.freeze({
+export const Keys: Readonly<{ LEFT: 1; RIGHT: 2; UP: 4; DOWN: 8; SHOOT: 16; BOMB: 32; FOCUS: 64; PAUSE: 128; CONFIRM: 256; CANCEL: 512; SPECIAL: 1024 }> = Object.freeze({
   LEFT: 1, RIGHT: 2, UP: 4, DOWN: 8, SHOOT: 16, BOMB: 32,
-  FOCUS: 64, PAUSE: 128, CONFIRM: 256, CANCEL: 512,
+  FOCUS: 64, PAUSE: 128, CONFIRM: 256, CANCEL: 512, SPECIAL: 1024,
 });
 
 export class Input {
