@@ -1,7 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Debug','Release','RelWithDebInfo')][string]$Configuration = 'Release',
-    [switch]$WithReferenceAssets
+    [ValidateSet('Debug','Release','RelWithDebInfo')][string]$Configuration = 'Release'
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = [IO.Path]::GetFullPath($PSScriptRoot)
@@ -9,17 +8,13 @@ Push-Location $projectRoot
 try {
     & npm run build:thlib
     if ($LASTEXITCODE -ne 0) { throw 'TypeScript build failed; no package was created.' }
-    if ($WithReferenceAssets) {
-        & npm run build:games
-        if ($LASTEXITCODE -ne 0) { throw 'Demo TypeScript build failed; no package was created.' }
-    }
 } finally { Pop-Location }
 $binary = Join-Path $projectRoot "build/$Configuration/ts-stg.exe"
 if (-not (Test-Path -LiteralPath $binary)) { $binary = Join-Path $projectRoot 'build/ts-stg.exe' }
 if (-not (Test-Path -LiteralPath $binary)) { throw 'Build the engine with ./build.ps1 first.' }
 $distributionRoot = [IO.Path]::GetFullPath((Join-Path $projectRoot 'dist'))
-$packageName = if ($WithReferenceAssets) { 'TS-STG-local' } else { 'TS-STG' }
-$entry = if ($WithReferenceAssets) { 'games/touhou20/main.js' } else { 'main.js' }
+$packageName = 'TS-STG'
+$entry = 'main.js'
 $destination = [IO.Path]::GetFullPath((Join-Path $distributionRoot $packageName))
 
 function Assert-DistributionPath([string]$Path) {
@@ -82,27 +77,16 @@ Copy-Item -LiteralPath (Join-Path $projectRoot 'docs/typescript.md') -Destinatio
 foreach ($document in @('native-api.md','thlib-guide.md','touhou-prefabs.md','touhou-scene-transition.md','touhou-stage-flow.md','touhou-dialogue.md','touhou-rendering.md','touhou-end-feedback.md','touhou-boss-death.md','touhou-boss-defeat.md','touhou-boss-entrance.md','touhou-boss-hud.md','touhou-item-drops.md','touhou-projectile-rules.md','touhou-marisa-bomb-release.md','touhou-reimu-bomb-release.md','touhou-music.md','touhou-player-stage-visibility.md')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot "docs/$document") -Destination (Join-Path $staging 'docs')
 }
-$readmeSource = if ($WithReferenceAssets) { 'docs/private-demo.md' } else { 'docs/engine-sdk.md' }
+$readmeSource = 'docs/engine-sdk.md'
 Copy-Item -LiteralPath (Join-Path $projectRoot $readmeSource) -Destination (Join-Path $staging 'README.md')
 foreach ($name in @('LICENSE', 'THIRD_PARTY.md')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot $name) -Destination $staging
 }
 
-if ($WithReferenceAssets) {
-    $referenceAssets = Join-Path $projectRoot 'games/touhou20/assets'
-    foreach ($required in @('manifest.json', 'bullet-styles.json', 'anm/bullet.json', 'anm/title.json', 'audio/manifest.json', 'shots/pl00.json', 'shots/pl01.json')) {
-        if (-not (Test-Path -LiteralPath (Join-Path $referenceAssets $required))) { throw "Missing local reference asset: $required. Run ./import-th20.ps1 first." }
-    }
-    New-Item -ItemType Directory -Path (Join-Path $staging 'games') | Out-Null
-    Copy-OwnedTree (Join-Path $projectRoot 'games/touhou20') (Join-Path $staging 'games')
-}
-
 # Release scope is a strict allowlist: engine, thlib, API documentation and licenses.
 # Demo programs, assets, importers and regression fixtures never enter the SDK.
-if (-not $WithReferenceAssets) {
-    foreach ($excluded in @('games', 'examples', 'tests', 'tools', 'assets')) {
-        if (Test-Path -LiteralPath (Join-Path $staging $excluded)) { throw "SDK unexpectedly contains $excluded" }
-    }
+foreach ($excluded in @('games', 'examples', 'tests', 'tools', 'assets')) {
+    if (Test-Path -LiteralPath (Join-Path $staging $excluded)) { throw "SDK unexpectedly contains $excluded" }
 }
 
 $noticeDirectory = Join-Path $staging 'licenses'
@@ -176,7 +160,7 @@ $launcher = @'
 cd /d "%~dp0"
 ts-stg.exe __ENTRY__ --root "%~dp0." %*
 '@
-$launcherName = if ($WithReferenceAssets) { 'Play.cmd' } else { 'Run.cmd' }
+$launcherName = 'Run.cmd'
 $launcher.Replace('__ENTRY__', $entry) | Set-Content -LiteralPath (Join-Path $staging $launcherName) -Encoding ascii
 $runScript = @'
 [CmdletBinding(PositionalBinding = $false)]
@@ -186,12 +170,8 @@ $ErrorActionPreference = 'Stop'
 if ($LASTEXITCODE -ne 0) { throw "TS-STG exited with code $LASTEXITCODE" }
 '@
 $runScript.Replace('__ENTRY__', $entry) | Set-Content -LiteralPath (Join-Path $staging 'run.ps1') -Encoding utf8
-$resourceNotice = if ($WithReferenceAssets) {
-    'LOCAL PRIVATE COPY: contains the user''s imported Touhou resources. Do not publish or redistribute this directory. The MIT license covers TS-STG code only, not these original graphics, music or game data.'
-} else {
-    'ENGINE SDK: contains only the native engine, portable thlib, common assets, API documentation and licenses. No demo games or title-specific resources are included; shared visual packs retain their own notices. Add your own main.js or pass an explicit application entry and project root.'
-}
-$launchInstructions = if ($WithReferenceAssets) { 'Double-click Play.cmd to run the private local reference demo.' } else { 'Create main.js in this directory, then run Run.cmd; or use ts-stg.exe main.js --root C:\Path\To\YourGame with thlib installed in that project.' }
+$resourceNotice = 'ENGINE SDK: contains only the native engine, portable thlib, common assets, API documentation and licenses. No demo games or title-specific resources are included; shared visual packs retain their own notices. Add your own main.js or pass an explicit application entry and project root.'
+$launchInstructions = 'Create main.js in this directory, then run Run.cmd; or use ts-stg.exe main.js --root C:\Path\To\YourGame with thlib installed in that project.'
 @"
 TS-STG 0.1.0 - Windows x64
 
@@ -212,8 +192,8 @@ Repackaging creates a fresh output. Previous outputs are preserved beside it as
 .$packageName.previous.<unique-id>, including any saves and user changes.
 "@ | Set-Content -LiteralPath (Join-Path $staging 'START.txt') -Encoding utf8
 $metadata = @{ format = 'ts-stg-local-package-v2'; version = '0.1.0'; entry = $entry;
-    kind = $(if ($WithReferenceAssets) { 'private-reference-demo' } else { 'engine-sdk' });
-    referenceAssets = [bool]$WithReferenceAssets; configuration = $Configuration;
+    kind = 'engine-sdk';
+    referenceAssets = $false; configuration = $Configuration;
     defaultBackend = $defaultBackend; runtimes = @($runtimes);
     createdUtc = [DateTime]::UtcNow.ToString('o'); binarySha256 = (Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash.ToLower();
     commonResourceCounts = $commonManifest.counts } |

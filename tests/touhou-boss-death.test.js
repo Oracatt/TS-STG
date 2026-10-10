@@ -8,6 +8,7 @@ import { AnmBank, TouhouBossDeath, TouhouBossPresentation, TouhouScreenShake,
 
 const bank = (name, source = false) => new AnmBank(JSON.parse(fs.readFileSync(new URL(
   `../${source ? 'games/touhou20/assets' : 'packages/thlib/assets/touhou-common'}/anm/${name}.json`, import.meta.url))), { loadTexture: () => 11 });
+const hasReference = fs.existsSync(new URL('../games/touhou20/assets/anm/effect.json', import.meta.url)); // private local reference assets, absent in a clean checkout
 const all = roots => roots.flatMap(vm => [vm, ...all(vm.children)]);
 const render = roots => { const draw = new DrawList(), queue = new TouhouRenderQueue(); for (const root of roots) root.draw(queue, { x: 336, y: 24, scale: 1.5 }); queue.flush(draw); return draw.commands; };
 
@@ -50,7 +51,7 @@ test('Boss inversion uses the identical child preset as player death while ordin
   assert.deepEqual(at.get(25), [26, 30, 28, 29, 27, 26]); assert.equal(at.get(74).length, 6); assert.deepEqual(at.get(75), []);
 });
 
-test('shared death draws the exact unfiltered effect25/57 command stream at every key ANM birth and finish', () => {
+test('shared death draws the exact unfiltered effect25/57 command stream at every key ANM birth and finish', { skip: !hasReference }, () => {
   const source = bank('effect', true), shared = bank('effect'), roots = [25, 57].map(script => source.create(script, { x: -40, y: 120, front: true }));
   const death = new TouhouBossDeath(shared, { x: -40, y: 120, delayFrames: 0 });
   for (let frame = 0; frame <= 193; frame++) {

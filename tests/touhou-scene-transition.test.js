@@ -5,7 +5,7 @@ import {DrawList,Keys} from '@ts-stg/thlib';
 import {AnmBank,TouhouApplication,TouhouSceneTransition,TouhouStageSelect} from '@ts-stg/thlib/touhou';
 
 const common='packages/thlib/assets/touhou-common/anm/',reference='games/touhou20/assets/anm/';
-const available=fs.existsSync(`${common}screenswitch.json`);
+const available=fs.existsSync(`${common}screenswitch.json`)&&fs.existsSync(`${reference}screenswitch.json`); // reference = private local assets
 const read=(name,prefix=common)=>JSON.parse(fs.readFileSync(`${prefix}${name}.json`,'utf8'));
 const makeBank=(name,prefix=common)=>new AnmBank(read(name,prefix),{loadTexture:()=>1});
 const tick=(object,count)=>{for(let i=0;i<count;i++)object.update();};

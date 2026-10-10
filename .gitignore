@@ -6,8 +6,6 @@ node_modules/
 /packages/thlib/dist/
 /examples/**/*.js
 /examples/**/*.js.map
-/games/**/*.js
-/games/**/*.js.map
 /tools/spellcard-editor/*.js
 /tools/spellcard-editor/*.js.map
 /tools/spellcard-editor/*.mjs
@@ -30,10 +28,6 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.template
-
-# Demo-specific media stays local. Common thlib assets are versioned with the library.
-/games/touhou20/assets/
-/games/rushboss/assets/
 
 # Generated verification output is reproducible. Keep the authored capture notes.
 /reports/**

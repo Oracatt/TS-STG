@@ -7,6 +7,7 @@ import { AnmBank, TouhouBossEntrance, TouhouBossPresentation, TouhouRenderQueue,
 
 const bank = (name, source = false) => new AnmBank(JSON.parse(fs.readFileSync(new URL(
   `../${source ? 'games/touhou20/assets' : 'packages/thlib/assets/touhou-common'}/anm/${name}.json`, import.meta.url))), { loadTexture: () => 11 });
+const hasReference = fs.existsSync(new URL('../games/touhou20/assets/anm/effect.json', import.meta.url)); // private local reference assets, absent in a clean checkout
 const render = owner => {
   const draw = new DrawList(), queue = new TouhouRenderQueue();
   owner.draw(queue, { x: 336, y: 24, scale: 1.5, screenScale: 1 }); queue.flush(draw);
@@ -60,7 +61,7 @@ test('halfFog readiness does not truncate its 600-particle source tail or move t
   entrance.update(); assert.deepEqual(completed, [192]);
 });
 
-test('halfFog matches the unfiltered original ANM while following a moving actor through its full tail', () => {
+test('halfFog matches the unfiltered original ANM while following a moving actor through its full tail', { skip: !hasReference }, () => {
   const source = bank('effect', true), common = bank('effect'), boss = { x: -224, y: 64 };
   const sourceRoots = sourceStreams.map(stream => source.create(stream.script,
     { ...boss, rotation: stream.rotation, front: true }));

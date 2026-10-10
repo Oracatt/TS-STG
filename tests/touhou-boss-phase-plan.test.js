@@ -9,6 +9,7 @@ import { TOUHOU_BOSS_SCREEN_VIEW } from '../packages/thlib/dist/touhou/boss-pres
 
 const data = (name, original = false) => JSON.parse(fs.readFileSync(new URL(
   `../${original ? 'games/touhou20/assets' : 'packages/thlib/assets/touhou-common'}/anm/${name}.json`, import.meta.url)));
+const hasReference = fs.existsSync(new URL('../games/touhou20/assets/anm/front.json', import.meta.url)); // private local reference assets, absent in a clean checkout
 const bank = (name, original = false) => new AnmBank(data(name, original), { loadTexture: () => 1 });
 const boss = () => ({ x: 0, y: 128, hp: 12000, maximumHp: 12000, alive: true });
 const hud = options => new TouhouBossHud({ bank: bank('front'), textBank: bank('ascii_960'), ...options });
@@ -144,7 +145,7 @@ test('future-card stars retain source sprite38, position, layer, 60+20 entry and
   display.destroy();assert.ok(stars.every(vm => !vm.alive));
 });
 
-test('custom Boss names use the original label alpha timeline and position without importing concrete Boss art', () => {
+test('custom Boss names use the original label alpha timeline and position without importing concrete Boss art', { skip: !hasReference }, () => {
   const calls = [], display = hud({ drawName: (draw, name, options) => calls.push({ name, ...options }) });
   const source = bank('front', true).create(150), enemy = boss(), state = { bosses: [enemy], name: 'Custom Boss', remainingSpells: 1 };
   display.setName(state.name);

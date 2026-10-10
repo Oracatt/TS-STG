@@ -7,6 +7,7 @@ import { AnmBank, TouhouBossEntrance, TouhouBossPresentation, TouhouRenderQueue,
 
 const bank = (name, source = false) => new AnmBank(JSON.parse(fs.readFileSync(new URL(
   `../${source ? 'games/touhou20/assets' : 'packages/thlib/assets/touhou-common'}/anm/${name}.json`, import.meta.url))), { loadTexture: () => 11 });
+const hasReference = fs.existsSync(new URL('../games/touhou20/assets/anm/effect.json', import.meta.url)); // private local reference assets, absent in a clean checkout
 const render = owner => { const draw = new DrawList(), queue = new TouhouRenderQueue(); owner.draw(queue, { x: 336, y: 24, scale: 1.5, screenScale: 1 }); queue.flush(draw); return draw.commands; };
 
 test('source Boss entrance has four 200-particle streams, waits101 for its body, then lets the fog finish', () => {
@@ -31,7 +32,7 @@ test('source Boss entrance has four 200-particle streams, waits101 for its body,
   assert.ok(completed[0] > 101); assert.ok(owner.roots.every(vm => !vm.alive));
 });
 
-test('entrance source149/150 positions, blend modes, colors and Hermite phases match the unfiltered bank through the full timeline', () => {
+test('entrance source149/150 positions, blend modes, colors and Hermite phases match the unfiltered bank through the full timeline', { skip: !hasReference }, () => {
   const source = bank('effect', true), shared = bank('effect'), follow = { x: -20, y: 128 };
   const roots = TOUHOU_BOSS_ENTRANCE_PRESETS.blackFog.streams.map(stream => source.create(stream.script, { ...follow, rotation: stream.rotation, front: true }));
   const owner = new TouhouBossEntrance(shared, { ...follow, follow });
@@ -82,7 +83,7 @@ test('fly-in stays visible without fog and lets a stage own movement and readine
   assert.throws(() => new TouhouBossEntrance(effect, { revealFrame: 40, readyFrame: 30 }), /integer frames/);
 });
 
-for (const combatFrame of [102, 320]) test(`presentation defers aura108 RNG until the explicit effect signal at frame${combatFrame}`, () => {
+for (const combatFrame of [102, 320]) test(`presentation defers aura108 RNG until the explicit effect signal at frame${combatFrame}`, { skip: !hasReference }, () => {
   const source = bank('effect', true), banks = { effect: bank('effect'), front: bank('front'), ascii_960: bank('ascii_960') };
   const boss = { x: 18, y: 128, hp: 1000 }, presentation = new TouhouBossPresentation({ banks });
   presentation.enter(boss); const entrance = presentation.beginEntrance();

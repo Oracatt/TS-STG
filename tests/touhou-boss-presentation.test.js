@@ -212,7 +212,8 @@ test('spell numeric values retain Renderer default left alignment and follow the
   owner.destroy();
 });
 
-test('shared Boss presentation commands equal original unfiltered ANM on the audited common atlas layout through entry, card and exit', () => {
+// Needs the private local reference assets; skipped in a clean checkout.
+test('shared Boss presentation commands equal original unfiltered ANM on the audited common atlas layout through entry, card and exit', { skip: !fs.existsSync(new URL('../games/touhou20/assets/anm/effect.json', import.meta.url)) }, () => {
   const manifest=JSON.parse(fs.readFileSync(new URL('../packages/thlib/assets/touhou-common/manifest.json',import.meta.url)));
   function fromRoot(assetRoot, options) {
     const files = Object.fromEntries(['effect', 'front', 'ascii_960', 'text'].map(name => [name,

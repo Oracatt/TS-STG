@@ -109,7 +109,3 @@ Your application owns specific Boss attacks, stages, rules unique to a game,
 branding, BGM, resource locations and platform adapters. Specific demo content never
 becomes a reverse dependency of thlib. See `packages/thlib/README.md`,
 `packages/thlib/assets/README.md` and `docs/native-api.md`.
-
-The repository's Touhou 20 application is a development and regression demo,
-not part of the engine or thlib release. A separately generated private demo
-bundle may contain locally imported original resources and must not be published.

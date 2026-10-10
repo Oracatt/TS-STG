@@ -1,8 +1,0 @@
-{
-  "name": "@ts-stg/rushboss-demo",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "license": "GPL-3.0-only",
-  "dependencies": { "@ts-stg/thlib": "0.1.0" }
-}

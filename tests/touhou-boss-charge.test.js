@@ -6,7 +6,8 @@ import {DrawList} from '@ts-stg/thlib';
 import {assertRenderScopes} from './fixtures/render-scopes.js';
 
 const read=root=>JSON.parse(fs.readFileSync(new URL(`${root}/anm/effect.json`,import.meta.url),'utf8'));
-const source=read('../games/touhou20/assets'),common=read('../packages/thlib/assets/touhou-common');
+const hasReference=fs.existsSync(new URL('../games/touhou20/assets/anm/effect.json',import.meta.url)); // private local reference assets, absent in a clean checkout
+const source=hasReference?read('../games/touhou20/assets'):null,common=read('../packages/thlib/assets/touhou-common');
 const makeBank=data=>new AnmBank(data,{loadTexture:()=>17});
 const view={x:336,y:24,scale:1.5,screenScale:1};
 function capture(charge){
@@ -16,7 +17,7 @@ function capture(charge){
 }
 const projectCenter=command=>{const m=command[4];return{x:(m[12]/m[15]+1)*480,y:(1-m[13]/m[15])*360};};
 
-test('all attack-charge presets retain source circle and inward/outward particle instructions',()=>{
+test('all attack-charge presets retain source circle and inward/outward particle instructions',{skip:!hasReference},()=>{
   for(const {chargeScript,releaseScript}of Object.values(TOUHOU_BOSS_CHARGE_PRESETS)){
     for(const script of [chargeScript,chargeScript-1,releaseScript,releaseScript-1,62,77])
       assert.deepEqual(common.scripts[script].instructions,source.scripts[script].instructions,`source effect:${script}`);
@@ -27,7 +28,7 @@ test('all attack-charge presets retain source circle and inward/outward particle
   }
 });
 
-test('public attack charge exactly submits independently scheduled source ECL307 cohorts at early/middle/release/exit frames',()=>{
+test('public attack charge exactly submits independently scheduled source ECL307 cohorts at early/middle/release/exit frames',{skip:!hasReference},()=>{
   for(const color of Object.keys(TOUHOU_BOSS_CHARGE_PRESETS)){
     const actualBank=makeBank(common),expectedBank=makeBank(source),preset=TOUHOU_BOSS_CHARGE_PRESETS[color];
     const actual=new TouhouBossCharge(actualBank,{x:40,y:128,color,releaseColor:color});

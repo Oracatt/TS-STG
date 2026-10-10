@@ -49,11 +49,9 @@ presentation.draw(renderQueue); // 与自机/敌机一起按原始 ANM 优先级
 
 Bonus/History 数值继承 `text_renderer/text.cpp` 构造器的 `align_x=1,align_y=1`（左/上对齐）；`card_system/draw.cpp` 只切换字体和绘制层。默认坐标 `(266,37)`、`(360,37)` 是数值起点，不是右边界；这样数字接在标签后面，失败时的 `$` 同样遵循左对齐。
 
-RushBoss Demo 的 `shared-presentation.js` 适配坐标和开卡/结束事件。Boss 映射为 `(rush.x,224-rush.y)`；竖屏共享自机保持其原始向下 Y 坐标。通用演出 ANM 使用独立 bank，不消耗玩家动画随机流。业务仍负责分数和阶段切换，公共 `addScore` 回调为空以避免重复计分。
 
-攻击聚能使用 `presentation.beginCharge({x,y,color:'green',releaseColor:'yellow'})`，默认 effect72 收缩圈/62 汇聚粒子，60 帧后接 effect89 扩张圈/77 释放粒子；七种颜色保留原64..76和79..91脚本。每个动画出生时采样位置，已出生的粒子不会被移动中的Boss拖动。可配置 `repeatCount`、`repeatInterval`、`releaseFrame`、`release` 和后续出生点 `follow`；`stop()` 停止后续出生，`destroy()` 立即释放全部动画。Rush仅提供24帧重复间隔和其释放时间。此前误用的 effect151..192 / opcode508 EffChargePoint属于另一类入场效果，已经从攻击聚能路径移除。源依据与失误/消弹说明见 [演出修正](rushboss-combat-restoration.md)。
+攻击聚能使用 `presentation.beginCharge({x,y,color:'green',releaseColor:'yellow'})`，默认 effect72 收缩圈/62 汇聚粒子，60 帧后接 effect89 扩张圈/77 释放粒子；七种颜色保留原64..76和79..91脚本。每个动画出生时采样位置，已出生的粒子不会被移动中的Boss拖动。可配置 `repeatCount`、`repeatInterval`、`releaseFrame`、`release` 和后续出生点 `follow`；`stop()` 停止后续出生，`destroy()` 立即释放全部动画。Rush仅提供24帧重复间隔和其释放时间。此前误用的 effect151..192 / opcode508 EffChargePoint属于另一类入场效果，已经从攻击聚能路径移除。
 
-2026-10-04 起，具体 Boss 精灵与对白／开卡立绘由 `games/rushboss/src/boss-artwork.js`、`boss-portraits.js` 提供，三关透视场景和符卡底图由 `stage-artwork.js` 提供。关卡底图在优先级3、符卡底图在11进入初始捕获，与公共13号开卡双圈一起接受15号原作网格扭曲。具体 Boss 本体在29绘制，开卡立绘在63，公共符卡名仍在81。所有私有图片与背景 shader 留在 Demo；Rush 的扭曲、圆环、HUD 和旧宽屏菜单不替换 thlib 的公共默认演出。
 
 验证包含原始未筛选 ANM 与公共素材包的完整命令流、圆环/粒子树和状态一致性：Boss、道中 Boss、移动后的视口三个配置，各检查 11 个时间点，覆盖开卡、结束和紧接的下一张卡。`tools/verify-touhou-boss-graphics.mjs` 可进一步捕获实际 QuickJS/GPU 的同场景像素，包含独立棋盘背景上的扭曲对照。此验证比较移植实现使用两份素材的输出，不运行原游戏可执行文件，也不把它称为原游戏逐像素证明。
 

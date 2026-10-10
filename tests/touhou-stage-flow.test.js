@@ -37,7 +37,7 @@ test('source stage-clear confirmation first succeeds at120 and automatic dismiss
   assert.equal(TOUHOU_STAGE_CLEAR_PRESET.musicFadeSeconds, 2);
 });
 
-test('common STAGE CLEAR preset retains source ANM111 delayed fade and is a reusable resource', () => {
+test('common STAGE CLEAR preset retains source ANM111 delayed fade and is a reusable resource', { skip: !fs.existsSync('games/touhou20/assets/anm/front.json') }, () => {
   const load = path => new AnmBank(JSON.parse(fs.readFileSync(new URL(path, import.meta.url))), { loadTexture: () => 1 });
   const source = load('../games/touhou20/assets/anm/front.json');
   const common = load('../packages/thlib/assets/touhou-common/anm/front.json');

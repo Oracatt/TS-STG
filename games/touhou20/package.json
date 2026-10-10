@@ -1,8 +1,0 @@
-{
-  "name": "@ts-stg/touhou20-reference",
-  "version": "0.1.0",
-  "private": true,
-  "type": "module",
-  "description": "Local Touhou 20 reference application, separate from the reusable thlib",
-  "dependencies": { "@ts-stg/thlib": "0.1.0" }
-}
