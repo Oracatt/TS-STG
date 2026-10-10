@@ -28,4 +28,4 @@ ANM sprite instructions at 60 ticks/second; clips contain only texture-frame
 selection, not the full original ANM transforms, alpha/color, blending, UV
 scroll, child spawning, bullet rules, or Bomb game logic. The caller supplies
 those behaviors and the pack directory explicitly. Generic thlib has no
-runtime dependency on the Touhou 20 demo or its asset paths.
+runtime dependency on any title's asset paths.

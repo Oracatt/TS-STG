@@ -12,9 +12,8 @@ is needed at runtime, and installing the packed library does not run a build.
 To rebuild the included source independently, install development dependencies
 and run `npm run build`; the package includes its own compiler configuration.
 
-The restored common implementation previously developed in the touhou20 demo now
-lives in `src/touhou/`, exported by both `@ts-stg/thlib/touhou` and the package root.
-Both demos use these same classes and resources. An asset's appearance in TH20
+The restored common implementation lives in `src/touhou/`, exported by both `@ts-stg/thlib/touhou` and the package root.
+Applications use these same classes and resources. An asset's appearance in TH20
 does not make it TH20-exclusive: the common Reimu/Marisa bodies, normal weapons,
 Bombs, focus indicator, bullets, lasers, minor enemies and effects belong here.
 Magic-stone variants and other actual title-specific content stay in applications.
@@ -154,8 +153,7 @@ camera clipping, resource ownership and the remaining resampling limits.
 A battle context connects `enemies`, `damageEnemy`/`damageRegion`,
 `cancelCircle`/`cancelRectangle`, `spawnItem`, `enqueueGraze`, `spell` and event
 callbacks to the application's world. The shared owners still compute the actual
-weapon/Bomb behavior, damage shapes and cancellation timing. The old demo's
-`Th20*` imports are identity aliases of these `Touhou*` classes, not copies.
+weapon/Bomb behavior, damage shapes and cancellation timing.
 
 `getTouhouPlayerData(0 | 1 | 'reimu' | 'marisa')` returns normalized
 `ts-stg-touhou-shots` data: baseline patterns 0..14, one normal option profile,
@@ -185,7 +183,7 @@ game converts at its application boundary.
 
 The three common packs (`assets/reference-common/`, `assets/touhou-common/`, and
 `assets/spell-common/`) are versioned with thlib and included in its npm package
-and engine SDK. A fresh checkout does not need a demo or resource importer to
+and engine SDK. A fresh checkout does not need a resource importer to
 use them. Their original NOTICE and manifest files are retained.
 
 `assets/touhou-common/` contains curated full ANM animations and common image,
@@ -306,15 +304,13 @@ presentation.drawFocus(draw, player, view);
 
 The reusable menu/HUD layouts and application flow belong to thlib. Title
 artwork, specific Boss identities, backgrounds, BGM, stages and exclusive
-mechanics such as magic stones remain in the demo applications.
+mechanics such as magic stones remain in the consuming applications.
 `TouhouBossPresentation` exposes an explicit black-fog/fly-in entrance;
 `TouhouBossPhasePlan` converts caller-owned attack phases into source-style
 segmented health rings and remaining-card stars. Custom names, appearance
 timing, movement, phase groups and visual weights do not require copying thlib.
 Common character shot records and their animation behavior are included in thlib.
-The repository's private `games/touhou20/` and `games/rushboss/` demos depend on this
-package and never ship in the default SDK. The former `@ts-stg/thlib/th20` subpath
-remains removed; the shared restored entry is `@ts-stg/thlib/touhou`.
+The former `@ts-stg/thlib/th20` subpath remains removed; the shared restored entry is `@ts-stg/thlib/touhou`.
 
 Local installation: `npm install ../TS-STG/packages/thlib`.
 The root ESM entry includes TypeScript declarations. Native QuickJS-NG hosts load

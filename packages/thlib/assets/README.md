@@ -2,15 +2,15 @@
 
 thlib 包含灵梦、魔理沙本体、子机、武器、判定点、Bomb、弹幕、激光、道具、小怪、消弹和其他特效素材，以及通用音效。素材按用途归属；从哪个作品的资源中提取，并不决定它必须依赖该作品的业务代码。
 
-`reference-common/`、`touhou-common/`、`spell-common/` 三套公共素材随 thlib 纳入 Git、npm 包和引擎 SDK。克隆仓库后即可使用，无须先导入任一 Demo。导入工具仅用于维护和从本机参考资源重建；各包的来源清单、哈希及原权利说明随素材保留。
+`reference-common/`、`touhou-common/`、`spell-common/` 三套公共素材随 thlib 纳入 Git、npm 包和引擎 SDK。克隆仓库后即可使用，无须先导入任何参考资源。导入工具仅用于维护和从本机参考资源重建；各包的来源清单、哈希及原权利说明随素材保留。
 
 ## 完整公共还原资源
 
-`touhou-common/` 由 `createTouhouResources` 载入，包含 10 个 ANM bank、94 张 PNG、51 个原音效、1,342 个动画脚本和 2,256 个 sprite，以及两角色的基础射击数据。脚本包含姿态、子动画和辅助效果，数量不是独立实体种类数。两个参考 Demo 都使用这套资源和同一个 `TouhouPlayer` 实现；保留运动、缩放、旋转、混合、子动画及中断等完整演出。混合图集仅移除魔石等真正专属区域，并保留 1 像素原采样边框；没有因图集混杂而排除整个角色或武器。来源、筛选规则和使用方式见 [完整公共资源](TOUHOU-COMMON.md)。
+`touhou-common/` 由 `createTouhouResources` 载入，包含 10 个 ANM bank、94 张 PNG、51 个原音效、1,342 个动画脚本和 2,256 个 sprite，以及两角色的基础射击数据。脚本包含姿态、子动画和辅助效果，数量不是独立实体种类数。应用使用这套资源和同一个 `TouhouPlayer` 实现；保留运动、缩放、旋转、混合、子动画及中断等完整演出。混合图集仅移除作品专属区域，并保留 1 像素原采样边框；没有因图集混杂而排除整个角色或武器。来源、筛选规则和使用方式见 [完整公共资源](TOUHOU-COMMON.md)。
 
 公共 UI 的 `front`、`ascii_960`、`title` 另作统一采样隔离：1066 个静态精灵完整保留原 RGBA，重新排列并延展两像素自身边缘；只重映射 UV 和纹理尺寸，不改变几何与 ANM。横向循环条带保留循环行为，动态文字和捕获表面不重排。这样避免相邻图块串边，并保留文字本身的黑色描边。`screenswitch` 的两张转场纹理和原始越界 UV 完全不重排，以保留原作平铺；`ascii_960:17` 和其子节点提供通用 NowLoading，其 entry7 原图已有采样留白，保留原纹理尺寸和 UV，避免粒子边缘量化差异。
 
-工作区执行 `node tools/import-touhou-common-assets.mjs` 重建，`--check` 校验所有产物。`import-th20.ps1` 同时生成两种公共素材包。运行时不需要导入工具或任一 Demo。
+工作区执行 `node tools/import-touhou-common-assets.mjs` 重建，`--check` 校验所有产物。运行时不需要导入工具。
 
 ## 图像与动画片段
 
@@ -37,11 +37,11 @@ cancel.draw(draw, 200, 180);
 // 场景释放时调用 atlas.dispose()。
 ```
 
-SpriteClip 只负责纹理帧播放。需要已还原的 Bomb 伤害、无敌、消弹、运动、混合和完整演出时，使用公共 `TouhouPlayer` 与 `touhou-common` 的 ANM；两个参考 Demo 采用此路径。
+SpriteClip 只负责纹理帧播放。需要已还原的 Bomb 伤害、无敌、消弹、运动、混合和完整演出时，使用公共 `TouhouPlayer` 与 `touhou-common` 的 ANM。
 
 这些图像来自本机已有原资源，逐文件 SHA-256、来源和范围在清单与 `reference-common/NOTICE.md` 记录；原图不属于 TS-STG 代码的 MIT 授权。素材选择表示通用用途，不宣称每张原图在所有作品里字节完全相同。
 
-工作区执行 `node tools/import-common-reference-assets.mjs` 可从已有本机导入资源重建此包；`import-th20.ps1` 会在最后调用它。导入工具位于开发工作区，运行或依赖 thlib 时不需要该工具或 Demo。用 `run.ps1 -Entry examples/common-assets/main.js` 可检查素材页。
+工作区执行 `node tools/import-common-reference-assets.mjs` 可从已有本机导入资源重建此包。导入工具位于开发工作区，运行或依赖 thlib 时不需要该工具。用 `run.ps1 -Entry examples/common-assets/main.js` 可检查素材页。
 
 ## 开卡、光环与蓄力素材
 
