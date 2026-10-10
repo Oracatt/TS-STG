@@ -76,7 +76,7 @@ runtime dependency on the Touhou 20 demo or its asset paths.
 `;
 
 /** Build an explicit portable data pack from already-imported local originals. */
-export function buildCommonReferencePack(source = join(root, 'games/touhou20/assets')) {
+export function buildCommonReferencePack(source = join(root, 'games/demo/assets')) {
   source = resolve(source);
   const imported = readJson(join(source, 'manifest.json'));
   const banks = new Map(), copies = [], lookup = new Map();

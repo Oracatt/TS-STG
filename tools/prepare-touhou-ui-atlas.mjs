@@ -12,7 +12,7 @@ const read=path=>JSON.parse(readFileSync(path,'utf8'));
 verifyCommonPack(base);mkdirSync(scratch,{recursive:true});mkdirSync(out,{recursive:true});
 const manifest=read(join(base,'manifest.json'));
 const atlasAudit=manifest.textures.filter(t=>t.spriteMappings).map(t=>{
-  const bank=t.source.archive.slice(0,-4),source=readFileSync(join(root,'games/touhou20/assets/textures',bank,`entry-${t.source.entry}.png`));
+  const bank=t.source.archive.slice(0,-4),source=readFileSync(join(root,'games/demo/assets/textures',bank,`entry-${t.source.entry}.png`));
   const bytes=readFileSync(join(base,t.file));assert.equal(hash(source),t.source.pngSha256);assert.equal(hash(bytes),t.sha256);
   return{bank,entry:t.source.entry,file:t.file,sourceSha256:t.source.pngSha256,outputSha256:t.sha256,
     width:bytes.readUInt32BE(16),height:bytes.readUInt32BE(20),sprites:t.spriteMappings.length,

@@ -10,7 +10,7 @@ import {TouhouPlayer} from '../packages/thlib/dist/touhou/player.js';
 import {AnmBank} from '../packages/thlib/dist/touhou/anm.js';
 import {DrawList,Keys} from '../packages/thlib/dist/index.js';
 
-const source='games/touhou20/assets',available=existsSync(`${source}/anm/pl00.json`)&&existsSync(`${source}/audio/manifest.json`);
+const source='games/demo/assets',available=existsSync(`${source}/anm/pl00.json`)&&existsSync(`${source}/audio/manifest.json`);
 let built;const pack=()=>built??=buildTouhouCommonAssets();
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const read=path=>JSON.parse(readFileSync(path,'utf8'));
@@ -40,7 +40,7 @@ test('common pack preserves original baseline parameters and complete selected a
       }
       assert.deepEqual(shared.scripts[id],expected,`${name}:${id} instructions/timing changed outside explicit source boundary transformations`);
     }
-    assert.ok(!JSON.stringify(shared).includes('games/touhou20'));
+    assert.ok(!JSON.stringify(shared).includes('games/demo'));
   }
 });
 

@@ -29,6 +29,9 @@ Thumbs.db
 !.env.example
 !.env.template
 
+# Local-only original-resource import (input of the common-asset importers and reference comparisons)
+/games/demo/
+
 # Generated verification output is reproducible. Keep the authored capture notes.
 /reports/**
 !/reports/touhou/

@@ -6,8 +6,8 @@ import { AnmBank, TouhouBossEntrance, TouhouBossPresentation, TouhouRenderQueue,
   TOUHOU_BOSS_ENTRANCE_PRESETS } from '@ts-stg/thlib/touhou';
 
 const bank = (name, source = false) => new AnmBank(JSON.parse(fs.readFileSync(new URL(
-  `../${source ? 'games/touhou20/assets' : 'packages/thlib/assets/touhou-common'}/anm/${name}.json`, import.meta.url))), { loadTexture: () => 11 });
-const hasReference = fs.existsSync(new URL('../games/touhou20/assets/anm/effect.json', import.meta.url)); // private local reference assets, absent in a clean checkout
+  `../${source ? 'games/demo/assets' : 'packages/thlib/assets/touhou-common'}/anm/${name}.json`, import.meta.url))), { loadTexture: () => 11 });
+const hasReference = fs.existsSync(new URL('../games/demo/assets/anm/effect.json', import.meta.url)); // private local reference assets, absent in a clean checkout
 const render = owner => {
   const draw = new DrawList(), queue = new TouhouRenderQueue();
   owner.draw(queue, { x: 336, y: 24, scale: 1.5, screenScale: 1 }); queue.flush(draw);

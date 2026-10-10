@@ -213,12 +213,12 @@ test('spell numeric values retain Renderer default left alignment and follow the
 });
 
 // Needs the private local reference assets; skipped in a clean checkout.
-test('shared Boss presentation commands equal original unfiltered ANM on the audited common atlas layout through entry, card and exit', { skip: !fs.existsSync(new URL('../games/touhou20/assets/anm/effect.json', import.meta.url)) }, () => {
+test('shared Boss presentation commands equal original unfiltered ANM on the audited common atlas layout through entry, card and exit', { skip: !fs.existsSync(new URL('../games/demo/assets/anm/effect.json', import.meta.url)) }, () => {
   const manifest=JSON.parse(fs.readFileSync(new URL('../packages/thlib/assets/touhou-common/manifest.json',import.meta.url)));
   function fromRoot(assetRoot, options) {
     const files = Object.fromEntries(['effect', 'front', 'ascii_960', 'text'].map(name => [name,
       JSON.parse(fs.readFileSync(new URL(`${assetRoot}/anm/${name}.json`, import.meta.url)))]));
-    if(assetRoot==='../games/touhou20/assets'){
+    if(assetRoot==='../games/demo/assets'){
       // The atlas isolation intentionally changes UV origins and texture size.
       // Put the INDEPENDENT, UNFILTERED source ANM on that same physical atlas
       // layout before comparing every draw command; do not copy any animation,
@@ -253,7 +253,7 @@ test('shared Boss presentation commands equal original unfiltered ANM on the aud
   }
   for (const options of [{}, { profile: 'midboss' }, { view: { x: 480, y: 24, scale: 1.5, screenScale: 1 },
     screenView: { ...TOUHOU_BOSS_SCREEN_VIEW, x: 144 }, distortion: { viewOffsetX: 320 } }]) {
-    const source = fromRoot('../games/touhou20/assets', options), shared = fromRoot('../packages/thlib/assets/touhou-common', options);
+    const source = fromRoot('../games/demo/assets', options), shared = fromRoot('../packages/thlib/assets/touhou-common', options);
     const boss = { x: -48, y: 128, z: 0, hp: 8000, maximumHp: 8000 }; source.enter(boss); shared.enter(boss);
     for (const owner of [source, shared]) { owner.beginSpell({ id: 42, name: 'Reusable spell', duration: 1800 }); owner.setEffects({aura:true,distortion:true}); }
     for (let frame = 1; frame <= 181; frame++) {

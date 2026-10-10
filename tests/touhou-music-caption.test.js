@@ -19,11 +19,11 @@ function textHost(){
 }
 
 test('music caption reproduces all three original logo timelines and screen geometry without their images',{
-  skip:!existsSync('games/rushboss/assets/portrait/anm/st01logo.json')},()=>{
+  skip:!existsSync('games/demo/assets-rush/portrait/anm/st01logo.json')},()=>{
   const sourceHashes={st01logo:'a33fa555420d6f6eb089a6febe314067c38f4fed9abb13626ca51c54c4389248',
     st02logo:'c28400993a415c1939d834fed123e3e852027fa316783a775e5b92ae92023597',st03logo:'e2c6a2ddd51addc39fdba0ca52a903860c9346ea10c123ded651ca273f94c618'};
   for(const name of ['st01logo','st02logo','st03logo']){
-    const source=JSON.parse(readFileSync(`games/rushboss/assets/portrait/anm/${name}.json`)),bank=new AnmBank(source,{loadTexture:()=>11});
+    const source=JSON.parse(readFileSync(`games/demo/assets-rush/portrait/anm/${name}.json`)),bank=new AnmBank(source,{loadTexture:()=>11});
     assert.equal(source.source.sha256,sourceHashes[name]);
     const raw=`D:/AIWorkspace/Touhou20Reconstruction/assets/raw/${name}.anm`;
     if(existsSync(raw))assert.equal(createHash('sha256').update(readFileSync(raw)).digest('hex'),sourceHashes[name],'Pinned original archive is only read, never executed');

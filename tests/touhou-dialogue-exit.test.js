@@ -63,9 +63,9 @@ test('both player portraits, right portrait and text retirement match source int
   for (const character of [0, 1]) {
     const f = fixture(), dialogue = new TouhouDialogue({ resources: f.resources, character, steps: [step], exit: 'afterBoss' });
     const profile = character ? TOUHOU_DIALOGUE_PORTRAITS.marisa : TOUHOU_DIALOGUE_PORTRAITS.reimu;
-    const leftBank = new AnmBank(JSON.parse(fs.readFileSync(`games/touhou20/assets/anm/pl0${character}.json`)));
+    const leftBank = new AnmBank(JSON.parse(fs.readFileSync(`games/demo/assets/anm/pl0${character}.json`)));
     const rightBank = new AnmBank(decodeAnm(fs.readFileSync(rightSource), 'st01enm'));
-    const textBank = new AnmBank(JSON.parse(fs.readFileSync('games/touhou20/assets/anm/text.json')));
+    const textBank = new AnmBank(JSON.parse(fs.readFileSync('games/demo/assets/anm/text.json')));
     const left = leftBank.create(profile.root), right = rightBank.create(12), text = textBank.create(20);
     left.interruptNow(17, true); left.interruptNow(2, true); right.interruptNow(3, true); text.interruptNow(3); text.interruptNow(2);
     const leftBody = left.children.find(vm => vm.scriptId === profile.body), rightBody = right.children.find(vm => vm.scriptId === 10);

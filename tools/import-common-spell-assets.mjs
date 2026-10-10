@@ -11,7 +11,7 @@ const selected=[
   ['legacy-aura','eff_aura.png','03ee3f4d98ae94f32abce87461c329489021951477e0a2ec36b818d4ccc1b773'],
   ['legacy-petals','eff_maple.png','a9795da32b0a25827385a97971d8c031b6f6feac0e5a1926bdf00bbe5819fb50'],
 ];
-export function buildCommonSpellAssets(source=join(root,'games/rushboss/assets')) {
+export function buildCommonSpellAssets(source=join(root,'games/demo/assets-rush')) {
   const sourceManifest=JSON.parse(readFileSync(join(source,'manifest.json'),'utf8'));
   const files=new Map(),manifest={format:'ts-stg-sprite-pack-v1',version:1,name:'spell-common',license:'Original-resource; not MIT',notice:'NOTICE.md',textures:{},sprites:{},clips:{},provenance:{input:'Previously imported local media from TouhouRushBoss thsrc.smx',archiveSha256:sourceManifest.source.sha256,pixels:'Whole reviewed common effect atlases copied byte-for-byte; no game-specific Boss artwork'},excluded:['Boss portraits and cut-ins','Specific Boss backgrounds','Title and HUD artwork']};
   for(const [name,file,expectedHash]of selected){
@@ -34,7 +34,7 @@ export function buildCommonSpellAssets(source=join(root,'games/rushboss/assets')
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const args=process.argv.slice(2),option=(name,fallback)=>args.includes(name)?args[args.indexOf(name)+1]:fallback;
-  const source=resolve(option('--source',join(root,'games/rushboss/assets'))),out=resolve(option('--out',join(root,'packages/thlib/assets/spell-common'))),check=args.includes('--check'),pack=buildCommonSpellAssets(source);
+  const source=resolve(option('--source',join(root,'games/demo/assets-rush'))),out=resolve(option('--out',join(root,'packages/thlib/assets/spell-common'))),check=args.includes('--check'),pack=buildCommonSpellAssets(source);
   for(const[name,bytes]of pack.files){const target=join(out,name);if(check){if(!existsSync(target)||hash(readFileSync(target))!==hash(bytes))throw new Error(`Shared spell resource differs: ${target}`);}else{mkdirSync(dirname(target),{recursive:true});writeFileSync(target,bytes);}}
   console.log(JSON.stringify({check,out,textures:Object.keys(pack.manifest.textures).length,sprites:Object.keys(pack.manifest.sprites).length}));
 }

@@ -153,7 +153,7 @@ export function scriptClosure(bank,roots){
   }
   return {scripts,sprites};
 }
-export function buildTouhouCommonAssets({source=join(root,'games/touhou20/assets')}={}){
+export function buildTouhouCommonAssets({source=join(root,'games/demo/assets')}={}){
   source=resolve(source);const files=new Map(),manifest={format:'ts-stg-touhou-common-v1',version:2,ticksPerSecond:60,
     license:'Original resources; not MIT',notice:'NOTICE.md',archives:{},shots:['shots/pl00.json','shots/pl01.json'],styles:'bullet-styles.json',audio:'audio/manifest.json',textures:[],sounds:[],
     catalog:'prefabs.json',transformations:[],
@@ -301,7 +301,7 @@ export function buildTouhouCommonAssets({source=join(root,'games/touhou20/assets
   return {manifest,files};
 }
 export function writeTouhouCommonAssets({out=join(root,'packages/thlib/assets/touhou-common'),checkOnly=false,...options}={}){
-  const destination=resolve(out),source=resolve(options.source??join(root,'games/touhou20/assets'));
+  const destination=resolve(out),source=resolve(options.source??join(root,'games/demo/assets'));
   assert(destination!==source&&!destination.startsWith(source+sep),'Never write inside the source assets');
   const pack=buildTouhouCommonAssets(options),expected=new Set(pack.files.keys());
   const walk=dir=>readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(join(dir,e.name)):[relative(destination,join(dir,e.name)).split(sep).join('/')]);

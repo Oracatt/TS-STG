@@ -215,7 +215,7 @@ Rush 原资源包已有 `bgm/Player's Score.wav`，此前遗漏曲目映射。�
 
 ## 2026-10-03：通用库、业务 Demo 与发布边界
 
-版本专属代码已迁至 `games/touhou20/src`，导入资源在 `games/touhou20/assets`。thlib 公开提供通用网格、可配置径向扭曲、分层绘制、按键连发和精灵图集/动画片段；不再导出 `@ts-stg/thlib/th20`。原生默认启动消费方的 `main.js`，不内置 Demo 入口。
+版本专属代码已迁至 `games/touhou20/src`，导入资源在 `games/demo/assets`。thlib 公开提供通用网格、可配置径向扭曲、分层绘制、按键连发和精灵图集/动画片段；不再导出 `@ts-stg/thlib/th20`。原生默认启动消费方的 `main.js`，不内置 Demo 入口。
 
 抽取前后另做冻结实现对照：128 组网格、720 帧径向扭曲、64 帧场景网格、20 组分层队列完全相同；按键连发对照原实现 2,000 帧。标题、灵梦射击、魔理沙 Bomb、暂停四个原生场景的 PNG 哈希和完整状态均与抽取前一致，报告为 `reports/th20/layer-split-scenes.json`。两角色运行摘要仍为 `cb82bd15` / `fb800141`，没有以架构重构替代原作一致性验收。
 

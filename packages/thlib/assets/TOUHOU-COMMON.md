@@ -8,7 +8,7 @@ particles/death/charge effects, scene-cover/reveal transitions, the NowLoading
 indicator, bitmap glyphs and the original common sound effects.
 
 A fresh checkout or installed package already contains these files. To rebuild from local reference inputs, use `node tools/import-touhou-common-assets.mjs`. The default input is the
-existing local import at `games/touhou20/assets`; that directory is only an import
+existing local import at `games/demo/assets`; that directory is only an import
 source, never a runtime dependency. Use `--source` for another existing import,
 `--out` to relocate the result, or `--check` to verify every generated file.
 

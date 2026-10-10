@@ -29,7 +29,7 @@ for(const scene of [
     fs.writeFileSync(entry,`
 import {DrawList} from '@ts-stg/thlib';
 import {AnmBank,TouhouSceneTransition} from '@ts-stg/thlib/touhou';
-const common=${common},scene=${JSON.stringify(scene)},prefix=common?'packages/thlib/assets/touhou-common/':'games/touhou20/assets/';
+const common=${common},scene=${JSON.stringify(scene)},prefix=common?'packages/thlib/assets/touhou-common/':'games/demo/assets/';
 const create=name=>new AnmBank(JSON.parse(tsstg.readText(prefix+'anm/'+name+'.json')),
   {loadTexture:p=>tsstg.loadTexture(common?prefix+p:p)});
 const effect=new TouhouSceneTransition({bank:create('screenswitch'),loadingBank:create('ascii_960')});

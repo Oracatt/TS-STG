@@ -6,7 +6,7 @@ import {createTouhouResources} from '../packages/thlib/dist/touhou/resources.js'
 import {createTouhouPrefabCatalog,TOUHOU_ENEMY_PRESETS,TOUHOU_EFFECT_PRESETS,TOUHOU_BULLET_PRESETS,TouhouEffectPreset} from '../packages/thlib/dist/touhou/prefabs.js';
 import {TouhouEnemy} from '../packages/thlib/dist/touhou/enemy.js';
 import {DrawList} from '../packages/thlib/dist/render.js';
-const base='packages/thlib/assets/touhou-common',original='games/touhou20/assets/anm';
+const base='packages/thlib/assets/touhou-common',original='games/demo/assets/anm';
 const available=existsSync(`${base}/manifest.json`)&&existsSync(`${original}/enemy.json`);
 const read=file=>JSON.parse(readFileSync(file,'utf8'));
 const host={readText:file=>readFileSync(file,'utf8'),loadTexture:()=>1,createTexture:()=>2,createRenderTarget:()=>3};

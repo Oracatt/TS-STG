@@ -33,9 +33,9 @@ import {DrawList,Keys} from '@ts-stg/thlib';
 const host=globalThis.tsstg,mode=${JSON.stringify(mode)},scene=${JSON.stringify(scene)},character=scene.character,name='pl0'+character;
 const read=path=>JSON.parse(host.readText(path)),environment={loadTexture:(...args)=>host.loadTexture(...args)};
 const resources=mode==='shared'?createTouhouResources(host):null;
-const bank=resources?resources.banks[name]:new AnmBank(read('games/touhou20/assets/anm/'+name+'.json'),environment);
-const effect=resources?resources.banks.effect:new AnmBank(read('games/touhou20/assets/anm/effect.json'),environment);
-const sht=resources?resources.shots[character]:read('games/touhou20/assets/shots/'+name+'.json');
+const bank=resources?resources.banks[name]:new AnmBank(read('games/demo/assets/anm/'+name+'.json'),environment);
+const effect=resources?resources.banks.effect:new AnmBank(read('games/demo/assets/anm/effect.json'),environment);
+const sht=resources?resources.shots[character]:read('games/demo/assets/shots/'+name+'.json');
 const player=new TouhouPlayer({character,sht,bank,effectBank:effect,power:400,x:0,y:380,seed:2468});
 const draw=new DrawList(),queue=new TouhouRenderQueue(),enemy={x:0,y:70,radius:12,hp:999999},sounds=[],traces=[],cancellations=[];let frame=0,maximumShots=0,sawFocus=false,sawBomb=false;
 const context={enemies:[enemy],sound:(id,x)=>sounds.push([frame,id,x]),stopSound:id=>sounds.push([frame,-id-1,0]),

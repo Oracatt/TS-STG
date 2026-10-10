@@ -7,8 +7,8 @@ import { AnmBank, TouhouBossDeath, TouhouBossPresentation, TouhouScreenShake,
   TOUHOU_BOSS_DEATH_PRESET } from '@ts-stg/thlib/touhou';
 
 const bank = (name, source = false) => new AnmBank(JSON.parse(fs.readFileSync(new URL(
-  `../${source ? 'games/touhou20/assets' : 'packages/thlib/assets/touhou-common'}/anm/${name}.json`, import.meta.url))), { loadTexture: () => 11 });
-const hasReference = fs.existsSync(new URL('../games/touhou20/assets/anm/effect.json', import.meta.url)); // private local reference assets, absent in a clean checkout
+  `../${source ? 'games/demo/assets' : 'packages/thlib/assets/touhou-common'}/anm/${name}.json`, import.meta.url))), { loadTexture: () => 11 });
+const hasReference = fs.existsSync(new URL('../games/demo/assets/anm/effect.json', import.meta.url)); // private local reference assets, absent in a clean checkout
 const all = roots => roots.flatMap(vm => [vm, ...all(vm.children)]);
 const render = roots => { const draw = new DrawList(), queue = new TouhouRenderQueue(); for (const root of roots) root.draw(queue, { x: 336, y: 24, scale: 1.5 }); queue.flush(draw); return draw.commands; };
 

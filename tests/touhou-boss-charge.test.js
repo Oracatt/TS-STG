@@ -6,8 +6,8 @@ import {DrawList} from '@ts-stg/thlib';
 import {assertRenderScopes} from './fixtures/render-scopes.js';
 
 const read=root=>JSON.parse(fs.readFileSync(new URL(`${root}/anm/effect.json`,import.meta.url),'utf8'));
-const hasReference=fs.existsSync(new URL('../games/touhou20/assets/anm/effect.json',import.meta.url)); // private local reference assets, absent in a clean checkout
-const source=hasReference?read('../games/touhou20/assets'):null,common=read('../packages/thlib/assets/touhou-common');
+const hasReference=fs.existsSync(new URL('../games/demo/assets/anm/effect.json',import.meta.url)); // private local reference assets, absent in a clean checkout
+const source=hasReference?read('../games/demo/assets'):null,common=read('../packages/thlib/assets/touhou-common');
 const makeBank=data=>new AnmBank(data,{loadTexture:()=>17});
 const view={x:336,y:24,scale:1.5,screenScale:1};
 function capture(charge){

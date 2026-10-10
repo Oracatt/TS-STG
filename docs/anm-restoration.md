@@ -1,6 +1,6 @@
 # 原作 ANM 资源与动画
 
-`tools/import-th20-assets.mjs` 只读取本机参考工程的原始 ANM，将纹理原始 PNG/JPEG 字节和解码后的精灵、脚本表保存到忽略目录 `games/touhou20/assets`。它不会运行原游戏 EXE，也不会把原作资源加入公开代码。默认导入自机、敌机、子弹、公共特效、HUD、标题、aura、text 截图动画、字体与已有 ebg 背景；当前本机得到 21 个归档、4,522 个精灵、1,809 个脚本，缺失纹理文件为 0。动态纹理与渲染目标单列在 manifest.runtimeTextures，须由通用宿主适配器提供。每份归档和纹理均保留 SHA-256；可找到参考工程已导出图片时，还核对两份原始字节。
+`tools/import-th20-assets.mjs` 只读取本机参考工程的原始 ANM，将纹理原始 PNG/JPEG 字节和解码后的精灵、脚本表保存到忽略目录 `games/demo/assets`。它不会运行原游戏 EXE，也不会把原作资源加入公开代码。默认导入自机、敌机、子弹、公共特效、HUD、标题、aura、text 截图动画、字体与已有 ebg 背景；当前本机得到 21 个归档、4,522 个精灵、1,809 个脚本，缺失纹理文件为 0。动态纹理与渲染目标单列在 manifest.runtimeTextures，须由通用宿主适配器提供。每份归档和纹理均保留 SHA-256；可找到参考工程已导出图片时，还核对两份原始字节。
 
 ```powershell
 node tools/import-th20-assets.mjs --reference D:/AIWorkspace/Touhou20Reconstruction

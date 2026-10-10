@@ -19,7 +19,7 @@ export function createTouhouBossPresentationFixture(host, { assets = 'shared', p
       },
     };
     const files = Object.fromEntries(['front', 'effect', 'ascii_960', 'text'].map(name => [name,
-      JSON.parse(host.readText(`games/touhou20/assets/anm/${name}.json`))]));
+      JSON.parse(host.readText(`games/demo/assets/anm/${name}.json`))]));
     banks = Object.fromEntries(Object.entries(files).map(([name, data]) => [name, new AnmBank(data, adapter)]));
     const text = new TouhouTextRenderer({ host, bank: banks.text });
     banks.text.environment = { ...banks.text.environment, createNameAnimation: (name, options) => text.createNameAnimation(name, options) };
