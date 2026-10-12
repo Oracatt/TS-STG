@@ -159,9 +159,16 @@ if(BUILD_TESTING)
     --snapshot ${CMAKE_CURRENT_BINARY_DIR}/native-smoke.json)
   add_script_test(NAME native.input-special COMMAND ts-stg native/tests/input-special.js
     --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 2 --input 1040)
-  add_test(NAME native.reject-input-range COMMAND ts-stg native/tests/input-special.js
-    --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 1 --input 2048)
-  set_tests_properties(native.reject-input-range PROPERTIES PASS_REGULAR_EXPRESSION "between 0 and 2047" TIMEOUT 10)
+  add_script_test(NAME native.input-control COMMAND ts-stg native/tests/input-control.js
+    --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 2 --input 2128)
+  add_script_test(NAME native.input-all COMMAND ts-stg native/tests/input-all.js
+    --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 2 --input 4095)
+  add_script_test(NAME native.reject-input-range COMMAND ts-stg native/tests/input-all.js
+    --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 1 --input 4096)
+  set_tests_properties(native.reject-input-range PROPERTIES PASS_REGULAR_EXPRESSION "between 0 and 4095" TIMEOUT 10)
+  if(TSSTG_ENABLE_V8)
+    set_tests_properties(native.reject-input-range.v8 PROPERTIES PASS_REGULAR_EXPRESSION "between 0 and 4095" TIMEOUT 10)
+  endif()
   add_script_test(NAME native.default-entry COMMAND ts-stg
     --root ${CMAKE_CURRENT_SOURCE_DIR}/native/tests/default-project --headless --frames 2
     --snapshot ${CMAKE_CURRENT_BINARY_DIR}/native-default-entry.json)

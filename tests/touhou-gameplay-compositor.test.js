@@ -99,7 +99,8 @@ test('zero shake preserves the original full command stream without a regional s
 test('embedded bullet bodies use the BulletInf owner, while registered children and cancellation keep their callbacks',()=>{
   const field=new TouhouBulletField({bank:{create(){}},styles:Array(50).fill({})}),queue=new TouhouRenderQueue(),draw=new DrawList();
   const global=(priority,label)=>({draw(target){if(target.enqueuePriority)target.enqueuePriority(priority,d=>d.rect(label,0,1,1,0));else target.rect(label,0,1,1,0);}});
-  const main={children:[global(13,13)],drawSelf(target){target.rect(41,0,1,1,0);}};
+  // Simulation already owns the embedded transform; rendering is read-only.
+  const main=Object.freeze({x:0,y:0,z:.1,children:[global(13,13)],drawSelf(target){target.rect(41,0,1,1,0);}});
   field.bullets=[{state:1,frozen:false,group:0,x:0,y:0,z:.1,animation:main,child:global(37,37)}];
   field.effects=[global(40,40)];field.draw(queue);queue.flush(draw);
   assert.equal(TOUHOU_OWNER_PRIORITIES.bullet,41);

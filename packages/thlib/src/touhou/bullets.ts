@@ -124,7 +124,7 @@ export class TouhouBulletField {
         configureTouhouBulletBirth(b.animation,kind);
         this.spawnTransition(b); b.commandIndex++;
       } else configureTouhouBulletBirth(b.animation,null);
-      this.executeCommands(b); b.animation.update();
+      this.executeCommands(b); b.animation.update(); this.synchronizeAnimation(b);
       if (p.minimumPlayerDistanceSquared! > 0 && this.player) {
         const dx = sub(b.x, this.player.x), dy = sub(b.y, this.player.y);
         if (add(mul(dx, dx), mul(dy, dy)) < p.minimumPlayerDistanceSquared!) this.retire(b);
@@ -229,6 +229,16 @@ export class TouhouBulletField {
     b.animation.U(0x4a0, (b.animation.U(0x4a0) & ~0x03000000) | 0x01000000);
     if (b.style.childScript) b.child = this.bank.create(b.style.childScript, { x: b.x, y: b.y });
     if (color & 0x8000) b.animation.interrupt(2);
+    this.synchronizeAnimation(b);
+  }
+  /** Embedded ANM ownership is part of the simulation clock. A draw callback
+   * must not set it: replay speed, headless execution and repeated rendering
+   * would otherwise produce different ANM positions and future child updates. */
+  private synchronizeAnimation(b: TouhouBullet): void {
+    if (!b.state || b.frozen) return;
+    b.animation.x = b.x; b.animation.y = b.y; b.animation.z = b.z;
+    if (b.animation.orientation) { b.animation.rotation = wrapAngle(add(b.angle, div(PI, 2))); b.animation.flag(2, 2); }
+    if (b.scaleEnabled) { b.animation.scale2X = b.animation.scale2Y = b.scale; b.animation.flag(4, 4); }
   }
   updateMotion(b: TouhouBullet, rate: number) {
     let finished = 0;
@@ -359,6 +369,7 @@ export class TouhouBulletField {
     const rate = f32(this.context.clockScale ?? 1);
     b.x = add(b.x, div(mul(b.vx, rate), 2)); b.y = add(b.y, div(mul(b.vy, rate), 2)); b.z = add(b.z, div(mul(b.vz, rate), 2));
     b.state = 4; b.primaryRate = b.secondaryRate = 1; b.age.set(0);
+    this.synchronizeAnimation(b);
   }
   dropItems(b: TouhouBullet, mode: number) {
     if (!mode || outside(b, 32, 32)) return;
@@ -414,6 +425,7 @@ export class TouhouBulletField {
         }
       }
       b.age.tick(context.clockScale ?? 1);
+      this.synchronizeAnimation(b);
     }
     for (const effect of priorEffects) effect.update();
     this.bullets = this.bullets.filter(b => b.state !== 0); this.effects = this.effects.filter(effect => effect.alive);
@@ -434,9 +446,6 @@ export class TouhouBulletField {
     }
     for (let group = 0; group < 6; group++) for (const b of this.bullets) {
       if (!b.state || b.frozen || b.group !== group) continue;
-      b.animation.x = b.x; b.animation.y = b.y; b.animation.z = b.z;
-      if (b.animation.orientation) { b.animation.rotation = wrapAngle(add(b.angle, div(PI, 2))); b.animation.flag(2, 2); }
-      if (b.scaleEnabled) { b.animation.scale2X = b.animation.scale2Y = b.scale; b.animation.flag(4, 4); }
       if(children){b.animation.draw(draw,view);b.child?.draw(draw,view);}else b.animation.drawSelf(draw,view);
     }
     if(effects)for (const effect of this.effects) effect.draw(draw, view);

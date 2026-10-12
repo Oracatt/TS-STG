@@ -119,7 +119,7 @@ export class TouhouLaserField {
     const laser=this.spawn(kind,parameters);if(!laser)return null;
     laser.driven=true;laser.autoBounds=kind===2&&parameters.autoBounds===true;laser.state=parameters.state??2;laser.width=laser.p.width;
     if(kind===2)this.drivenCurveOrigins.set(laser,sample(vector(laser.p.x,laser.p.y,laser.p.z),vector(),laser.p.angle,laser.p.speed));
-    if(kind===0)laser.length=laser.p.length;return laser;
+    if(kind===0)laser.length=laser.p.length;this.synchronizeAnimation(laser);return laser;
   }
   /** Adopt newest-first external live-curve history. Missing pre-birth samples
    * stay at the original spawn position with source angle/speed and zero
@@ -169,7 +169,22 @@ export class TouhouLaserField {
       l.path=p.path?p.path.map((n: TouhouCurveNode)=>({...n,position:{...n.position},direction:n.direction??direction(n.angle,1)})):[{kind:0,begin:0,end:999999,position:{...position},direction:direction(p.angle,1),angle:wrapAngle(p.angle),speed:p.speed,acceleration:0,angularAcceleration:0}];
       if(p.path)l.commandIndex=99;l.samples=Array.from({length:p.count},()=>sample(position,vector(),p.angle,p.speed));l.samples![0].velocity={...l.velocity};this.samplePath(l);
     }
-    this.lasers.unshift(l);if(p.sound>=0)this.context.sound?.(p.sound,0);return l;
+    this.synchronizeAnimation(l);this.lasers.unshift(l);if(p.sound>=0)this.context.sound?.(p.sound,0);return l;
+  }
+  /** Preserve the former once-per-frame drawing transform on the owner clock.
+   * Detached ANM children read these words during subsequent updates. */
+  private synchronizeAnimation(l: TouhouLaser): void{
+    if(!l.alive||l.state===1)return;
+    if(l.kind===2){
+      if(l.origin&&(l.p.count<2||l.time.current<=l.p.count)){
+        const p=l.samples![l.p.count<2?0:l.p.count-1]?.position??l.position;
+        l.origin.F(0x2c,p.x);l.origin.F(0x30,p.y);
+      }
+      return;
+    }
+    if(l.animation){l.animation.F(0x2c,l.position.x);l.animation.F(0x30,l.position.y);l.animation.F(0x34,l.position.z);l.animation.rotation=wrapAngle(add(l.angle,div(PI,2)));l.animation.flag(2,2);}
+    if(l.tip){const p=plus(l.position,direction(l.angle,l.length));l.tip.F(0x2c,p.x);l.tip.F(0x30,p.y);}
+    if(!l.travel&&l.origin){l.origin.F(0x2c,l.position.x);l.origin.F(0x30,l.position.y);}
   }
   configureAnimation(vm: AnmInstance,body: boolean){configureLaserAnimation(vm,body);}
   retire(l: TouhouLaser): void{if(!l.alive)return;l.alive=false;l.animation?.destroy();l.origin?.destroy();l.tip?.destroy();}
@@ -257,7 +272,7 @@ export class TouhouLaserField {
       if(l.animation&&l.kind!==2){const sprite=this.bank!.data.sprites[l.animation.spriteIndex];l.animation.scaleX=div(l.width,sprite?.width??l.animation.width);l.animation.scaleY=div(l.length,sprite?.height??l.animation.height);l.animation.flag(4,4);}
       l.animation?.update();if(l.kind===2||l.travel===0)l.origin?.update();l.tip?.update();
       if(l.kind===0)l.time.tick(rate);else if(l.kind===2)l.time.add(mul(l.scale1,l.scale2),rate);
-      l.age.tick(rate);l.updated=true;
+      l.age.tick(rate);l.updated=true;this.synchronizeAnimation(l);
     }
     for(const effect of priorEffects)effect.update();this.effects=this.effects.filter(e=>e.alive);this.lasers=this.lasers.filter(l=>l.alive);this.bank?.collect?.();return this;
   }
@@ -278,14 +293,14 @@ export class TouhouLaserField {
   erase(l: TouhouLaser,options: {check?:boolean}={}): number{return eraseTouhouLaser(l,{world:l.world??this.world,...options,onEffect:(laser,p,circle)=>this.effect(laser,p,circle)});}
   drawCurve(l: TouhouLaser,draw:DrawList,view:AnmView){
     if(!this.bank)return draw;
-    if(l.p.count<2){const p=l.samples![0]?.position??l.position;l.origin!.F(0x2c,p.x);l.origin!.F(0x30,p.y);l.origin!.draw(draw,view);return draw;}
+    if(l.p.count<2){l.origin!.draw(draw,view);return draw;}
     const vm=l.animation!,uv=anmSpriteVertices(vm,{x:0,y:0,scale:1}),vertices:[number,number,number,number,number][]=[],indices:number[]=[];let u=0;const halfPi=div(PI,2);
     for(let i=0;i<l.p.count;i++){const s=l.samples![i];for(let side=0;side<2;side++){let a=wrapAngle(side?sub(s.angle,halfPi):add(halfPi,s.angle));if(i){const prior=wrapAngle(side?sub(l.samples![i-1].angle,halfPi):add(halfPi,l.samples![i-1].angle));a=wrapAngle(add(a,wrapAngle(div(wrapAngle(angleDifference(prior,a)),2))));}const p=plus(s.position,direction(a,mul(l.p.width,.5)));vertices.push([add(view.x??0,mul(p.x,view.scale??1)),add(view.y??0,mul(p.y,view.scale??1)),u,uv[side*2][3],0xffffffff]);}if(i)indices.push((i-1)*2,(i-1)*2+1,i*2,(i-1)*2+1,i*2+1,i*2);u=add(div(1,f32(l.p.count-1)),u);}
     const texture=this.bank.textureFor(vm.spriteIndex),blend=sourceBlend[vm.B(0x499)];if(!blend)throw new Error('Unsupported curve blend');draw.sampler(texture,'bilinear','wrap','wrap').blendFactors(...blend).mesh(texture,vertices,indices).blendEnd();
-    if(l.time.current<=l.p.count){const p=l.samples![l.p.count-1].position;l.origin!.F(0x2c,p.x);l.origin!.F(0x30,p.y);l.origin!.draw(draw,view);}
+    if(l.time.current<=l.p.count)l.origin!.draw(draw,view);
   }
-  draw(draw: DrawList,view: {x:number;y:number;scale:number}=viewDefault,{effects=true}={}): DrawList{if(!this.bank)return draw;if(draw.enqueuePriority){draw.enqueuePriority(39,target=>this.draw(target,view,{effects:false}));for(const effect of this.effects)effect.draw(draw,view);return draw;}for(const l of this.lasers){if(!l.alive||l.state===1)continue;if(l.kind===2){this.drawCurve(l,draw,view);continue;}const vm=l.animation!;vm.F(0x2c,l.position.x);vm.F(0x30,l.position.y);vm.F(0x34,l.position.z);vm.rotation=wrapAngle(add(l.angle,div(PI,2)));vm.flag(2,2);vm.draw(draw,view);
-      if(l.tip){const p=plus(l.position,direction(l.angle,l.length));l.tip.F(0x2c,p.x);l.tip.F(0x30,p.y);l.tip.draw(draw,view);}if(!l.travel){l.origin!.F(0x2c,l.position.x);l.origin!.F(0x30,l.position.y);l.origin!.draw(draw,view);}}
+  draw(draw: DrawList,view: {x:number;y:number;scale:number}=viewDefault,{effects=true}={}): DrawList{if(!this.bank)return draw;if(draw.enqueuePriority){draw.enqueuePriority(39,target=>this.draw(target,view,{effects:false}));for(const effect of this.effects)effect.draw(draw,view);return draw;}for(const l of this.lasers){if(!l.alive||l.state===1)continue;if(l.kind===2){this.drawCurve(l,draw,view);continue;}l.animation!.draw(draw,view);
+      l.tip?.draw(draw,view);if(!l.travel)l.origin!.draw(draw,view);}
     if(effects)for(const effect of this.effects)effect.draw(draw,view);return draw;
   }
   snapshot(): unknown{return {count:this.count,cancelCounter:this.cancelCounter,lasers:this.lasers.map(l=>({id:l.id,kind:l.kind,state:l.state,x:l.position.x,y:l.position.y,angle:l.angle,width:l.width,length:l.length,speed:l.speed,age:l.age.current,time:l.time.value,samples:l.samples?.map(s=>({x:s.position.x,y:s.position.y,angle:s.angle,speed:s.speed}))}))};}

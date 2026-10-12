@@ -42,6 +42,8 @@ function interruptTree(vm:AnmInstance|null|undefined, label:number) { if (!vm?.a
 function setDuration(vm:AnmInstance|null|undefined, duration:number) { if (!vm) return; if (vm.scriptId === 4 || vm.scriptId === 5) vm.U(0x44c, duration); for (const child of vm.children ?? []) setDuration(child, duration); }
 const record = (records: Record<number,TouhouSpellRecord>, key: number) => records[key] ??= { name: '', captures: [0, 0], attempts: [0, 0] };
 const increment = (entry:TouhouSpellRecord, field:'captures'|'attempts', mode:number) => { if (entry[field][mode] < 99999) entry[field][mode]++; };
+const copyRecords = (records:Record<number,TouhouSpellRecord>):Record<number,TouhouSpellRecord> => Object.fromEntries(
+  Object.entries(records).map(([id,entry])=>[id,{name:entry.name,captures:[...entry.captures],attempts:[...entry.attempts]}]));
 
 /** Common original spell owner. update never runs or selects a Boss attack script. */
 export class TouhouSpell {
@@ -84,9 +86,13 @@ export class TouhouSpell {
   constructor({ player, textBank = null, effectBank = null, font = null, context = {}, records = {},
     fallbackRecords = {}, difficulty = 1, stage = 1, mode = 0, viewIndex = 0, playback = false, presentation = {} }: {player?:TouhouSpellPlayer|null;textBank?:AnmBank|null;effectBank?:AnmBank|null;font?:{screenScale?:number;draw(draw:DrawList,text:string,options:Record<string,unknown>):unknown}|null;context?:TouhouSpellContext;records?:Record<number,TouhouSpellRecord>;fallbackRecords?:Record<number,TouhouSpellRecord>;difficulty?:number;stage?:number;mode?:number;
   /** Original game-session viewport index, not a player/character index. Keep 0 for every character in a single-playfield game; it selects the moving text22 title. */
-  viewIndex?:number;playback?:boolean;presentation?:TouhouSpellPresentation} = {}) {
+  viewIndex?:number;
+  /** Replay HUD counters advance on private copies of the supplied historical records. Caller-owned save records remain unchanged. */
+  playback?:boolean;presentation?:TouhouSpellPresentation} = {}) {
     this.player = player; this.textBank = textBank; this.effectBank = effectBank; this.font = font; this.context = context;
-    this.records = records; this.fallbackRecords = fallbackRecords; this.difficulty = difficulty; this.stage = stage;
+    this.records = playback ? copyRecords(records) : records;
+    this.fallbackRecords = playback ? copyRecords(fallbackRecords) : fallbackRecords;
+    this.difficulty = difficulty; this.stage = stage;
     // card_system/lifecycle.cpp selects a game-session viewport here, not a
     // player character. A single-playfield game keeps index0 for both players.
     this.mode = mode; this.viewIndex = viewIndex; this.playback = playback;
@@ -114,7 +120,7 @@ export class TouhouSpell {
     if (survival) this.flags |= 8;
     if (!keepStageBackground) this.flags &= ~0x200;
     const mode = this.mode === 2 ? 1 : 0;
-    if (!this.playback) for (const records of [this.records, this.fallbackRecords]) {
+    for (const records of [this.records, this.fallbackRecords]) {
       const entry = record(records, id); entry.name = this.name; increment(entry, 'attempts', mode);
     }
     context.hudNumberInterrupt?.(2); this.flags &= ~0x20;
@@ -195,7 +201,7 @@ export class TouhouSpell {
       if (context.addScore) context.addScore(this.bonus, this);
       else if (this.player) this.player.score = Math.min(999999999, (this.player.score ?? 0) + Math.trunc((this.bonus >>> 0) / 10));
       context.hudNotice?.(0, this.bonus);
-      if (!this.playback) for (const records of [this.records, this.fallbackRecords]) increment(record(records, this.spellIndex), 'captures', this.mode === 2 ? 1 : 0);
+      for (const records of [this.records, this.fallbackRecords]) increment(record(records, this.spellIndex), 'captures', this.mode === 2 ? 1 : 0);
       context.sound?.(46, 0);
     }
     if (this.flags & 0x80) context.sound?.(69, 0);
@@ -236,8 +242,8 @@ export class TouhouSpell {
     const write = (text: string, x: number) => this.font!.draw(draw, text, { x: x * scale + (screenView.x ?? 0) / baseScale,
       y: this.presentation.y * scale + (screenView.y ?? 0) / baseScale, scaleX: scale, scaleY: scale, font: this.presentation.font, alignX: 1, color, drawPriority:TOUHOU_OWNER_PRIORITIES.spellText });
     write(this.captureEligible ? String(this.bonus).padStart(8, ' ') : '$', this.captureEligible ? this.presentation.bonusX : this.presentation.failedBonusX);
-    const entry = record(this.records, this.spellIndex), mode = this.mode === 2 ? 1 : 0;
-    const captures = entry.captures[mode], attempts = entry.attempts[mode];
+    const entry = this.records[this.spellIndex], mode = this.mode === 2 ? 1 : 0;
+    const captures = entry?.captures[mode] ?? 0, attempts = entry?.attempts[mode] ?? 0;
     write(captures >= 100 ? 'MASTER' : `${String(captures).padStart(2, '0')}/${attempts >= 100 ? '99+' : String(attempts).padStart(2, '0')}`, this.presentation.recordX);
     return draw;
   }

@@ -129,7 +129,18 @@ export class TouhouItems {
     item.animation = script!==undefined&&script>=0?bank?.create(script)??null:null;
     item.secondaryAnimation = upScript!==undefined&&upScript>=0?bank?.create(upScript)??null:null;
     item.animation?.U(0x490, color);
-    this.items.unshift(item); return item;
+    this.synchronizeAnimation(item);this.items.unshift(item); return item;
+  }
+  /** Owner offsets and the recovered off-screen arrow state belong to the
+   * simulation tick: ANM detached children inherit them on their next update. */
+  private synchronizeAnimation(item: TouhouItem): void{
+    if(!item.state||!item.animation?.alive||item.delay>0)return;
+    item.animation.x=item.x;item.animation.y=item.y;
+    const visual=item.secondaryAnimation;
+    if(visual){visual.x=item.x;visual.y=item.y;}
+    // Test script-local Y, retaining the source's independent owner offset.
+    item.drawState=(item.animation.F?.(0x30)??0)<-8?1:0;
+    if(item.drawState&&visual?.alive){const shifted=add(visual.F(0x30),8);visual.F(0x30,8);visual.alpha=shifted<32?trunc32(mul(div(shifted,32),255))&255:255;}
   }
   spawnMany({ x, y }: {x:number;y:number}, count: number, type: TouhouItemId, context: TouhouItemContext = this.context): TouhouItem[] {
     const result = [];
@@ -212,7 +223,7 @@ export class TouhouItems {
     for (const item of this.items) {
       if (!item.state) continue;
       if (item.state === 1) {
-        if (item.delay > 0) { item.delay = isub(item.delay, 1); if (item.delay < 1) this.spawnEffect(item, context); continue; }
+        if (item.delay > 0) { item.delay = isub(item.delay, 1); if (item.delay < 1) {this.spawnEffect(item, context);this.synchronizeAnimation(item);} continue; }
         if (this.forcedCollect(context)) { item.attractionSpeed = p.collectSpeed; item.state = 3; this.pursue(item, scale); }
         else {
           this.move(item, scale, this.speedScale); item.vy = add(item.vy, mul(mul(scale, .03), this.speedScale));
@@ -234,7 +245,7 @@ export class TouhouItems {
           item.attractionSpeed = div(p.collectSpeed, 3); item.state = 4;
         }
       }
-      item.animation?.update(); item.secondaryAnimation?.update(); item.timer.tick(context.timerRate ?? 1); this.processed = iadd(this.processed, 1);
+      item.animation?.update(); item.secondaryAnimation?.update(); item.timer.tick(context.timerRate ?? 1);this.synchronizeAnimation(item); this.processed = iadd(this.processed, 1);
     }
     this.items = this.items.filter(item => item.state);
     for (const effect of this.effects) effect.update(); this.effects = this.effects.filter(effect => effect.alive);
@@ -323,15 +334,8 @@ export class TouhouItems {
     if(draw.enqueuePriority){draw.enqueuePriority(35,target=>this.draw(target,view,{effects:false}));for(const effect of this.effects)effect.draw(draw,view);this.floatingScores?.draw(draw,view);return draw;}
     for (const item of this.items) {
       if (!item.state || !item.animation?.alive || item.delay > 0) continue;
-      item.animation.x = item.x; item.animation.y = item.y;
-      if (item.secondaryAnimation) { item.secondaryAnimation.x = item.x; item.secondaryAnimation.y = item.y; }
-      // Preserve the recovered script-coordinate test, not an inferred global-Y test.
-      if (!(item.animation.F(0x30) < -8)) { item.animation.draw(draw, view); item.drawState = 0; }
-      else {
-        const visual = item.secondaryAnimation;
-        if (visual?.alive) { const shifted = add(visual.F(0x30), 8); visual.F(0x30, 8); visual.alpha = shifted < 32 ? trunc32(mul(div(shifted, 32), 255)) & 255 : 255; visual.draw(draw, view); }
-        item.drawState = 1;
-      }
+      if(!item.drawState)item.animation.draw(draw,view);
+      else if(item.secondaryAnimation?.alive)item.secondaryAnimation.draw(draw,view);
     }
     if(effects){for (const effect of this.effects) effect.draw(draw, view);this.floatingScores?.draw(draw,view);}
   }

@@ -1,6 +1,54 @@
 import type { ReplayData, StorageAdapter } from './api-types.js';
 import { Keys } from './input.js';
-const INPUT_MASK = Object.values(Keys).reduce<number>((mask, key) => mask | key, 0);
+// Version 1 recordings retain the existing simulation bits; view controls do not
+// extend their accepted input range or require a replay format revision.
+const INPUT_MASK = Object.values(Keys).reduce<number>((mask, key) => key === Keys.FAST_FORWARD ? mask : mask | key, 0);
+
+export interface ReplayPlaybackControllerOptions {
+  /** Live control only. The native host maps both Ctrl keys to this default. */
+  fastForwardMask?: number;
+  /** Integer simulation updates per host update while the control is held. */
+  fastForwardSteps?: number;
+}
+
+export interface ReplayPlaybackUpdateOptions {
+  /** A paused replay consumes no recorded inputs. */
+  paused?: boolean;
+  /** Checked before every step, including the first. Guard the scene, page and
+   * completion state here, and include pause state if it can change in a step.
+   * Allow the final step that handles next() === null and reports completion. */
+  shouldContinue?: () => boolean;
+}
+
+/** Portable replay view control. Repeats complete deterministic updates, never
+ * enlarges dt, skips recorded inputs or injects live keys into the simulation.
+ * Invoke only for playback; normal play and menus keep their usual clock. */
+export class ReplayPlaybackController {
+  readonly fastForwardMask: number;
+  readonly fastForwardSteps: number;
+
+  constructor(options: ReplayPlaybackControllerOptions = {}) {
+    this.fastForwardMask = options.fastForwardMask ?? Keys.FAST_FORWARD;
+    this.fastForwardSteps = options.fastForwardSteps ?? 8;
+    if (!Number.isInteger(this.fastForwardMask) || this.fastForwardMask < 0 || this.fastForwardMask > 0xffffffff)
+      throw new RangeError('Replay fast-forward mask must be an unsigned input mask');
+    if (!Number.isSafeInteger(this.fastForwardSteps) || this.fastForwardSteps < 1)
+      throw new RangeError('Replay fast-forward steps must be a positive safe integer');
+  }
+
+  /** Return the number of completed simulation steps. A step or guard exception
+   * propagates immediately; no remaining steps run after it. */
+  update(liveMask: number, step: () => void, options: ReplayPlaybackUpdateOptions = {}): number {
+    if (options.paused) return 0;
+    const steps = (liveMask & this.fastForwardMask) !== 0 ? this.fastForwardSteps : 1;
+    let completed = 0;
+    for (; completed < steps; completed++) {
+      if (options.shouldContinue && !options.shouldContinue()) break;
+      step();
+    }
+    return completed;
+  }
+}
 /** Stable integer hash for deterministic replay checkpoints. */
 export function stateHash(value: unknown): string {
   const canonical = (item: unknown): string => {
@@ -26,7 +74,7 @@ export class ReplayRecorder {
     this.runs = []; this.frames = 0; this.checkpoints = [];
   }
   record(mask: number): void {
-    mask = mask >>> 0;
+    mask = (mask & ~Keys.FAST_FORWARD) >>> 0;
     const last = this.runs[this.runs.length - 1];
     if (last && last[0] === mask) last[1]++;
     else this.runs.push([mask, 1]);

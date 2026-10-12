@@ -59,7 +59,7 @@
 | 敌人/Boss/道具 | 敌人血量/伤害/掉落、Boss多阶段/移动/超时/收卡、资源和碎片道具 | `Enemy`、`Boss`、`Item`、`ItemTypes`、`spawnDrops` |
 | 特效与自机绘制 | 圈/火花/浮字、爆散；图集驱动的武器/Bomb/道具/判定点/死亡效果分层绘制 | `Effect`、`Effects`、`PlayerPresentation` |
 | 关卡与会话 | 生成器关卡时间线、Boss/对话、通关；标题、游戏、暂停、练习、续关/结算等原型流程 | `Stage`、`Dialogue`、`Game`、`Menu`、`DEFAULT_RULES` |
-| 回放与保存 | TS-STG自定义输入RLE格式、检查点、状态hash、回放和同步存储适配 | `ReplayRecorder`、`ReplayPlayer`、`SaveStore`、`stateHash` |
+| 回放与保存 | TS-STG自定义输入RLE格式、检查点、状态hash、回放、Ctrl长按快进与同步存储适配 | `ReplayRecorder`、`ReplayPlayer`、`ReplayPlaybackController`、`SaveStore`、`stateHash` |
 | 图集与动画 | 图集元数据、命名精灵/clip、逐帧动画、缓动、简易投影相机 | `SpriteAtlas`、`SpriteClip`、`SpriteAnimation`、`Easing`、`tween`、`Camera3D` |
 | 绘制命令与图层 | 图形/文字/精灵/区域精灵、四边形、2D/3D网格、shader、混合/alpha/sampler、目标纹理、裁剪和排序命令 | `DrawList`、`LayeredDrawQueue` |
 | 网格与透视效果 | 可变网格、径向扭曲、透视精灵、纹理圆环、矩阵/四元数 | `GridMesh`、`RadialDistortion`、`PerspectiveCamera`、`PerspectiveSprite`、`TexturedRing` |
@@ -198,7 +198,7 @@
 | [radial-distortion.ts](../packages/thlib/src/radial-distortion.ts) | `RadialDistortion` |
 | [render.ts](../packages/thlib/src/render.ts) | `DrawList`、`rgba`、`withAlpha` |
 | [repeating-input.ts](../packages/thlib/src/repeating-input.ts) | `RepeatingInput` |
-| [replay.ts](../packages/thlib/src/replay.ts) | `ReplayPlayer`、`ReplayRecorder`、`SaveStore`、`stateHash` |
+| [replay.ts](../packages/thlib/src/replay.ts) | `ReplayPlayer`、`ReplayRecorder`、`ReplayPlaybackController`、`SaveStore`、`stateHash` |
 | [resources.ts](../packages/thlib/src/resources.ts) | `Resources` |
 | [spell-presentation.ts](../packages/thlib/src/spell-presentation.ts) | `PerspectiveCamera`、`PerspectiveSprite`、`TexturedRing`、`identityPresentationMatrix`、`multiplyPresentationMatrix`、`multiplyPresentationQuaternion`、`presentationQuaternion`、`presentationWorldMatrix` |
 | [sprite-atlas.ts](../packages/thlib/src/sprite-atlas.ts) | `SpriteAtlas`、`SpriteClip` |

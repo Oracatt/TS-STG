@@ -201,7 +201,7 @@ test('spell numeric values retain Renderer default left alignment and follow the
   for (let i = 0; i < 150; i++) owner.update();
   owner.draw(new DrawList());
   const bonus = calls.find(call => call.text.trim() === String(owner.spell.bonus));
-  const history = calls.find(call => call.text === '00/00');
+  const history = calls.find(call => call.text === '00/01');
   assert.equal(bonus.options.alignX, 1); assert.equal(history.options.alignX, 1);
   assert.ok(bonus.glyphs.every(glyph => glyph.x >= 399));
   assert.equal(history.glyphs[0].x, 540);

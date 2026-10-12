@@ -709,6 +709,7 @@ std::uint32_t keyboardInput() {
     if (IsKeyDown(KEY_ESCAPE)) mask |= 128;
     if (IsKeyDown(KEY_ENTER) || IsKeyDown(KEY_KP_ENTER)) mask |= 256;
     if (IsKeyDown(KEY_C)) mask |= 1024;
+    if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) mask |= 2048;
     return mask;
 }
 }

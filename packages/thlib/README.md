@@ -209,6 +209,15 @@ format. Sprite animation, resource caches, binary32 arithmetic, configurable inp
 repeat, ordered draw queues, grid meshes, radial distortion, SpriteAtlas and SpriteClip are reusable services.
 Angles are radians; time and velocity use simulation frames.
 
+`ReplayPlaybackController` owns held playback acceleration: the native host maps
+left/right Ctrl to `Keys.FAST_FORWARD`, and the default runs eight complete
+simulation steps per host update while held. Releasing Ctrl immediately restores
+one step. Shift remains `Keys.FOCUS` and does not accelerate playback by default.
+The key and integer step count are configurable. Playback control never enters
+version 1 recorded inputs; `ReplayRecorder` strips the Ctrl control bit, and
+`ReplayPlayer` keeps its existing input validation. See
+[replay view control](../../docs/replay-playback.md) for lifecycle integration.
+
 `StandardBulletPresets` and `getBulletPreset(name)` provide the library's shared
 visual sizes and collision shapes. These are thlib defaults, rather than a
 historical hitbox table from a particular game. Round bullets use a radius of
