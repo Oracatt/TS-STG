@@ -261,7 +261,13 @@ export class TouhouLaserField {
     }
     for(const effect of priorEffects)effect.update();this.effects=this.effects.filter(e=>e.alive);this.lasers=this.lasers.filter(l=>l.alive);this.bank?.collect?.();return this;
   }
-  effect(l: TouhouLaserCollisionState,p: {x:number;y:number;z?:number},circle: boolean=false): void{if(!this.bank)return;const type=l.p.type;let script;if(l.kind===2||type<18||type===34||type===38)script=l.p.color*2+0xd4;else if(type<(circle?32:31)||l.kind===1&&type<32)script=l.p.color*2+0x104;else if(type<34)script=l.p.color*2+0x11c;else return;const vm=this.bank.create(script,{x:p.x,y:p.y,z:p.z??0});this.effects.push(vm);this.context.onLaserCancelEffect?.(l,vm);}
+  effect(l: TouhouLaserCollisionState,p: {x:number;y:number;z?:number},circle: boolean=false): void{
+    if(!this.bank)return;const type=l.p.type;if(l.kind!==2&&type>=35&&type!==38)return;
+    // Palette rows name the parent ANM, including its two colored fragment scripts.
+    // Curves and tiny bullet styles use the regular sixteen-color laser effects.
+    const style=this.styles[l.kind===2||type<2?2:type],script=style.colors[l.p.color][3];
+    if(script<=0)return;const vm=this.bank.create(script,{x:p.x,y:p.y,z:p.z??0});this.effects.push(vm);this.context.onLaserCancelEffect?.(l,vm);
+  }
   cancelOne(l: TouhouLaser,center:Vector,width:number,height:number,angle: number,circle:boolean,check:boolean){
     return cancelTouhouLaser(l,center,width,height,angle,circle,{check,world:l.world,clockScale:this.context.clockScale??1,
       onEffect:(laser,p,isCircle)=>this.effect(laser,p,isCircle),onCancel:count=>{this.cancelCounter+=count;},
