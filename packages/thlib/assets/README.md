@@ -6,11 +6,11 @@ thlib 包含灵梦、魔理沙本体、子机、武器、判定点、Bomb、弹�
 
 ## 完整公共还原资源
 
-`touhou-common/` 由 `createTouhouResources` 载入，包含 10 个 ANM bank、94 张 PNG、51 个原音效、1,342 个动画脚本和 2,256 个 sprite，以及两角色的基础射击数据。脚本包含姿态、子动画和辅助效果，数量不是独立实体种类数。应用使用这套资源和同一个 `TouhouPlayer` 实现；保留运动、缩放、旋转、混合、子动画及中断等完整演出。混合图集仅移除作品专属区域，并保留 1 像素原采样边框；没有因图集混杂而排除整个角色或武器。来源、筛选规则和使用方式见 [完整公共资源](TOUHOU-COMMON.md)。
+`touhou-common/` 由 `createTouhouResources` 载入，包含 10 个 ANM bank、95 张 PNG、53 个原音效、1,406 个动画脚本和 2,355 个 sprite。两角色的基础射击数据保持不变，另提供每人八套武器、共 320 组射击模式，以及对应子机、命中动画和音效。脚本包含姿态、子动画和辅助效果，数量不是独立实体种类数。应用使用这套资源和同一个 `TouhouPlayer` 实现；保留运动、缩放、旋转、混合、子动画及中断等完整演出。混合图集仅移除作品专属区域，并保留 1 像素原采样边框；没有因图集混杂而排除整个角色或武器。来源、筛选规则和使用方式见 [完整公共资源](TOUHOU-COMMON.md)。
 
 公共 UI 的 `front`、`ascii_960`、`title` 另作统一采样隔离：1066 个静态精灵完整保留原 RGBA，重新排列并延展两像素自身边缘；只重映射 UV 和纹理尺寸，不改变几何与 ANM。横向循环条带保留循环行为，动态文字和捕获表面不重排。这样避免相邻图块串边，并保留文字本身的黑色描边。`screenswitch` 的两张转场纹理和原始越界 UV 完全不重排，以保留原作平铺；`ascii_960:17` 和其子节点提供通用 NowLoading，其 entry7 原图已有采样留白，保留原纹理尺寸和 UV，避免粒子边缘量化差异。
 
-工作区执行 `node tools/import-touhou-common-assets.mjs` 重建，`--check` 校验所有产物。运行时不需要导入工具。
+工作区执行 `node tools/import-touhou-common-assets.mjs` 重建素材，`node tools/import-touhou-weapon-data.mjs` 重建武器 TypeScript 数据，两者均支持 `--check`。运行时不需要导入工具。武器普通射击与子机行为由 thlib 提供；增强射击表及其动画原样保留，不引入魔石装备、被动属性、拾取或自动激活阶段。
 
 ## 图像与动画片段
 
@@ -51,6 +51,6 @@ SpriteClip 只负责纹理帧播放。需要已还原的 Bomb 伤害、无敌、
 
 ## 音效
 
-`manifest.json` 和 `audio/` 提供六个原创合成音效：shot、graze、pickup、hit、bomb、select。它们为 MIT 授权；格式是单声道 22,050 Hz、16 位 PCM WAV。`touhou-common/audio/` 另外提供 51 个导入原音效（包括普通符卡超时的69号 `se_fault.wav`），保留原权利说明，由 `TouhouAudio` 调度。清单文件名相对各自素材目录，平台适配器负责载入和播放。
+`manifest.json` 和 `audio/` 提供六个原创合成音效：shot、graze、pickup、hit、bomb、select。它们为 MIT 授权；格式是单声道 22,050 Hz、16 位 PCM WAV。`touhou-common/audio/` 另外提供 53 个导入原音效（包括武器发射/命中的64/65号 `se_msl.wav`、`se_msl2.wav` 和普通符卡超时的69号 `se_fault.wav`），保留原权利说明，由 `TouhouAudio` 调度。清单文件名相对各自素材目录，平台适配器负责载入和播放。
 
 `tools/generate-audio.mjs` 可重建这六个文件。Moonlit 的音乐仍属于该示例，不在通用素材包内。

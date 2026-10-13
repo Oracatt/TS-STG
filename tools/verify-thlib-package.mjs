@@ -21,6 +21,8 @@ const packed=JSON.parse(run(process.execPath,[npmCli,'pack','--json','--ignore-s
 assert.ok(packed.files.some(file=>file.path==='assets/manifest.json'));
 assert.equal(packed.files.filter(file=>file.path.startsWith('assets/audio/')&&file.path.endsWith('.wav')).length,6);
 assert.ok(packed.files.some(file=>file.path==='assets/touhou-common/manifest.json'),'Complete shared animation/resources pack is required');
+for(const character of [0,1])assert.ok(packed.files.some(file=>file.path===`assets/touhou-common/shots/pl0${character}-weapons.json`),'Each character requires all eight standalone weapon tables');
+for(const file of ['weapon-data','weapons'])for(const extension of ['js','d.ts'])assert.ok(packed.files.some(entry=>entry.path===`dist/touhou/${file}.${extension}`),'Standalone weapon APIs must be compiled and typed in the tarball');
 assert.ok(packed.files.some(file=>file.path==='assets/touhou-common/locales/zh-CN/anm/front.json'),'Chinese common UI locale must be present in the isolated package');
 assert.ok(packed.files.some(file=>file.path==='assets/spell-common/manifest.json'),'Shared spell/charge/aura pack is required');
 assert.ok(!packed.files.some(file=>/(?:^|\/)(?:th20|games|examples|tests)(?:\/|$)/.test(file.path)),'Library tarball contains game-specific files');
@@ -69,7 +71,7 @@ for(const texture of Object.values(spellVisuals.textures)){
 }
 assert.ok(existsSync(join(installed,'assets/spell-common/NOTICE.md')));
 const source=`import * as thlib from '@ts-stg/thlib';
-import {TouhouPlayer,createTouhouResources} from '@ts-stg/thlib/touhou';
+import {TouhouPlayer,createTouhouResources,getTouhouWeaponData} from '@ts-stg/thlib/touhou';
 const {Game,Keys,GridMesh,RadialDistortion,LayeredDrawQueue,RepeatingInput,SpriteAtlas,Player,Weapon,PlayerPresentation,createPlayerCharacter}=thlib;
 if(!GridMesh||!RadialDistortion||!LayeredDrawQueue||!RepeatingInput||!SpriteAtlas)throw Error('Missing shared templates');
 if(!thlib.PerspectiveCamera||!thlib.PerspectiveSprite||!thlib.TexturedRing)throw Error('Missing shared spell presentation primitives');
@@ -79,6 +81,13 @@ if(characters.some(player=>!(player instanceof Player)||!(player.weapon instance
 if(characters[0].weapon.type!=='homing'||characters[1].weapon.type!=='laser')throw Error('Missing shared character weapons');
 const game=new Game({seed:42,title:'Independent application'});let frame=0;
 const resources=createTouhouResources(globalThis.__testResourceHost??globalThis.tsstg,{basePath:'node_modules/@ts-stg/thlib/assets/touhou-common',locale:'zh-CN'});
+const weaponProfiles=[];
+for(const character of [0,1])for(let weapon=0;weapon<8;weapon++){
+ const data=getTouhouWeaponData(character,weapon),bank=resources.banks[character?'pl01':'pl00'];
+ if(data.patterns.length!==20||!Object.isFrozen(data.patterns))throw Error('Missing immutable complete weapon data');
+ for(const row of data.patterns.flat())if(bank.data.scripts[row.animation]?.excluded)throw Error('Weapon references excluded artwork');
+ weaponProfiles.push({character,weapon,patterns:data.patterns.length,rows:data.patterns.flat().length});
+}
 const restored=[0,1].map(character=>new TouhouPlayer({character,sht:resources.shots[character],bank:resources.banks[character?'pl01':'pl00'],effectBank:resources.banks.effect,power:400}));
 const playerDraw=new thlib.DrawList();
 globalThis.__tsstg_game={update(){game.update(frame===0?Keys.CONFIRM:Keys.SHOOT);
@@ -87,7 +96,7 @@ globalThis.__tsstg_game={update(){game.update(frame===0?Keys.CONFIRM:Keys.SHOOT)
 },render(){playerDraw.reset();for(const player of restored)player.draw(playerDraw);return game.render().concat(playerDraw.commands);},snapshot:()=>({frame,state:game.state,libraryOnly:true,
  characters:characters.map(player=>({character:player.character,weapon:player.weapon.type})),
  restored:restored.map(player=>({character:player.character,shots:player.shots.length,bombs:player.bombs,bomb:player.bomb?.constructor.name,animated:!!player.animation})),
- sharedBanks:Object.keys(resources.banks),locale:resources.locale})};
+ sharedBanks:Object.keys(resources.banks),locale:resources.locale,weaponProfiles})};
 `;
 writeFileSync(join(app,'main.js'),source);
 writeFileSync(join(app,'node-check.mjs'),`import {readFileSync} from 'node:fs';
@@ -100,6 +109,7 @@ console.log(JSON.stringify(game.snapshot()));
 `);
 const node=JSON.parse(run(process.execPath,['node-check.mjs'],app));assert.equal(node.frame,120);
 assert.equal(node.locale,'zh-CN');
+assert.equal(node.weaponProfiles.length,16);
 assert.deepEqual(node.restored.map(p=>p.bomb),['TouhouReimuBomb','TouhouMarisaBomb']);
 assert.ok(node.restored.every(p=>p.animated&&p.bombs===1));
 const binary=resolve(root,process.env.TSSTG_BINARY??'build/Release/ts-stg.exe');

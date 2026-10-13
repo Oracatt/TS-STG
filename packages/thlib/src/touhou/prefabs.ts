@@ -2,6 +2,7 @@ import type {AnmCreateOptions,AnmInstance} from './anm.js';
 import type {TouhouResources} from './resources.js';
 import type {TouhouPlayerOptions} from './player.js';
 import type {TouhouEnemyOptions} from './enemy.js';
+import type {TouhouWeaponIndex} from './weapon-data.js';
 
 export interface TouhouAnimationPreset {readonly id:string;readonly bank:string;readonly script:number;}
 
@@ -12,6 +13,7 @@ export interface TouhouBulletPreset extends TouhouAnimationPreset {readonly type
 export interface TouhouPrefabCatalog {
  readonly players:typeof TOUHOU_PLAYER_PRESETS;readonly bullets:typeof TOUHOU_BULLET_PRESETS;readonly enemies:typeof TOUHOU_ENEMY_PRESETS;readonly effects:typeof TOUHOU_EFFECT_PRESETS;readonly animations:readonly TouhouAnimationPreset[];
  createPlayer(character?:'reimu'|'marisa'|0|1,options?:Omit<TouhouPlayerOptions,'character'|'sht'|'bank'|'effectBank'>):TouhouPlayer;
+ createWeaponPlayer(character:'reimu'|'marisa'|0|1,weapon:TouhouWeaponIndex,options?:Omit<TouhouPlayerOptions,'character'|'sht'|'bank'|'effectBank'>):TouhouPlayer;
  createEnemy(preset?:string|number,options?:Omit<TouhouEnemyOptions,'bank'|'script'|'deathBank'>):TouhouEnemy;
  createEffect(preset:string|number,options?:AnmCreateOptions):AnmInstance;
  createAnimation(preset:string,options?:AnmCreateOptions):AnmInstance;
@@ -23,6 +25,7 @@ import {TouhouEnemy,touhouEnemyDeathScript} from './enemy.js';
 import {TouhouPlayer} from './player.js';
 import {TouhouBulletField} from './bullets.js';
 import {TOUHOU_BULLET_STYLES} from './bullet-style-data.js';
+import {createTouhouWeaponPreset} from './weapons.js';
 
 const freezeEntries=<const T>(entries:readonly T[])=>Object.freeze(entries.map(entry=>Object.freeze(entry)));
 const sequence=<T>(count:number,callback:(index:number)=>T)=>Array.from({length:count},(_,index)=>callback(index));
@@ -88,6 +91,13 @@ export function createTouhouPrefabCatalog(resources: TouhouResources): TouhouPre
       if(!preset)throw new RangeError(`Unknown player preset ${String(character)}`);
       if(resources.disposed)throw new Error('Touhou resources have been disposed');
       return new TouhouPlayer({...options,character:preset.character,sht:resources.shots[preset.character],bank:resources.banks[preset.bank]!,effectBank:resources.banks.effect!});
+    },
+    createWeaponPlayer(character,weapon,options={}){
+      const preset=TOUHOU_PLAYER_PRESETS.find(p=>p.id===character||p.character===character);
+      if(!preset)throw new RangeError(`Unknown player preset ${String(character)}`);
+      if(resources.disposed)throw new Error('Touhou resources have been disposed');
+      return new TouhouPlayer({...createTouhouWeaponPreset(preset.character,weapon),...options,character:preset.character,
+        bank:resources.banks[preset.bank]!,effectBank:resources.banks.effect!});
     },
     createEnemy(preset=0,options={}){
       const descriptor=selected(TOUHOU_ENEMY_PRESETS,preset,'enemy');

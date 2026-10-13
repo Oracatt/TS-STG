@@ -67,7 +67,10 @@ export class TouhouDamageAccumulator {
       if (p.timer && p.timer.current === p.timer.previous) continue;
       const profile = p.sht?.damageCaps?.[0];
       if (!profile) throw new Error('Damage accumulator requires current imported SHT damage caps');
-      const total = Math.min(entry.amount, p.focused ? profile.focus : profile.normal) | 0;
+      // damage_regions/damage.cpp reads overlay +0x54 (phase), not its
+      // separate +0x78 main-shooting flag.
+      const cap=p.weaponPhaseActive?profile.special:p.focused?profile.focus:profile.normal;
+      const total = Math.min(entry.amount, cap) | 0;
       if (total !== 0) {
         const nominal = (Math.trunc(total / 10) + 10) | 0;
         if (context.addScore) context.addScore(nominal, { type: 'damage', enemy });

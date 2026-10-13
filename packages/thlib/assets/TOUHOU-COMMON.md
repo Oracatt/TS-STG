@@ -2,7 +2,7 @@
 
 `touhou-common/` is the bundled resource pack for `@ts-stg/thlib/touhou` and is versioned with the library.
 It carries complete animation instructions and their dependency trees, including
-Reimu/Marisa bodies, options, baseline weapons, Bombs and focus indicators. It
+Reimu/Marisa bodies, options, all eight weapons per character, Bombs and focus indicators. It
 also includes ordinary bullets/lasers, cancellation, common items, fairy enemies,
 particles/death/charge effects, scene-cover/reveal transitions, the NowLoading
 indicator, bitmap glyphs and the original common sound effects.
@@ -11,6 +11,8 @@ A fresh checkout or installed package already contains these files. To rebuild f
 existing local import at `games/demo/assets`; that directory is only an import
 source, never a runtime dependency. Use `--source` for another existing import,
 `--out` to relocate the result, or `--check` to verify every generated file.
+`node tools/import-touhou-weapon-data.mjs` regenerates the corresponding portable
+TypeScript numeric tables; its `--check` verifies the checked-in data.
 
 ```js
 import {createTouhouResources, TouhouPlayer} from '@ts-stg/thlib/touhou';
@@ -33,8 +35,18 @@ shared textures remain valid for other banks. Call `resources.dispose()` once th
 resource owner is finished to release its remaining banks, textures and sounds.
 Disposal is idempotent, sets `resources.disposed`, and prevents new banks or loads.
 
-Only profile 0 and normal/focused shot patterns 0–14 are kept. Stone profiles,
-stone icons and enemies, named Bosses, portraits, title/stage/background artwork,
+The default tables retain profile 0 and normal/focused patterns 0–14 unchanged.
+`getTouhouWeaponData(character, weapon)` selects any of the eight profiles (`0..7`)
+for either character, with each original twenty-pattern block mapped to local
+`0..19`. The data preserves main, unfocused, focused and enhanced-shot rows,
+matching option coordinates/animations, damage caps, callback IDs and source SHT
+hashes. The player banks include their complete shot/impact/option dependencies
+and controller-allocated Bar/Yellow animation trees; sounds 64/65 retain the
+original missile launch/impact samples. Normal shooting and option motion are
+standalone weapons; retained enhanced data does not add stone equipment, passive
+attributes, pickups or automatic activation to the library.
+
+Stone icons and enemies, named Bosses, portraits, title/stage/background artwork,
 game-specific HUD and loading illustrations are omitted. Selected regions of mixed
 atlases are copied losslessly into otherwise transparent canvases without changing
 their dimensions or coordinates. Each region retains the one-pixel source border

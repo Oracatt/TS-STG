@@ -45,6 +45,13 @@
         "sourceTexture": "player/pl00/pl00.png"
       },
       {
+        "id": "pl00:6",
+        "bank": "pl00",
+        "script": 6,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
         "id": "pl00:7",
         "bank": "pl00",
         "script": 7,
@@ -59,6 +66,195 @@
         "sourceTexture": "player/pl00/pl00s.png"
       },
       {
+        "id": "pl00:9",
+        "bank": "pl00",
+        "script": 9,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:10",
+        "bank": "pl00",
+        "script": 10,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:11",
+        "bank": "pl00",
+        "script": 11,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:12",
+        "bank": "pl00",
+        "script": 12,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:13",
+        "bank": "pl00",
+        "script": 13,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:14",
+        "bank": "pl00",
+        "script": 14,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:16",
+        "bank": "pl00",
+        "script": 16,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:17",
+        "bank": "pl00",
+        "script": 17,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:18",
+        "bank": "pl00",
+        "script": 18,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:19",
+        "bank": "pl00",
+        "script": 19,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:20",
+        "bank": "pl00",
+        "script": 20,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:21",
+        "bank": "pl00",
+        "script": 21,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:22",
+        "bank": "pl00",
+        "script": 22,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:23",
+        "bank": "pl00",
+        "script": 23,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:24",
+        "bank": "pl00",
+        "script": 24,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:25",
+        "bank": "pl00",
+        "script": 25,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:26",
+        "bank": "pl00",
+        "script": 26,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:27",
+        "bank": "pl00",
+        "script": 27,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:28",
+        "bank": "pl00",
+        "script": 28,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:29",
+        "bank": "pl00",
+        "script": 29,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:30",
+        "bank": "pl00",
+        "script": 30,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:31",
+        "bank": "pl00",
+        "script": 31,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:32",
+        "bank": "pl00",
+        "script": 32,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:33",
+        "bank": "pl00",
+        "script": 33,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:34",
+        "bank": "pl00",
+        "script": 34,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:35",
+        "bank": "pl00",
+        "script": 35,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:36",
+        "bank": "pl00",
+        "script": 36,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
         "id": "pl00:37",
         "bank": "pl00",
         "script": 37,
@@ -69,6 +265,48 @@
         "id": "pl00:38",
         "bank": "pl00",
         "script": 38,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:39",
+        "bank": "pl00",
+        "script": 39,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:40",
+        "bank": "pl00",
+        "script": 40,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:41",
+        "bank": "pl00",
+        "script": 41,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:42",
+        "bank": "pl00",
+        "script": 42,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:43",
+        "bank": "pl00",
+        "script": 43,
+        "entry": 1,
+        "sourceTexture": "player/pl00/pl00s.png"
+      },
+      {
+        "id": "pl00:44",
+        "bank": "pl00",
+        "script": 44,
         "entry": 1,
         "sourceTexture": "player/pl00/pl00s.png"
       },
@@ -250,6 +488,13 @@
         "sourceTexture": "player/pl01/pl01.png"
       },
       {
+        "id": "pl01:6",
+        "bank": "pl01",
+        "script": 6,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
         "id": "pl01:7",
         "bank": "pl01",
         "script": 7,
@@ -257,9 +502,30 @@
         "sourceTexture": "player/pl01/pl01s.png"
       },
       {
+        "id": "pl01:8",
+        "bank": "pl01",
+        "script": 8,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:9",
+        "bank": "pl01",
+        "script": 9,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
         "id": "pl01:10",
         "bank": "pl01",
         "script": 10,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:11",
+        "bank": "pl01",
+        "script": 11,
         "entry": 1,
         "sourceTexture": "player/pl01/pl01s.png"
       },
@@ -278,6 +544,132 @@
         "sourceTexture": "player/pl01/pl01s.png"
       },
       {
+        "id": "pl01:14",
+        "bank": "pl01",
+        "script": 14,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:15",
+        "bank": "pl01",
+        "script": 15,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:16",
+        "bank": "pl01",
+        "script": 16,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:17",
+        "bank": "pl01",
+        "script": 17,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:18",
+        "bank": "pl01",
+        "script": 18,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:19",
+        "bank": "pl01",
+        "script": 19,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:20",
+        "bank": "pl01",
+        "script": 20,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:21",
+        "bank": "pl01",
+        "script": 21,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:22",
+        "bank": "pl01",
+        "script": 22,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:23",
+        "bank": "pl01",
+        "script": 23,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:24",
+        "bank": "pl01",
+        "script": 24,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:25",
+        "bank": "pl01",
+        "script": 25,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:26",
+        "bank": "pl01",
+        "script": 26,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:27",
+        "bank": "pl01",
+        "script": 27,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:28",
+        "bank": "pl01",
+        "script": 28,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:29",
+        "bank": "pl01",
+        "script": 29,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:30",
+        "bank": "pl01",
+        "script": 30,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:31",
+        "bank": "pl01",
+        "script": 31,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
         "id": "pl01:32",
         "bank": "pl01",
         "script": 32,
@@ -288,6 +680,48 @@
         "id": "pl01:33",
         "bank": "pl01",
         "script": 33,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:34",
+        "bank": "pl01",
+        "script": 34,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:35",
+        "bank": "pl01",
+        "script": 35,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:36",
+        "bank": "pl01",
+        "script": 36,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:37",
+        "bank": "pl01",
+        "script": 37,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:38",
+        "bank": "pl01",
+        "script": 38,
+        "entry": 1,
+        "sourceTexture": "player/pl01/pl01s.png"
+      },
+      {
+        "id": "pl01:39",
+        "bank": "pl01",
+        "script": 39,
         "entry": 1,
         "sourceTexture": "player/pl01/pl01s.png"
       },
@@ -9667,6 +10101,264 @@
       "reason": "WeaponStoneInf overlay; overlay_system/lifecycle.cpp loads aura.anm exclusively for the stone controller"
     }
   },
+  "weapons": [
+    {
+      "character": 0,
+      "weapon": 0,
+      "bank": "pl00",
+      "file": "shots/pl00-weapons.json",
+      "originalPatterns": [
+        0,
+        19
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 37,
+      "fullPowerScript": 38
+    },
+    {
+      "character": 0,
+      "weapon": 1,
+      "bank": "pl00",
+      "file": "shots/pl00-weapons.json",
+      "originalPatterns": [
+        20,
+        39
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 37,
+      "fullPowerScript": 38
+    },
+    {
+      "character": 0,
+      "weapon": 2,
+      "bank": "pl00",
+      "file": "shots/pl00-weapons.json",
+      "originalPatterns": [
+        40,
+        59
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 39,
+      "fullPowerScript": 40
+    },
+    {
+      "character": 0,
+      "weapon": 3,
+      "bank": "pl00",
+      "file": "shots/pl00-weapons.json",
+      "originalPatterns": [
+        60,
+        79
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 39,
+      "fullPowerScript": 40
+    },
+    {
+      "character": 0,
+      "weapon": 4,
+      "bank": "pl00",
+      "file": "shots/pl00-weapons.json",
+      "originalPatterns": [
+        80,
+        99
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 41,
+      "fullPowerScript": 42
+    },
+    {
+      "character": 0,
+      "weapon": 5,
+      "bank": "pl00",
+      "file": "shots/pl00-weapons.json",
+      "originalPatterns": [
+        100,
+        119
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 41,
+      "fullPowerScript": 42
+    },
+    {
+      "character": 0,
+      "weapon": 6,
+      "bank": "pl00",
+      "file": "shots/pl00-weapons.json",
+      "originalPatterns": [
+        120,
+        139
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 43,
+      "fullPowerScript": 44
+    },
+    {
+      "character": 0,
+      "weapon": 7,
+      "bank": "pl00",
+      "file": "shots/pl00-weapons.json",
+      "originalPatterns": [
+        140,
+        159
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 43,
+      "fullPowerScript": 44
+    },
+    {
+      "character": 1,
+      "weapon": 0,
+      "bank": "pl01",
+      "file": "shots/pl01-weapons.json",
+      "originalPatterns": [
+        0,
+        19
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 32,
+      "fullPowerScript": 33
+    },
+    {
+      "character": 1,
+      "weapon": 1,
+      "bank": "pl01",
+      "file": "shots/pl01-weapons.json",
+      "originalPatterns": [
+        20,
+        39
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 32,
+      "fullPowerScript": 33
+    },
+    {
+      "character": 1,
+      "weapon": 2,
+      "bank": "pl01",
+      "file": "shots/pl01-weapons.json",
+      "originalPatterns": [
+        40,
+        59
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 34,
+      "fullPowerScript": 35
+    },
+    {
+      "character": 1,
+      "weapon": 3,
+      "bank": "pl01",
+      "file": "shots/pl01-weapons.json",
+      "originalPatterns": [
+        60,
+        79
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 34,
+      "fullPowerScript": 35
+    },
+    {
+      "character": 1,
+      "weapon": 4,
+      "bank": "pl01",
+      "file": "shots/pl01-weapons.json",
+      "originalPatterns": [
+        80,
+        99
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 36,
+      "fullPowerScript": 37
+    },
+    {
+      "character": 1,
+      "weapon": 5,
+      "bank": "pl01",
+      "file": "shots/pl01-weapons.json",
+      "originalPatterns": [
+        100,
+        119
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 36,
+      "fullPowerScript": 37
+    },
+    {
+      "character": 1,
+      "weapon": 6,
+      "bank": "pl01",
+      "file": "shots/pl01-weapons.json",
+      "originalPatterns": [
+        120,
+        139
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 38,
+      "fullPowerScript": 39
+    },
+    {
+      "character": 1,
+      "weapon": 7,
+      "bank": "pl01",
+      "file": "shots/pl01-weapons.json",
+      "originalPatterns": [
+        140,
+        159
+      ],
+      "localPatterns": [
+        0,
+        19
+      ],
+      "optionScript": 38,
+      "fullPowerScript": 39
+    }
+  ],
   "counts": {
     "bulletStyles": 50,
     "bulletColorRows": 800,

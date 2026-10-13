@@ -195,7 +195,7 @@ export class TouhouGame {
     Object.assign(this,{banks,font,difficulty,stage,renderTarget,renderBackground,onSound,onStopSound,onEvent,onExit,onRestart,onReplay,onOptions,onManual,pauseBackground,pauseCapture});
     this.rng=rng;this.visualRng=visualRng;this.view=view;this.viewport=viewport;this.disposeBanks=disposeBanks;this.onDestroy=onDestroy;this.destroyed=false;
     this.session={difficulty,stage:1,mode:0,continues:0,...session};this.gameOverOptions=gameOverOptions;this.pauseOptions=pauseOptions;this.pendingGameOver=false;
-    this.player=create('player',TouhouPlayer,{character,sht,bank:character===0?banks.pl00:character===1?banks.pl01:undefined,effectBank:banks.effect,power,rng,world:this.world});
+    this.player=create('player',TouhouPlayer,{character,sht,bank:character===0?banks.pl00:character===1?banks.pl01:undefined,effectBank:banks.effect,power,rng,visualRng,world:this.world});
     this.player.score??=0;this.player.lifeFragments??=0;this.player.bombFragments??=0;
     this.bullets=create('bullets',TouhouBulletField,{bank:banks.bullet,styles,random:rng,visualRandom:visualRng,world:this.world});
     this.lasers=create('lasers',TouhouLaserField,{bank:banks.bullet,styles,world:this.world});

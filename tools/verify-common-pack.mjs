@@ -58,8 +58,26 @@ export function verifyCommonPack(base){
   }
  }
  for(const file of [...manifest.shots,manifest.styles,manifest.audio,manifest.catalog,manifest.notice])checked(file);
+ const weaponTables=[];
+ assert.equal(manifest.weapons?.length,2,'Both characters require bundled weapon tables');
+ for(const [character,descriptor]of manifest.weapons.entries()){
+  assert.equal(descriptor.character,character);assert.equal(descriptor.profiles,8);assert.equal(descriptor.patterns,160);
+  assert.equal(hash(descriptor.file),descriptor.sha256,'Weapon table hash');
+  const profiles=JSON.parse(readFileSync(checked(descriptor.file),'utf8')),bank=archives[`pl0${character}`];
+  assert.equal(profiles.length,8);weaponTables.push(profiles);
+  for(const [weapon,data]of profiles.entries()){
+   assert.equal(data.character,character);assert.equal(data.profile,`weapon-${weapon}`);assert.equal(data.patterns.length,20);
+   assert.equal(data.source.file,descriptor.source.file);assert.equal(data.source.sha256,descriptor.source.sha256);
+   for(const key of ['offsets','optionScripts','fullPowerScripts','damageCaps'])assert.equal(data[key].length,1);
+   for(const script of [...data.optionScripts,...data.fullPowerScripts,...data.patterns.flat().flatMap(row=>[row.animation,row.hitAnimation])])
+    assert.ok(bank.scripts[script]&&!bank.scripts[script].excluded,`Weapon ${character}/${weapon} requires animation ${script}`);
+  }
+  for(const script of character===0?[25,31]:[24,27])assert.ok(!bank.scripts[script].excluded,'Controller-allocated weapon effect tree');
+ }
+ assert.equal(manifest.counts.weaponProfiles,16);assert.equal(manifest.counts.weaponPatterns,320);
+ assert.deepEqual(manifest.counts.weaponShotRows,weaponTables.map(profiles=>profiles.reduce((sum,data)=>sum+data.patterns.flat().length,0)));
  const audio=JSON.parse(readFileSync(checked(manifest.audio),'utf8'));
- for(const [id,name]of [[5,'se_enep01.wav'],[17,'se_extend.wav'],[46,'se_cardget.wav'],[54,'se_ch02.wav']]){
+ for(const [id,name]of [[5,'se_enep01.wav'],[17,'se_extend.wav'],[46,'se_cardget.wav'],[54,'se_ch02.wav'],[64,'se_msl.wav'],[65,'se_msl2.wav']]){
   const definition=audio.definitions.find(entry=>entry.id===id);assert.ok(definition,`Missing common feedback sound${id}`);
   const file=audio.files[definition.fileIndex];assert.equal(file.name,name);assert.equal(hash(file.path),file.sha256);
  }
@@ -153,6 +171,11 @@ export function verifyCommonPack(base){
  assert.equal(timeoutFile.name,'se_fault.wav');assert.equal(hash(timeoutFile.path),timeoutFile.sha256);
  const catalog=JSON.parse(readFileSync(checked(manifest.catalog),'utf8'));
  assert.equal(catalog.format,'ts-stg-touhou-prefabs-v1');
+ assert.equal(catalog.weapons?.length,16,'Prefab inventory includes all independent weapons');
+ for(const entry of catalog.weapons){const data=weaponTables[entry.character][entry.weapon];
+  assert.equal(entry.bank,`pl0${entry.character}`);assert.equal(entry.optionScript,data.optionScripts[0]);assert.equal(entry.fullPowerScript,data.fullPowerScripts[0]);
+  assert.deepEqual(entry.originalPatterns,[entry.weapon*20,entry.weapon*20+19]);assert.deepEqual(entry.localPatterns,[0,19]);
+ }
  const inventory=Object.values(catalog.animations).flat();assert.equal(inventory.length,scripts,'Prefab inventory must cover every retained animation');
  for(const entry of inventory)assert.ok(!archives[entry.bank].scripts[entry.script].excluded,entry.id);
  for(const [language,locale]of Object.entries(manifest.locales??{})){

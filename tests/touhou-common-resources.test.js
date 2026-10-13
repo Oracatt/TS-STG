@@ -324,14 +324,14 @@ test('scene-switch textures retain exact source pixels and oversized wrapped UVs
   assert.deepEqual(pack().files.get('textures/ascii_960/entry-7.png'),readFileSync(`${source}/textures/ascii_960/entry-7.png`));
 });
 
-test('portable loader excludes stone and specific artwork but includes original common Boss, transition and application effects',{skip:!available},()=>{
+test('portable loader excludes stone UI and specific artwork but includes all weapon, Boss, transition and application effects',{skip:!available},()=>{
   const resources=createTouhouResources(host(),{basePath:'relocated'});
-  for(const [name,ids]of Object.entries({pl00:[39,40],pl01:[34,35],bullet:[123,131,132,136],enemy:[272,326],ascii_960:[18,19],front:[13,150,165],title:[1,30,32,33]}))
+  for(const [name,ids]of Object.entries({pl00:[63,65],pl01:[74,76],bullet:[123,131,132,136],enemy:[272,326],ascii_960:[18,19],front:[13,150,165],title:[1,30,32,33]}))
     for(const id of ids)assert.throws(()=>resources.banks[name].create(id),/Excluded/);
-  for(const [name,ids]of Object.entries({pl00:[0,7,8,37,38,46,61,62,64,66],pl01:[0,7,10,13,32,33,51,65,73,75,77],bullet:[115,122,137,144,162],effect:[4,5,6,13,19,21,22,94,148],front:[0,100,144,145,147,148,374,377],title:[0,12,31,34,35,58,134,135],text:[22,23,87],screenswitch:[0,1,2,3,4,5,6,7,8,9,10,11],ascii_960:[14,15,16,17]}))
+  for(const [name,ids]of Object.entries({pl00:[0,7,8,25,31,37,38,39,40,41,42,43,44,46,61,62,64,66],pl01:[0,7,10,13,24,27,32,33,34,35,36,37,38,39,51,65,73,75,77],bullet:[115,122,137,144,162],effect:[4,5,6,13,19,21,22,94,148],front:[0,100,144,145,147,148,374,377],title:[0,12,31,34,35,58,134,135],text:[22,23,87],screenswitch:[0,1,2,3,4,5,6,7,8,9,10,11],ascii_960:[14,15,16,17]}))
     for(const id of ids)assert.ok(resources.banks[name].create(id));
   const sounds=resources.audioManifest;assert.deepEqual(sounds.music,[]);
-  for(const id of [0,1,2,13,17,20,27,37,42,44,46,48,49,69,71,74])assert.ok(sounds.definitions.some(d=>d.id===id));
+  for(const id of [0,1,2,13,17,20,27,37,42,44,46,48,49,64,65,69,71,74])assert.ok(sounds.definitions.some(d=>d.id===id));
   assert.ok(sounds.files.every(f=>f.path.startsWith('relocated/audio/')));
   assert.ok(sounds.files.every(f=>!/(lgods|changeitem|release|warp|notice)/.test(f.name)));
   resources.dispose();

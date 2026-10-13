@@ -87,8 +87,13 @@ const player = new TouhouPlayer({
 // The player owns its actual shots, options, focus effects and Bomb animation.
 ```
 
-The common weapon data contains baseline patterns 0..14 in the portable
-`ts-stg-touhou-shots` format, with no binary SHT importer or stone variants.
+The default weapon data retains baseline patterns 0..14 in the portable
+`ts-stg-touhou-shots` format. `getTouhouWeaponData(character, 0..7)` exposes all
+eight source profiles per character, with twenty local patterns and their
+matching options, damage caps, animation dependencies and sound samples.
+`createTouhouWeaponPreset` supplies normal shooting and option behavior. Enhanced
+shot data is preserved; stone equipment, passive bonuses, pickups and automatic
+activation are outside this preset API. No binary SHT importer is needed at runtime.
 Default coordinates are Y-down in a 384×448 field centered on X=0; player bounds,
 movement insets and respawn coordinates are configurable. The complete native
 self-contained scene example is in `docs/thlib-guide.md`. Installing the package

@@ -7,11 +7,11 @@ import type {TouhouPlayerRules} from './player-rules.js';
 import type {TouhouWorld} from './world.js';
 export interface TouhouView{x?:number;y?:number;scale?:number;screenScale?:number;}
 export interface TouhouDamageSource{damageGroup?:number;hitPosition?:{x:number;y:number;z?:number};damagePosition?:{x:number;y:number;z?:number};x?:number;y?:number;z?:number;hitDetected?:boolean;}
-export interface TouhouDamageTarget{primaryFlags?:number;bombScale?:number;x:number;y:number;z?:number;radius?:number;id?:number;hp?:number;alive?:boolean;excluded?:boolean;invulnerable?:boolean;damage?(amount:number,source:unknown,context?:TouhouPlayerContext):unknown;}
+export interface TouhouDamageTarget{primaryFlags?:number;flags?:number;bombScale?:number;x:number;y:number;z?:number;radius?:number;id?:number;hp?:number;alive?:boolean;excluded?:boolean;invulnerable?:boolean;damage?(amount:number,source:unknown,context?:TouhouPlayerContext):unknown;}
 export type TouhouDamageRegion = ({shape:'circle';radius:number}|{shape:'rectangle';width:number;height:number;angle:number}) & {x:number;y:number;damage:number;bomb?:boolean;growth?:number;remaining?:number;source?:unknown};
-export type TouhouExpandingDamageRegion=Extract<TouhouDamageRegion,{shape:'circle'}> & {growth:number;remaining:number};
+export type TouhouExpandingDamageRegion=Extract<TouhouDamageRegion,{shape:'circle'}> & {growth:number;remaining:number;age?:number;period?:number;speed?:number;angle?:number};
 export interface TouhouPlayerEffect {animation:AnmInstance;age:number;motion?:{angle:number;distance:number;duration:number;mode:number};origin?:{x:number;y:number}}
-export interface TouhouPlayerOption {index:number;active:boolean;x:number;y:number;fixedX:number;fixedY:number;animation:AnmInstance|null;fullAnimation:AnmInstance|null;changed:number;focused:boolean;normalOffset?:{x:number;y:number};focusOffset?:{x:number;y:number}}
+export interface TouhouPlayerOption {index:number;active:boolean;x:number;y:number;fixedX:number;fixedY:number;animation:AnmInstance|null;fullAnimation:AnmInstance|null;changed:number;focused:boolean;angle?:number;normalOffset?:{x:number;y:number};focusOffset?:{x:number;y:number}}
 export interface TouhouPlayerContext{
   enemies?:TouhouDamageTarget[];enemyReady?:boolean;inputBlocked?:boolean;dialogue?:boolean;bossSuppressed?:boolean;clockScale?:number;timerRate?:number;spell?:Pick<TouhouSpell,'notifyBombStart'|'notifyPlayerHit'|'notifyPlayerMiss'>;
   sound?:(id:number,x?:number)=>void;stopSound?:(id:number)=>void;
@@ -27,10 +27,20 @@ export interface TouhouPlayerBounds{x:number;y:number;width:number;height:number
 export interface TouhouPlayerInsets{left:number;top:number;right:number;bottom:number;}
 export interface TouhouPlayerBomb{alive:boolean;timer?:TouhouTimer;update(context:TouhouPlayerContext):void;draw(draw:DrawList,view?:TouhouView):void;destroy():void;}
 export type TouhouPlayerShoot=(player:TouhouPlayer,frame:number,secondaryFrame:number,context:TouhouPlayerContext)=>void;
-export type TouhouShotFactory=(player:TouhouPlayer,row:TouhouShooter,pattern:number,index:number,context:TouhouPlayerContext)=>TouhouShot;
+export type TouhouShotFactory=(player:TouhouPlayer,row:TouhouShooter,pattern:number,index:number,context:TouhouPlayerContext,origin?:{x:number;y:number})=>TouhouShot;
 export type TouhouBombFactory=(player:TouhouPlayer,context:TouhouPlayerContext)=>TouhouPlayerBomb;
-export interface TouhouPlayerProfile{id:string|number;rules?:Partial<TouhouPlayerRules>;shoot?:TouhouPlayerShoot;shotFactory?:TouhouShotFactory;bombFactory?:TouhouBombFactory|null;}
-export interface TouhouPlayerOptions{character?:string|number;profile?:TouhouPlayerProfile;rules?:Partial<TouhouPlayerRules>;shoot?:TouhouPlayerShoot;shotFactory?:TouhouShotFactory;bombFactory?:TouhouBombFactory|null;sht:TouhouSht;bank?:AnmBank|null;effectBank?:AnmBank|null;power?:number;lives?:number;bombs?:number;state?:number;x?:number;y?:number;seed?:number;rng?:TouhouRNG|null;world?:TouhouWorld;bounds?:TouhouPlayerBounds;movementInsets?:Partial<TouhouPlayerInsets>;respawnX?:number;respawnY?:number;respawnStartY?:number;}
+/** Optional weapon owner. Option targets are in the player's 1/128 fixed units. */
+export interface TouhouPlayerWeapon {
+ initializeOption?(option:TouhouPlayerOption):void;
+ optionTarget?(option:TouhouPlayerOption,target:{x:number;y:number},context:TouhouPlayerContext):{x:number;y:number};
+ onFocusChange?(focused:boolean):void;
+ shoot(frame:number,secondary:number,context:TouhouPlayerContext):void;
+ update(context:TouhouPlayerContext):void;
+ reset?():void;destroy():void;draw?(draw:DrawList,view?:TouhouView):void;snapshot?():Record<string,unknown>;
+}
+export type TouhouWeaponFactory=(player:TouhouPlayer)=>TouhouPlayerWeapon;
+export interface TouhouPlayerProfile{id:string|number;rules?:Partial<TouhouPlayerRules>;shoot?:TouhouPlayerShoot;shotFactory?:TouhouShotFactory;bombFactory?:TouhouBombFactory|null;weaponFactory?:TouhouWeaponFactory;}
+export interface TouhouPlayerOptions{character?:string|number;profile?:TouhouPlayerProfile;rules?:Partial<TouhouPlayerRules>;shoot?:TouhouPlayerShoot;shotFactory?:TouhouShotFactory;bombFactory?:TouhouBombFactory|null;weaponFactory?:TouhouWeaponFactory;sht:TouhouSht;bank?:AnmBank|null;effectBank?:AnmBank|null;power?:number;lives?:number;bombs?:number;state?:number;x?:number;y?:number;seed?:number;rng?:TouhouRNG|null;visualRng?:TouhouRNG;world?:TouhouWorld;bounds?:TouhouPlayerBounds;movementInsets?:Partial<TouhouPlayerInsets>;respawnX?:number;respawnY?:number;respawnStartY?:number;}
 import { Keys } from '../input.js';
 import { f32, PI, add, sub, mul, div, trunc32, polar, atan2, rectangleCircle, TouhouTimer, TouhouRNG } from './math.js';
 import { fireTouhouPlayerWeapons } from './shots.js';
@@ -78,6 +88,12 @@ export class TouhouPlayer {
   shoot:TouhouPlayerShoot;
   shotFactory:TouhouShotFactory|null;
   bombFactory:TouhouBombFactory|null;
+  weapon:TouhouPlayerWeapon|null;
+  weaponPhaseActive=false;
+  weaponSuppressOptions=false;
+  weaponPattern?:number;
+  weaponRng:TouhouRNG;
+  private optionPowerLevel=-1;
   sht:TouhouSht;
   bank:AnmBank|null;
   effectBank:AnmBank|null;
@@ -138,8 +154,8 @@ export class TouhouPlayer {
   stageVisibility:boolean;
   readonly destroyed:boolean;
 
-  constructor({ character = 0, profile, rules, shoot, shotFactory, bombFactory, sht, bank = null, effectBank = null, power, lives, bombs,
-    state = 1, x = 0, y = 400, seed = 1, rng = null,
+  constructor({ character = 0, profile, rules, shoot, shotFactory, bombFactory, weaponFactory, sht, bank = null, effectBank = null, power, lives, bombs,
+    state = 1, x = 0, y = 400, seed = 1, rng = null, visualRng,
     world, bounds, movementInsets = {},
     respawnX = 0, respawnY = 400, respawnStartY = 480 }: TouhouPlayerOptions = {} as TouhouPlayerOptions) {
     if(profile===undefined){
@@ -151,6 +167,8 @@ export class TouhouPlayer {
     this.shoot=shoot??profile.shoot??fireTouhouPlayerWeapons;
     this.shotFactory=shotFactory??profile.shotFactory??null;
     this.bombFactory=bombFactory!==undefined?bombFactory:profile.bombFactory??null;
+    weaponFactory??=profile.weaponFactory;
+    if(weaponFactory!==undefined&&typeof weaponFactory!=='function')throw new TypeError('Weapon factory must be a function');
     if(typeof this.shoot!=='function'||this.shotFactory!==null&&typeof this.shotFactory!=='function'||this.bombFactory!==null&&typeof this.bombFactory!=='function')throw new TypeError('Player weapon and Bomb strategies must be functions');
     validateTouhouShots(sht);
     this.character = profile.id; this.sht = sht; this.bank = bank; this.effectBank = effectBank;
@@ -164,6 +182,7 @@ export class TouhouPlayer {
       minY: fixed(bounds.y + inset.top), maxY: fixed(bounds.y + bounds.height - inset.bottom) };
     this.respawnX = respawnX; this.respawnY = respawnY; this.respawnStartY = respawnStartY;
     this.rng = rng ?? new TouhouRNG(seed);
+    this.weaponRng=visualRng??this.rng;
     this.fixedX = fixed(x); this.fixedY = fixed(y); this.x = div(this.fixedX, 128); this.y = div(this.fixedY, 128);
     this.state = state; this.timer = new TouhouTimer(0); this.focusTimer = new TouhouTimer(0);
     this.invulnerability = new TouhouTimer(0); this.focused = false;
@@ -189,6 +208,9 @@ export class TouhouPlayer {
     this.effects = []; this.damageRegions = []; this.bomb = null; this.bombBlocksShots = false;
     this.mask = 0; this.previousMask = 0; this.frame = 0; this.powerChanged = true;
     this.stageVisibility = false; this.stageVisibilityAge = 0;
+    this.weapon=weaponFactory?.(this)??null;
+    if(this.weapon&&['shoot','update','destroy'].some(method=>typeof this.weapon![method as 'shoot'|'update'|'destroy']!=='function'))
+      throw new TypeError('Weapon factory must return a shoot/update/destroy owner');
     this.bindAnimation(0); this.refreshPower();
   }
   get powerLevel(): number { this.power = clamp(this.power | 0, 0, this.maxPower); return Math.min(this.weaponLevels,Math.trunc(this.power / this.powerPerLevel)); }
@@ -204,8 +226,17 @@ export class TouhouPlayer {
   }
   refreshPower(): void {
     const count = this.powerLevel;
+    const rebuild=this.optionPowerLevel!==count||this.options.slice(0,count).some(option=>!option.active);
+    this.optionPowerLevel=count;
     this.powerChanged = true;
     for (const option of this.options) {
+      // power.cpp only rebuilds option positions/callbacks when the level
+      // changes. A small P within the current level must not restart an orbit.
+      if(!rebuild){
+        option.fullAnimation?.destroy();option.fullAnimation=null;
+        if(option.active&&this.power>=this.maxPower)option.fullAnimation=this.bank?.create(this.sht.fullPowerScripts[0],{x:option.x,y:option.y,front:true})??null;
+        continue;
+      }
       option.animation?.destroy(); option.fullAnimation?.destroy(); option.fullAnimation = null;
       option.active = option.index < count;
       if (!option.active) { option.animation = null; continue; }
@@ -213,6 +244,7 @@ export class TouhouPlayer {
       // Original4ff630 dispatches focused_weapon vslot14;4ff760 unfocused_weapon vslot18.
       option.normalOffset = this.sht.offsets[0].normal[count][option.index];
       option.focusOffset = this.sht.offsets[0].focus[count][option.index];
+      this.weapon?.initializeOption?.(option);
       const offset = this.focused ? option.focusOffset! : option.normalOffset!;
       option.fixedX = (this.fixedX + fixed(offset.x)) | 0; option.fixedY = (this.fixedY + fixed(offset.y)) | 0;
       option.x = div(option.fixedX, 128); option.y = div(option.fixedY, 128); option.changed = 1;
@@ -254,6 +286,7 @@ export class TouhouPlayer {
     this.state=1;this.timer.set(0);this.focusTimer.set(0);
     this.focusEffect?.destroy();this.focusEffect=null;
     for(const shot of this.shots)shot.destroy();this.shots.length=0;this.laserGroups.clear();
+    this.weapon?.reset?.();
     this.shootTimer.set(-1);this.secondaryShootTimer.set(-1);this.shotGate.set(0);
     this.restoreStageVisibility();this.refreshPower();this.bombBlocksShots=false;
     this.movementScale=1;
@@ -264,6 +297,7 @@ export class TouhouPlayer {
   destroy(): void {
     if(this.destroyed)return;
     (this as {destroyed:boolean}).destroyed=true;
+    this.weapon?.destroy();
     this.bomb?.destroy();this.bomb=null;this.bombBlocksShots=false;
     for(const shot of this.shots)shot.destroy();
     this.shots.length=0;this.laserGroups.clear();
@@ -276,7 +310,7 @@ export class TouhouPlayer {
     for(const effect of this.effects)effect.animation.destroy();
     this.effects.length=0;this.damageRegions.length=0;
   }
-  updateOptions(): void {
+  updateOptions(context:TouhouPlayerContext={}): void {
     for (const option of this.options) {
       if (!option.active) {
         // Retired options are registered ANM roots; their event1 tails keep
@@ -292,8 +326,11 @@ export class TouhouPlayer {
         option.focused = this.focused;
       }
       const offset = this.focused ? option.focusOffset! : option.normalOffset!;
-      const targetX = this.stageVisibility?this.fixedX:(this.fixedX + fixed(offset.x)) | 0;
-      const targetY = this.stageVisibility?this.fixedY:(this.fixedY + fixed(offset.y)) | 0;
+      let targetX = this.stageVisibility?this.fixedX:(this.fixedX + fixed(offset.x)) | 0;
+      let targetY = this.stageVisibility?this.fixedY:(this.fixedY + fixed(offset.y)) | 0;
+      if(!this.stageVisibility&&this.weapon?.optionTarget){
+        const target=this.weapon.optionTarget(option,{x:targetX,y:targetY},context);targetX=target.x;targetY=target.y;
+      }
       if(this.stageVisibility&&this.stageVisibilityAge>29){
         option.active=false;
         for(const visual of [option.animation,option.fullAnimation])if(visual){visual.interrupt(1,true);visual.update();}
@@ -323,7 +360,9 @@ export class TouhouPlayer {
     else if (held(Keys.UP)) direction = 1;
     else if (held(Keys.LEFT)) direction = 3;
     else if (held(Keys.RIGHT)) direction = 4;
-    this.focused = context.enemyReady !== false && this.focusTimer.current >= 4 ? held(Keys.FOCUS) : false;
+    const focused = context.enemyReady !== false && this.focusTimer.current >= 4 ? held(Keys.FOCUS) : false;
+    if(focused!==this.focused)this.weapon?.onFocusChange?.(focused);
+    this.focused=focused;
     if (this.focused && !this.focusEffect) this.focusEffect = this.effectBank?.create(19, { x: this.x, y: this.y }) ?? null;
     else if (!this.focused && this.focusEffect) { this.focusEffect.interrupt(1); this.effects.push({ animation: this.focusEffect, age: 0 }); this.focusEffect = null; }
     const signs = [[0, 0], [0, -1], [0, 1], [-1, 0], [1, 0], [-1, -1], [1, -1], [-1, 1], [1, 1]];
@@ -342,7 +381,7 @@ export class TouhouPlayer {
     this.x = div(this.fixedX, 128); this.y = div(this.fixedY, 128);
     if (dx || dy) { this.history.unshift({ x: this.fixedX, y: this.fixedY }); this.history.length = 33; }
     if(this.stageVisibility)this.stageVisibilityAge++;
-    this.updateOptions();
+    this.updateOptions(context);
   }
   pressed(key: number) { return (this.mask & ~this.previousMask & key) !== 0; }
   canBomb(context: TouhouPlayerContext): boolean { return !this.destroyed && !!this.bombFactory && this.bombs > 0 && !this.bomb?.alive && context.enemyReady !== false && !context.bossSuppressed; }
@@ -395,6 +434,7 @@ export class TouhouPlayer {
         }
       }
     }
+    this.weapon?.update(context);
     for (const shot of this.shots) { shot.update(context); shot.collisions(context); }
     this.shots = this.shots.filter(shot => shot.alive);
     this.powerChanged = false; this.shotGate.tick(rate); this.shotAge.tick(rate);
@@ -475,7 +515,11 @@ export class TouhouPlayer {
     if (this.bomb?.alive) this.bomb.update(context);
     if (this.bomb && !this.bomb.alive) { this.bomb.destroy(); this.bomb = null; }
     for (const region of this.damageRegions) {
-      applyTouhouDamage(region, context); region.radius = add(region.radius, region.growth); region.remaining--;
+      const age=region.age??0;
+      if(age%(region.period??1)===0)applyTouhouDamage(region, context);
+      if(region.speed){const velocity=polar(region.angle??0,region.speed);region.x=add(region.x,velocity.x);region.y=add(region.y,velocity.y);}
+      region.radius = add(region.radius, region.growth); region.remaining--;
+      if(region.age!==undefined||region.period!==undefined)region.age=age+1;
     }
     this.damageRegions = this.damageRegions.filter(region => region.remaining > 0);
     for (const effect of this.effects) {
@@ -520,6 +564,7 @@ export class TouhouPlayer {
   }
   draw(draw: DrawList, view: TouhouView = { x: 336, y: 24, scale: 1.5, screenScale: 1 }): void {
     if(this.destroyed)return;
+    this.weapon?.draw?.(draw,view);
     for (const shot of this.shots) shot.draw(draw, view);
     for (const option of this.options) { option.animation?.draw(draw, view); option.fullAnimation?.draw(draw, view); }
     if (this.state !== 2 && this.state !== 3 && this.state !== 6 && this.animation) {
@@ -539,9 +584,16 @@ export class TouhouPlayer {
       x: this.x, y: this.y, fixedX: this.fixedX, fixedY: this.fixedY, focused: this.focused,
       power: this.power, lives: this.lives, bombs: this.bombs, invulnerability: this.invulnerability.current,
       animationScript: this.animationScript, shootTime: this.shootTimer.current, secondaryShootTime: this.secondaryShootTimer.current,
-      options: this.options.filter(option => option.active).map(option => ({ x: option.x, y: option.y })),
+      options: this.options.filter(option => option.active).map(option => ({ x: option.x, y: option.y,...(this.weapon?{angle:option.angle??0}:{}) })),
       shots: this.shots.map(shot => ({ id: shot.id, pattern: shot.pattern, index: shot.index, x: shot.x, y: shot.y,
-        angle: shot.angle, speed: shot.speed, state: shot.state, time: shot.timer.current, width: shot.width })),
+        angle: shot.angle, speed: shot.speed, state: shot.state, time: shot.timer.current, width: shot.width,
+        ...(shot.row.callbacks[1]===1?{target:shot.target?{id:shot.target.id??null,x:shot.target.x,y:shot.target.y}:null}:{}),
+        ...(shot.row.callbacks[1]===3?{turnState:shot.turnState,turnTime:shot.turnTimer.current,turnTarget:shot.turnTarget}:{}),
+      })),
+      ...(this.weapon?{weapon:this.weapon.snapshot?.()??null,weaponPhaseActive:this.weaponPhaseActive,
+        weaponSuppressOptions:this.weaponSuppressOptions,weaponPattern:this.weaponPattern??null,
+        damageRegions:this.damageRegions.map(region=>({x:region.x,y:region.y,radius:region.radius,damage:region.damage,
+          growth:region.growth,remaining:region.remaining,age:region.age??0,period:region.period??1,speed:region.speed??0,angle:region.angle??0}))}:{}),
       bomb: this.bomb ? { character: this.character, time: this.bomb.timer?.current??0 } : null, rng: this.rng.state };
   }
 }

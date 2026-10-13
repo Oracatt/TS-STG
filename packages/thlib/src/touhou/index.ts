@@ -28,6 +28,8 @@ export * from './pause-capture.js';
 export { TouhouTimer, TouhouRNG } from './math.js';
 export * from './audio.js';
 export * from './player-data.js';
+export * from './weapon-data.js';
+export * from './weapons.js';
 export * from './bullet-style-data.js';
 export * from './resources.js';
 export * from './game.js';

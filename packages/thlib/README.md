@@ -16,7 +16,8 @@ The restored common implementation lives in `src/touhou/`, exported by both `@ts
 Applications use these same classes and resources. An asset's appearance in TH20
 does not make it TH20-exclusive: the common Reimu/Marisa bodies, normal weapons,
 Bombs, focus indicator, bullets, lasers, minor enemies and effects belong here.
-Magic-stone variants and other actual title-specific content stay in applications.
+All eight source weapon profiles per character are reusable presets. Magic-stone
+equipment, inventory, passive bonuses and automatic activation stay in applications.
 
 ## Complete reusable application
 
@@ -157,8 +158,13 @@ weapon/Bomb behavior, damage shapes and cancellation timing.
 
 `getTouhouPlayerData(0 | 1 | 'reimu' | 'marisa')` returns normalized
 `ts-stg-touhou-shots` data: baseline patterns 0..14, one normal option profile,
-movement speeds and per-target damage caps. Power uses 0..400 units. Title-specific
-SHT binary parsing and stone weapon profiles are excluded from the library.
+movement speeds and per-target damage caps. Power uses 0..400 units.
+`getTouhouWeaponData(character, 0..7)` separately returns all eight original weapon
+profiles for each character, preserving twenty local patterns, the matching option
+offsets/animations and damage caps. `createTouhouWeaponPreset` connects their normal
+shooting and option behavior to `TouhouPlayer`; the original enhanced-shot rows and
+animations are retained as data. This does not implement stone equipment, passive
+attributes, pickups or automatic activation. Binary SHT parsing remains an import tool concern.
 
 Restored coordinates are Y-down, angles radians and speeds units/frame. Default
 player bounds are `{x:-192,y:0,width:384,height:448}` with movement insets

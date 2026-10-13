@@ -7,19 +7,19 @@
   "archives": {
     "pl00": {
       "file": "anm/pl00.json",
-      "sha256": "a09e594931c6bb6507fadd38ddcd56d61f19a91bd1532cd965d660139fb922ca",
+      "sha256": "68e024f12ecd1cc1adaead53230e6524f254cb32d973f05320e762d078591ad7",
       "sourceSha256": "882295a202e337a9b05eaec0979b92690db0102a8a3ff98ef08d3d6402457d8a",
-      "scripts": 29,
-      "sprites": 42,
+      "scripts": 63,
+      "sprites": 85,
       "textures": 13,
       "surfaces": 0
     },
     "pl01": {
       "file": "anm/pl01.json",
-      "sha256": "44e9bfc683c82192071813db3777832a2430c9e7289e8d734950d9284c3c8001",
+      "sha256": "c5e03023adbf3198abba00f004e1aeebea72b0ecc6a0471af032a6b9a0134196",
       "sourceSha256": "debb4d951061bd672d5659fdfb159e8004dc770caa194ba26b83ea52f75305f2",
-      "scripts": 30,
-      "sprites": 48,
+      "scripts": 58,
+      "sprites": 102,
       "textures": 14,
       "surfaces": 0
     },
@@ -100,6 +100,30 @@
     "shots/pl00.json",
     "shots/pl01.json"
   ],
+  "weapons": [
+    {
+      "file": "shots/pl00-weapons.json",
+      "sha256": "4dbcdde9dfae17890652f750cd52b1eba4f666c5fa8c73ce62ab9ae91a43cd44",
+      "character": 0,
+      "profiles": 8,
+      "patterns": 160,
+      "source": {
+        "file": "pl00.sht",
+        "sha256": "15cd29b656f86b9e654e16902ff65e52d5ac31927504aaaf93adf2477e4a84bc"
+      }
+    },
+    {
+      "file": "shots/pl01-weapons.json",
+      "sha256": "d66351144123783c379b268643f5b0e0959d75d813fc421b26471086b4a8bd91",
+      "character": 1,
+      "profiles": 8,
+      "patterns": 160,
+      "source": {
+        "file": "pl01.sht",
+        "sha256": "22b3dc4e8c6ada6859f0212d84bae22b2ee2acccf075c86a97376c228ca0b015"
+      }
+    }
+  ],
   "styles": "bullet-styles.json",
   "audio": "audio/manifest.json",
   "textures": [
@@ -117,7 +141,7 @@
     },
     {
       "file": "textures/pl00/entry-1.png",
-      "sha256": "b854a9bf53bd48e1fce22c43bce7a7063ebd951ad34cf34d6336ccf559a77265",
+      "sha256": "ef2e1ab5c90af1b2efd2b6360e4dabbef555c4cf2a44191325a43e5154c02455",
       "source": {
         "archive": "pl00.anm",
         "archiveSha256": "882295a202e337a9b05eaec0979b92690db0102a8a3ff98ef08d3d6402457d8a",
@@ -127,6 +151,46 @@
       },
       "operation": "Selected sprite rectangles copied pixel-exactly into a transparent canvas; dimensions and coordinates unchanged",
       "rectangles": [
+        {
+          "sprite": 24,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 0,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 25,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 16,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 26,
+          "samplingPadding": 1,
+          "x": 16,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 27,
+          "samplingPadding": 1,
+          "x": 32,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 28,
+          "samplingPadding": 1,
+          "x": 48,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
         {
           "sprite": 29,
           "samplingPadding": 1,
@@ -144,10 +208,314 @@
           "height": 16
         },
         {
+          "sprite": 33,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 48,
+          "width": 128,
+          "height": 64
+        },
+        {
+          "sprite": 34,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 35,
+          "samplingPadding": 1,
+          "x": 144,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 36,
+          "samplingPadding": 1,
+          "x": 160,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 37,
+          "samplingPadding": 1,
+          "x": 176,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 38,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 39,
+          "samplingPadding": 1,
+          "x": 16,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 40,
+          "samplingPadding": 1,
+          "x": 32,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 41,
+          "samplingPadding": 1,
+          "x": 48,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 42,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 80,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 43,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 112,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 45,
+          "samplingPadding": 1,
+          "x": 32,
+          "y": 80,
+          "width": 80,
+          "height": 32
+        },
+        {
+          "sprite": 46,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 112,
+          "width": 128,
+          "height": 48
+        },
+        {
+          "sprite": 47,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 112,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 48,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 128,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 49,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 144,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 50,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 160,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 51,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 176,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 52,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 53,
+          "samplingPadding": 1,
+          "x": 144,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 54,
+          "samplingPadding": 1,
+          "x": 160,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 55,
+          "samplingPadding": 1,
+          "x": 176,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 56,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 32,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 57,
+          "samplingPadding": 1,
+          "x": 144,
+          "y": 32,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 58,
+          "samplingPadding": 1,
+          "x": 160,
+          "y": 32,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 59,
+          "samplingPadding": 1,
+          "x": 176,
+          "y": 32,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 60,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 160,
+          "width": 48,
+          "height": 32
+        },
+        {
+          "sprite": 61,
+          "samplingPadding": 1,
+          "x": 48,
+          "y": 160,
+          "width": 48,
+          "height": 32
+        },
+        {
+          "sprite": 62,
+          "samplingPadding": 1,
+          "x": 96,
+          "y": 160,
+          "width": 48,
+          "height": 32
+        },
+        {
+          "sprite": 63,
+          "samplingPadding": 1,
+          "x": 144,
+          "y": 160,
+          "width": 48,
+          "height": 32
+        },
+        {
           "sprite": 64,
           "samplingPadding": 1,
           "x": 64,
           "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 65,
+          "samplingPadding": 1,
+          "x": 80,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 66,
+          "samplingPadding": 1,
+          "x": 96,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 67,
+          "samplingPadding": 1,
+          "x": 112,
+          "y": 0,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 68,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 192,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 69,
+          "samplingPadding": 1,
+          "x": 64,
+          "y": 192,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 70,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 192,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 71,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 192,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 72,
+          "samplingPadding": 1,
+          "x": 144,
+          "y": 144,
           "width": 16,
           "height": 16
         }
@@ -299,7 +667,7 @@
     },
     {
       "file": "textures/pl01/entry-1.png",
-      "sha256": "a58070c5fde8636513f01844a3139961c15f7189b3b033d6a13d48ba98e2cb2c",
+      "sha256": "d3907d28aaea3fb82e157b1d9adc5f3087f8c2d467b22c83d3d3dd5c6b7ae13e",
       "source": {
         "archive": "pl01.anm",
         "archiveSha256": "debb4d951061bd672d5659fdfb159e8004dc770caa194ba26b83ea52f75305f2",
@@ -309,6 +677,38 @@
       },
       "operation": "Selected sprite rectangles copied pixel-exactly into a transparent canvas; dimensions and coordinates unchanged",
       "rectangles": [
+        {
+          "sprite": 24,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 0,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 25,
+          "samplingPadding": 1,
+          "x": 32,
+          "y": 0,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 26,
+          "samplingPadding": 1,
+          "x": 64,
+          "y": 0,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 27,
+          "samplingPadding": 1,
+          "x": 96,
+          "y": 0,
+          "width": 32,
+          "height": 16
+        },
         {
           "sprite": 28,
           "samplingPadding": 1,
@@ -342,12 +742,84 @@
           "height": 16
         },
         {
+          "sprite": 32,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 176,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 33,
+          "samplingPadding": 1,
+          "x": 160,
+          "y": 176,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 34,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 176,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 35,
+          "samplingPadding": 1,
+          "x": 224,
+          "y": 176,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 36,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 0,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 37,
+          "samplingPadding": 1,
+          "x": 160,
+          "y": 0,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 38,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 0,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 39,
+          "samplingPadding": 1,
+          "x": 224,
+          "y": 0,
+          "width": 32,
+          "height": 16
+        },
+        {
           "sprite": 40,
           "samplingPadding": 1,
           "x": 0,
           "y": 32,
           "width": 512,
           "height": 16
+        },
+        {
+          "sprite": 41,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 144,
+          "width": 512,
+          "height": 32
         },
         {
           "sprite": 42,
@@ -366,9 +838,337 @@
           "height": 32
         },
         {
+          "sprite": 44,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 48,
+          "width": 48,
+          "height": 16
+        },
+        {
+          "sprite": 45,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 64,
+          "width": 48,
+          "height": 16
+        },
+        {
+          "sprite": 46,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 112,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 47,
+          "samplingPadding": 1,
+          "x": 32,
+          "y": 112,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 48,
+          "samplingPadding": 1,
+          "x": 64,
+          "y": 112,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 49,
+          "samplingPadding": 1,
+          "x": 96,
+          "y": 112,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 50,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 112,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 51,
+          "samplingPadding": 1,
+          "x": 160,
+          "y": 112,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 52,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 112,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 53,
+          "samplingPadding": 1,
+          "x": 224,
+          "y": 112,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 54,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 48,
+          "width": 64,
+          "height": 32
+        },
+        {
+          "sprite": 55,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 48,
+          "width": 64,
+          "height": 32
+        },
+        {
+          "sprite": 56,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 192,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 57,
+          "samplingPadding": 1,
+          "x": 32,
+          "y": 192,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 58,
+          "samplingPadding": 1,
+          "x": 64,
+          "y": 192,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 59,
+          "samplingPadding": 1,
+          "x": 96,
+          "y": 192,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 60,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 192,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 61,
+          "samplingPadding": 1,
+          "x": 160,
+          "y": 192,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 62,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 192,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 63,
+          "samplingPadding": 1,
+          "x": 224,
+          "y": 192,
+          "width": 32,
+          "height": 16
+        },
+        {
+          "sprite": 64,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 208,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 65,
+          "samplingPadding": 1,
+          "x": 208,
+          "y": 208,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 66,
+          "samplingPadding": 1,
+          "x": 224,
+          "y": 208,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 67,
+          "samplingPadding": 1,
+          "x": 240,
+          "y": 208,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 68,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 240,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 69,
+          "samplingPadding": 1,
+          "x": 208,
+          "y": 240,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 70,
+          "samplingPadding": 1,
+          "x": 224,
+          "y": 240,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 71,
+          "samplingPadding": 1,
+          "x": 240,
+          "y": 240,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 72,
+          "samplingPadding": 1,
+          "x": 192,
+          "y": 16,
+          "width": 64,
+          "height": 16
+        },
+        {
+          "sprite": 73,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 208,
+          "width": 48,
+          "height": 32
+        },
+        {
+          "sprite": 74,
+          "samplingPadding": 1,
+          "x": 48,
+          "y": 208,
+          "width": 48,
+          "height": 32
+        },
+        {
+          "sprite": 75,
+          "samplingPadding": 1,
+          "x": 96,
+          "y": 208,
+          "width": 48,
+          "height": 32
+        },
+        {
+          "sprite": 76,
+          "samplingPadding": 1,
+          "x": 144,
+          "y": 208,
+          "width": 48,
+          "height": 32
+        },
+        {
+          "sprite": 77,
+          "samplingPadding": 1,
+          "x": 0,
+          "y": 80,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 78,
+          "samplingPadding": 1,
+          "x": 32,
+          "y": 80,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 79,
+          "samplingPadding": 1,
+          "x": 64,
+          "y": 80,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 80,
+          "samplingPadding": 1,
+          "x": 96,
+          "y": 80,
+          "width": 32,
+          "height": 32
+        },
+        {
+          "sprite": 81,
+          "samplingPadding": 1,
+          "x": 128,
+          "y": 80,
+          "width": 32,
+          "height": 32
+        },
+        {
           "sprite": 82,
           "samplingPadding": 1,
           "x": 64,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 83,
+          "samplingPadding": 1,
+          "x": 80,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 84,
+          "samplingPadding": 1,
+          "x": 96,
+          "y": 16,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "sprite": 85,
+          "samplingPadding": 1,
+          "x": 112,
           "y": 16,
           "width": 16,
           "height": 16
@@ -23799,6 +24599,24 @@
       "operation": "Byte-for-byte copy"
     },
     {
+      "file": "audio/se_msl.wav",
+      "sha256": "e0dd89c26fa2d59c066d5e5905360152ff08fa336c9de8b7d18bdb0b4271fa0e",
+      "source": {
+        "name": "se_msl.wav",
+        "sha256": "e0dd89c26fa2d59c066d5e5905360152ff08fa336c9de8b7d18bdb0b4271fa0e"
+      },
+      "operation": "Byte-for-byte copy"
+    },
+    {
+      "file": "audio/se_msl2.wav",
+      "sha256": "ed72ab58e7cd763f993240d986b4ace83afddb0f1278ca6e42cff348e673c67c",
+      "source": {
+        "name": "se_msl2.wav",
+        "sha256": "ed72ab58e7cd763f993240d986b4ace83afddb0f1278ca6e42cff348e673c67c"
+      },
+      "operation": "Byte-for-byte copy"
+    },
+    {
       "file": "audio/se_fault.wav",
       "sha256": "6c180644a6b68b7d0980dd4359fea5ece74615ff0789b472e7a027172abe9b74",
       "source": {
@@ -25660,7 +26478,7 @@
   ],
   "boundary": {
     "included": [
-      "Reimu/Marisa body, standard option and weapon animations, complete Bomb animation trees",
+      "Reimu/Marisa body, all eight weapon profiles per character with normal/focused/active shot and option animation trees, complete Bomb animation trees",
       "All 50 standard bullet styles with all 16 source color rows, lasers and cancellation animation, common item IDs 1..8",
       "Every non-stone enemy animation, particles, focus, graze/death and charge effects",
       "Original Boss double circles, Spell Card Attack, countdown and health bar primitives",
@@ -25668,7 +26486,7 @@
       "Generic screenswitch scene-cover/reveal animations and NowLoading indicator"
     ],
     "excluded": [
-      "Magic-stone player profiles, colored selection variants, item icons/animations, stone enemies and WeaponStoneInf aura",
+      "Magic-stone selection/inventory, colored character selection variants, item icons/animations, stone enemies and WeaponStoneInf aura",
       "Specific Bosses, names, portraits/cut-ins, title logo/background/illustration and copyright artwork, stages/backgrounds and game-specific loading illustrations"
     ]
   },
@@ -25676,12 +26494,18 @@
   "counts": {
     "archives": 10,
     "textures": 95,
-    "sounds": 51,
-    "scripts": 1344,
-    "sprites": 2258,
+    "sounds": 53,
+    "scripts": 1406,
+    "sprites": 2355,
     "shotRows": [
       72,
       32
+    ],
+    "weaponProfiles": 16,
+    "weaponPatterns": 320,
+    "weaponShotRows": [
+      452,
+      404
     ]
   },
   "locales": {
