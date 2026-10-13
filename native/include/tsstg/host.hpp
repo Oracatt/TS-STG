@@ -1,5 +1,6 @@
 #pragma once
 #include "backend.hpp"
+#include "display.hpp"
 #include <optional>
 
 namespace tsstg {
@@ -9,6 +10,10 @@ struct Options {
     std::string backend = "auto";
     bool headless = false;
     bool benchmark = false;
+    DisplayOptions display;
+    bool displayConfigured = false;
+    std::optional<std::filesystem::path> displayConfig;
+    bool configureDisplay = false;
     std::uint64_t profileWarmup = 60;
     std::optional<std::filesystem::path> profile;
     std::optional<std::uint64_t> frames;

@@ -1,5 +1,6 @@
 #include "tsstg/host.hpp"
 #include "tsstg/frame_stream.hpp"
+#include "tsstg/display_setup.hpp"
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -27,11 +28,14 @@ int main(int argc, char** argv) {
                 std::cout << "TS-STG 0.1.0\n"
                     "ts-stg [entry.js] [--root path] [--headless] [--frames N]\n"
                     "       [--backend auto|quickjs|v8]\n"
+                    "       [--window-size WIDTHxHEIGHT] [--windowed|--fullscreen]\n"
+                    "       [--display-config path.json] [--configure-display]\n"
                     "       [--input mask] [--snapshot path.json] [--screenshot path.png]\n"
                     "       [--profile path.json] [--profile-warmup N] [--benchmark]\n"
                     "       [--frame-stream local-pipe] (Windows hidden RGBA presentation)\n"
                     "Arrows: move  Z: shoot/confirm  X: bomb/cancel  Shift: focus  C: special  Esc: pause\n"
                     "Left/Right Ctrl: control modifier (2048). --input accepts 0 through 4095.\n"
+                    "Alt+Enter: toggle desktop fullscreen; the 960x720 canvas keeps its aspect ratio.\n"
                     "Headless defaults to one update. Explicit --input overrides keyboard.\n";
 #ifdef TSSTG_HAS_V8
                 std::cout << "Backends: V8 (JIT, auto default), QuickJS-NG.\n";
@@ -47,6 +51,11 @@ int main(int argc, char** argv) {
                     throw std::runtime_error("--backend requires auto, quickjs or v8");
             }
             else if (arg == "--headless") options.headless = true;
+            else if (arg == "--window-size") { tsstg::setDisplaySize(options.display,value()); options.displayConfigured = true; }
+            else if (arg == "--fullscreen") { options.display.mode = tsstg::WindowMode::BorderlessFullscreen; options.displayConfigured = true; }
+            else if (arg == "--windowed") { options.display.mode = tsstg::WindowMode::Windowed; options.displayConfigured = true; }
+            else if (arg == "--display-config") options.displayConfig = std::filesystem::u8path(value());
+            else if (arg == "--configure-display") options.configureDisplay = true;
             else if (arg == "--frame-stream") { options.frameStream = value(); tsstg::validateFrameStreamName(*options.frameStream); }
             else if (arg == "--benchmark") options.benchmark = true;
             else if (arg == "--profile") options.profile = std::filesystem::u8path(value());
@@ -65,8 +74,13 @@ int main(int argc, char** argv) {
         }
         if (options.headless && options.screenshot) throw std::runtime_error("--screenshot requires graphical mode");
         if (options.headless && options.frameStream) throw std::runtime_error("--frame-stream cannot be combined with --headless");
+        if ((options.headless || options.frameStream) && options.display.mode == tsstg::WindowMode::BorderlessFullscreen)
+            throw std::runtime_error("--fullscreen requires a visible graphical window");
+        if ((options.headless || options.frameStream) && options.configureDisplay)
+            throw std::runtime_error("--configure-display requires a visible graphical window");
         if (options.benchmark && (!options.frames || !*options.frames)) throw std::runtime_error("--benchmark requires --frames greater than zero");
         if (options.headless && !options.frames) options.frames = 1;
+        if (!tsstg::prepareDisplay(options)) return 0;
         return tsstg::runHost(options);
     } catch (const std::exception& error) {
         std::cerr << "TS-STG error: " << error.what() << '\n';

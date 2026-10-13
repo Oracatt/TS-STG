@@ -79,11 +79,13 @@ public:
             frameStream_ = std::make_unique<FrameStream>(*options.frameStream);
         }
         if (!headless_) {
+            validateDisplayOptions(options.display);
             SetConfigFlags(FLAG_WINDOW_RESIZABLE | (options.benchmark || frameStream_ ? 0 : FLAG_VSYNC_HINT) | FLAG_MSAA_4X_HINT |
                 (frameStream_ ? FLAG_WINDOW_HIDDEN | FLAG_WINDOW_ALWAYS_RUN : 0));
-            InitWindow(canvasWidth, canvasHeight, "TS-STG");
+            InitWindow(options.display.width, options.display.height, "TS-STG");
             if (!IsWindowReady()) throw std::runtime_error("Cannot initialize graphics window");
             SetWindowMinSize(480, 360);
+            if (options.display.mode == WindowMode::BorderlessFullscreen) ToggleBorderlessWindowed();
             SetExitKey(KEY_NULL);
             SetTargetFPS(options.benchmark?0:60);
             canvas_ = LoadRenderTexture(canvasWidth, canvasHeight);
@@ -586,13 +588,15 @@ public:
         }
         EndTextureMode();
         BeginDrawing();
-        ClearBackground({8, 9, 16, 255});
+        ClearBackground(BLACK);
         // Present already-composited canvas RGB. Its alpha channel belongs to
         // offscreen rendering and must not blend the finished image a second time.
         desiredCutoff=0;desiredBlend.mode=BLEND_CUSTOM_SEPARATE;desiredBlend.factors={GL_ONE,GL_ZERO,GL_FUNC_ADD,GL_ONE,GL_ZERO,GL_FUNC_ADD};applyStates();
-        const auto scale = std::min(GetScreenWidth()/static_cast<float>(canvasWidth), GetScreenHeight()/static_cast<float>(canvasHeight));
+        // Screen coordinates already match raylib's DPI-aware drawing space.
+        // The framebuffer may have a different physical size on high-DPI displays.
+        const auto viewport = fitDisplayViewport(GetScreenWidth(), GetScreenHeight());
         DrawTexturePro(canvas_.texture, {0,0,static_cast<float>(canvasWidth),-static_cast<float>(canvasHeight)},
-            {(GetScreenWidth()-canvasWidth*scale)/2,(GetScreenHeight()-canvasHeight*scale)/2,canvasWidth*scale,canvasHeight*scale},{0,0},0,WHITE);
+            {viewport.x,viewport.y,viewport.width,viewport.height},{0,0},0,WHITE);
         EndBlendMode();if(shaderActive)EndShaderMode();
         // Submit drawing before the measured swap/frame-cap section. An empty
         // EndDrawing flush is a no-op; GPU queries are read asynchronously.
@@ -697,7 +701,7 @@ private:
     std::map<std::uint32_t, FontResource> fonts_;
     std::unique_ptr<PlatformText> textEngine_;
 };
-std::uint32_t keyboardInput() {
+std::uint32_t keyboardInput(bool suppressConfirm) {
     std::uint32_t mask = 0;
     if (IsKeyDown(KEY_LEFT)) mask |= 1;
     if (IsKeyDown(KEY_RIGHT)) mask |= 2;
@@ -707,7 +711,7 @@ std::uint32_t keyboardInput() {
     if (IsKeyDown(KEY_X)) mask |= 32 | 512;
     if (IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) mask |= 64;
     if (IsKeyDown(KEY_ESCAPE)) mask |= 128;
-    if (IsKeyDown(KEY_ENTER) || IsKeyDown(KEY_KP_ENTER)) mask |= 256;
+    if (!suppressConfirm && (IsKeyDown(KEY_ENTER) || IsKeyDown(KEY_KP_ENTER))) mask |= 256;
     if (IsKeyDown(KEY_C)) mask |= 1024;
     if (IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) mask |= 2048;
     return mask;
@@ -741,15 +745,38 @@ int runHost(const Options& options) {
     } else {
         constexpr double timestep = 1.0 / 60.0;
         double previous = GetTime(), accumulator = timestep;
+        bool suppressDisplayConfirm = false;
         do {
             if (WindowShouldClose() || host.quit()) break;
+            if (!options.frameStream) {
+                const bool enterDown = IsKeyDown(KEY_ENTER) || IsKeyDown(KEY_KP_ENTER);
+                if (!enterDown) suppressDisplayConfirm = false;
+                if ((IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)) &&
+                    (IsKeyDown(KEY_LEFT_ALT) || IsKeyDown(KEY_RIGHT_ALT))) {
+                    // raylib preserves the window's size and position across this
+                    // desktop-fullscreen toggle, without changing the monitor mode.
+                    ToggleBorderlessWindowed();
+                    suppressDisplayConfirm = true;
+                    previous = GetTime();
+                    accumulator = timestep;
+                }
+                if (IsWindowMinimized()) {
+                    // A minimized window has no useful presentation surface. Do
+                    // not simulate an unseen backlog when it becomes visible again.
+                    WaitTime(.01);
+                    PollInputEvents();
+                    previous = GetTime();
+                    accumulator = 0;
+                    continue;
+                }
+            }
             const auto start=ProfileClock::now();ProfileFrame sample;
             const double now = GetTime();
             accumulator += std::min(now - previous, 0.25);
             previous = now;
             if(options.benchmark)accumulator=timestep;
             while (accumulator >= timestep && (!options.frames || frame < *options.frames) && !host.quit()) {
-                backend->update(options.input.value_or(options.frameStream ? 0 : keyboardInput()));
+                backend->update(options.input.value_or(options.frameStream ? 0 : keyboardInput(suppressDisplayConfirm)));
                 ++frame;
                 ++sample.updates;
                 accumulator -= timestep;

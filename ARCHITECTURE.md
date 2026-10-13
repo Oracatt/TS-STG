@@ -2,6 +2,19 @@
 
 TS-STG has three layers: a C++17 low-level host, the portable ECMAScript library `@ts-stg/thlib`, and applications. All STG rules are authored in TypeScript and run as portable JavaScript. thlib owns reusable mechanisms, restored common characters/weapons/Bombs and their common materials. A resource's source game does not make it exclusive to that game. Only genuinely title-specific rules, variants, layout, artwork, music and stages stay in the application; for example, TH20 magic-stone variants are excluded from the shared baseline. Windows first; CMake + raylib + V8 / QuickJS-NG. The engine and procedural demo require no original game binaries/assets. The restored presentation uses the curated local common resource pack. The public restored entry is `@ts-stg/thlib/touhou`; there is no `@ts-stg/thlib/th20` entry.
 
+## Physical display and logical canvas
+
+The native host owns `DisplayOptions`, physical window creation, desktop fullscreen,
+Alt+Enter and optional Windows startup display selection. Consumers opt into the
+startup prompt through `--display-config`; their scripts need no windowing rules.
+The script ABI's width/height and every draw command remain in the 960×720 logical
+canvas. Presentation scales that complete canvas into the current screen-coordinate
+viewport with 4:3 letterboxing, including when the OS framebuffer has a different
+DPI scale. `--screenshot` still exports the logical canvas, not a desktop capture.
+Display toggles consume their Enter key until release and never enter replay input.
+Minimization suspends simulation while the host continues pumping window events;
+restoring the window does not replay elapsed wall-clock time.
+
 ## Host ABI v1
 
 Entry module sets `globalThis.__tsstg_game = { update(inputMask), render(), snapshot?() }`.
