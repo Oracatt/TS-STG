@@ -61,6 +61,7 @@ endforeach()
 
 add_executable(ts-stg
   native/src/main.cpp
+  native/src/console.cpp
   native/src/host.cpp
   native/src/display.cpp
   native/src/display_setup.cpp
@@ -83,6 +84,13 @@ if(TSSTG_ENABLE_V8)
   target_link_libraries(ts-stg PRIVATE "${TSSTG_V8_SDK}/v8-host.lib" winmm dbghelp shlwapi)
 endif()
 if(WIN32)
+  # A GUI subsystem prevents Windows from allocating a console before main.
+  # Keep the ordinary CRT/main entry so CLI arguments, redirects and exit codes
+  # follow the same portable path. --console opts into a debugging console.
+  set_target_properties(ts-stg PROPERTIES WIN32_EXECUTABLE TRUE)
+  if(MSVC)
+    target_link_options(ts-stg PRIVATE /ENTRY:mainCRTStartup)
+  endif()
   target_link_libraries(ts-stg PRIVATE d2d1 dwrite windowscodecs ole32 gdi32)
 endif()
 if(MSVC)
@@ -96,6 +104,27 @@ else()
 endif()
 
 if(BUILD_TESTING)
+  if(WIN32)
+    add_executable(tsstg-console native/tests/console.cpp native/src/console.cpp)
+    add_executable(tsstg-console-probe WIN32 native/tests/console_probe.cpp native/src/console.cpp)
+    foreach(console_target tsstg-console tsstg-console-probe)
+      target_include_directories(${console_target} PRIVATE native/include)
+      target_link_libraries(${console_target} PRIVATE user32)
+      if(MSVC)
+        target_compile_options(${console_target} PRIVATE /W4 /utf-8 /EHsc)
+        target_compile_definitions(${console_target} PRIVATE NOMINMAX _CRT_SECURE_NO_WARNINGS)
+      endif()
+    endforeach()
+    if(MSVC)
+      target_link_options(tsstg-console-probe PRIVATE /ENTRY:mainCRTStartup)
+    endif()
+    add_test(NAME native.console-lifecycle COMMAND tsstg-console $<TARGET_FILE:tsstg-console-probe>)
+    set_tests_properties(native.console-lifecycle PROPERTIES TIMEOUT 30 RUN_SERIAL TRUE)
+  endif()
+  add_test(NAME native.console-help COMMAND ts-stg --help)
+  set_tests_properties(native.console-help PROPERTIES PASS_REGULAR_EXPRESSION "--console" TIMEOUT 10)
+  add_test(NAME native.reject-console-cli-order COMMAND ts-stg --unknown-option --headless)
+  set_tests_properties(native.reject-console-cli-order PROPERTIES WILL_FAIL TRUE TIMEOUT 10)
   add_executable(tsstg-display native/tests/display.cpp native/src/display.cpp)
   target_include_directories(tsstg-display PRIVATE native/include)
   add_test(NAME native.display-options COMMAND tsstg-display)

@@ -45,6 +45,8 @@ CLI: `ts-stg [entry.js] [--root path] [--backend auto|quickjs|v8] [--headless] [
 
 Optional `--profile path.json --profile-warmup N` separates script, decoding, CPU/GPU drawing, presentation wait and instrumentation timings. `--benchmark --frames N` renders one fixed update per frame without intentional pacing; ordinary play still uses the fixed 60 Hz accumulator. Benchmark and headless numbers must not be described as normal-play frame rates.
 
+Windows console ownership is a native startup concern. The GUI-subsystem executable creates no console by default; `--console` explicitly requests one. The platform helper preserves redirected standard streams and never hides a caller's terminal. CLI/headless diagnostics and interactive error dialogs remain outside portable thlib.
+
 ## TypeScript source and runtime modules
 
 Core modules: packages/thlib/src/{math,input,task,world,bullets,lasers,patterns,render}.ts. Exports include `RNG`, `Input`, `Keys`, `TaskRunner`, `wait`, `World`, `Entity`, `Bullet`, `Laser`, `Patterns`, `DrawList` and geometry helpers.

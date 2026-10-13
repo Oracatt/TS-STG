@@ -1,6 +1,8 @@
 #include "tsstg/host.hpp"
 #include "tsstg/frame_stream.hpp"
 #include "tsstg/display_setup.hpp"
+#include "tsstg/console.hpp"
+#include <algorithm>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -15,6 +17,9 @@ std::uint64_t parseUnsigned(const std::string& text, const std::string& option) 
 }
 }
 int main(int argc, char** argv) {
+    tsstg::ConsoleSession console;
+    bool showConsole = false;
+    bool allowErrorDialog = true;
     try {
         tsstg::Options options;
         bool hasEntry = false;
@@ -25,9 +30,11 @@ int main(int argc, char** argv) {
                 return argv[i];
             };
             if (arg == "--help" || arg == "-h") {
+                console.configure(showConsole ? tsstg::ConsoleMode::Visible : tsstg::ConsoleMode::Parent);
                 std::cout << "TS-STG 0.1.0\n"
                     "ts-stg [entry.js] [--root path] [--headless] [--frames N]\n"
                     "       [--backend auto|quickjs|v8]\n"
+                    "       [--console] (Windows debugging console; hidden by default)\n"
                     "       [--window-size WIDTHxHEIGHT] [--windowed|--fullscreen]\n"
                     "       [--display-config path.json] [--configure-display]\n"
                     "       [--input mask] [--snapshot path.json] [--screenshot path.png]\n"
@@ -45,22 +52,23 @@ int main(int argc, char** argv) {
                 return 0;
             }
             if (arg == "--root") options.root = std::filesystem::u8path(value());
+            else if (arg == "--console") { showConsole = true; console.configure(tsstg::ConsoleMode::Visible); }
             else if (arg == "--backend") {
                 options.backend = value();
                 if (options.backend != "auto" && options.backend != "quickjs" && options.backend != "v8")
                     throw std::runtime_error("--backend requires auto, quickjs or v8");
             }
-            else if (arg == "--headless") options.headless = true;
+            else if (arg == "--headless") { options.headless = true; allowErrorDialog = false; }
             else if (arg == "--window-size") { tsstg::setDisplaySize(options.display,value()); options.displayConfigured = true; }
             else if (arg == "--fullscreen") { options.display.mode = tsstg::WindowMode::BorderlessFullscreen; options.displayConfigured = true; }
             else if (arg == "--windowed") { options.display.mode = tsstg::WindowMode::Windowed; options.displayConfigured = true; }
             else if (arg == "--display-config") options.displayConfig = std::filesystem::u8path(value());
             else if (arg == "--configure-display") options.configureDisplay = true;
-            else if (arg == "--frame-stream") { options.frameStream = value(); tsstg::validateFrameStreamName(*options.frameStream); }
-            else if (arg == "--benchmark") options.benchmark = true;
+            else if (arg == "--frame-stream") { allowErrorDialog = false; options.frameStream = value(); tsstg::validateFrameStreamName(*options.frameStream); }
+            else if (arg == "--benchmark") { options.benchmark = true; allowErrorDialog = false; }
             else if (arg == "--profile") options.profile = std::filesystem::u8path(value());
             else if (arg == "--profile-warmup") options.profileWarmup = parseUnsigned(value(),arg);
-            else if (arg == "--frames") options.frames = parseUnsigned(value(), arg);
+            else if (arg == "--frames") { allowErrorDialog = false; options.frames = parseUnsigned(value(), arg); }
             else if (arg == "--input") {
                 auto mask = parseUnsigned(value(), arg);
                 if (mask > 4095) throw std::runtime_error("--input mask must be between 0 and 4095");
@@ -80,10 +88,18 @@ int main(int argc, char** argv) {
             throw std::runtime_error("--configure-display requires a visible graphical window");
         if (options.benchmark && (!options.frames || !*options.frames)) throw std::runtime_error("--benchmark requires --frames greater than zero");
         if (options.headless && !options.frames) options.frames = 1;
+        if (!showConsole && !allowErrorDialog) console.configure(tsstg::ConsoleMode::Parent);
         if (!tsstg::prepareDisplay(options)) return 0;
         return tsstg::runHost(options);
     } catch (const std::exception& error) {
-        std::cerr << "TS-STG error: " << error.what() << '\n';
+        // An invalid option may precede --headless/--frames. Such failures
+        // must never block an unattended caller on a Windows message box.
+        const bool automated = std::any_of(argv + 1, argv + argc, [](const char* value) {
+            const std::string arg = value;
+            return arg == "--headless" || arg == "--frames" || arg == "--frame-stream" ||
+                   arg == "--benchmark" || arg == "--help" || arg == "-h";
+        });
+        console.reportError(std::string("TS-STG error: ") + error.what(), allowErrorDialog && !automated);
         return 1;
     }
 }
