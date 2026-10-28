@@ -206,6 +206,14 @@ if(BUILD_TESTING)
   set_tests_properties(native.music-transport PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 15 RUN_SERIAL TRUE)
   find_program(TSSTG_NODE node)
   if(TSSTG_NODE)
+    add_test(NAME native.display-pixels COMMAND ${TSSTG_NODE}
+      ${CMAKE_CURRENT_SOURCE_DIR}/native/tests/display-pixels.mjs $<TARGET_FILE:ts-stg> quickjs)
+    set_tests_properties(native.display-pixels PROPERTIES TIMEOUT 100 RUN_SERIAL TRUE)
+    if(TSSTG_ENABLE_V8)
+      add_test(NAME native.display-pixels.v8 COMMAND ${TSSTG_NODE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/native/tests/display-pixels.mjs $<TARGET_FILE:ts-stg> v8)
+      set_tests_properties(native.display-pixels.v8 PROPERTIES TIMEOUT 100 RUN_SERIAL TRUE)
+    endif()
     if(WIN32)
       add_test(NAME native.frame-stream-pixels COMMAND ${TSSTG_NODE}
         ${CMAKE_CURRENT_SOURCE_DIR}/native/tests/frame-stream.mjs $<TARGET_FILE:ts-stg> quickjs)

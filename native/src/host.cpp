@@ -88,9 +88,11 @@ public:
             if (options.display.mode == WindowMode::BorderlessFullscreen) ToggleBorderlessWindowed();
             SetExitKey(KEY_NULL);
             SetTargetFPS(options.benchmark?0:60);
-            canvas_ = LoadRenderTexture(canvasWidth, canvasHeight);
+            const auto pixels = displayCanvasSize(GetRenderWidth(), GetRenderHeight());
+            canvas_ = LoadRenderTexture(pixels.width, pixels.height);
             if (!IsRenderTextureValid(canvas_)) { CloseWindow(); throw std::runtime_error("Cannot create logical canvas"); }
             SetTextureWrap(canvas_.texture,TEXTURE_WRAP_CLAMP);
+            SetTextureFilter(canvas_.texture,TEXTURE_FILTER_BILINEAR);
             BeginTextureMode(canvas_);ClearBackground(BLANK);EndTextureMode();
             InitAudioDevice();
             audioReady_ = IsAudioDeviceReady();
@@ -317,7 +319,14 @@ public:
         else {Image image{const_cast<std::uint8_t*>(pixels.data()),width,height,1,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};texture=LoadTextureFromImage(image);if(!IsTextureValid(texture))throw std::runtime_error("Cannot create texture");}
         textures_[id]=texture;return id;
     }
-    void updateTexture(std::uint32_t id,const std::vector<std::uint8_t>& pixels) override {
+    void updateTexture(std::uint32_t id, const std::vector<std::uint8_t>& pixels) override {
+        if(!headless_&&canvasTargets_.count(id)){
+            if(pixels.size()!=static_cast<std::size_t>(canvasWidth)*canvasHeight*4)throw std::runtime_error("Canvas update requires logical RGBA pixels");
+            const auto texture=textures_.at(id);
+            Image source{const_cast<std::uint8_t*>(pixels.data()),canvasWidth,canvasHeight,1,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
+            Image copy=ImageCopy(source);ImageResize(&copy,texture.width,texture.height);ImageFlipVertical(&copy);
+            UpdateTexture(texture,copy.data);UnloadImage(copy);return;
+        }
         validateTexture(id);const auto texture=textures_.at(id);
         if(pixels.size()!=static_cast<std::size_t>(texture.width)*texture.height*4)throw std::runtime_error("Texture update requires exactly width*height*4 RGBA bytes");
         if(headless_)pixels_[id]=pixels;
@@ -329,6 +338,17 @@ public:
     }
     void updateTextureRegion(std::uint32_t id,int x,int y,int width,int height,const std::vector<std::uint8_t>& pixels) override {
         validateTexture(id);const auto texture=textures_.at(id);
+        if(!headless_&&canvasTargets_.count(id)){
+            if(x<0||y<0||width<1||height<1||x>canvasWidth-width||y>canvasHeight-height||pixels.size()!=static_cast<std::size_t>(width)*height*4)
+                throw std::runtime_error("Canvas update region is outside logical bounds");
+            const float sx=static_cast<float>(texture.width)/canvasWidth,sy=static_cast<float>(texture.height)/canvasHeight;
+            const int left=static_cast<int>(std::lround(x*sx)),top=static_cast<int>(std::lround(y*sy));
+            const int w=static_cast<int>(std::lround((x+width)*sx))-left,h=static_cast<int>(std::lround((y+height)*sy))-top;
+            Image source{const_cast<std::uint8_t*>(pixels.data()),width,height,1,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8};
+            Image copy=ImageCopy(source);ImageResize(&copy,w,h);ImageFlipVertical(&copy);
+            UpdateTextureRec(texture,{static_cast<float>(left),static_cast<float>(texture.height-top-h),static_cast<float>(w),static_cast<float>(h)},copy.data);
+            UnloadImage(copy);return;
+        }
         if(x<0||y<0||width<1||height<1||x>texture.width-width||y>texture.height-height)
             throw std::runtime_error("Texture update region must lie within the texture");
         if(pixels.size()!=static_cast<std::size_t>(width)*height*4)throw std::runtime_error("Texture region update requires exactly width*height*4 RGBA bytes");
@@ -343,17 +363,19 @@ public:
     }
     TexturePixels readTexturePixels(std::uint32_t id) const override {
         if(id)validateTexture(id);const auto texture=id?textures_.at(id):canvas_.texture;
-        TexturePixels result;result.width=id?texture.width:canvasWidth;result.height=id?texture.height:canvasHeight;
+        TexturePixels result;result.width=id&&!canvasTargets_.count(id)?texture.width:canvasWidth;result.height=id&&!canvasTargets_.count(id)?texture.height:canvasHeight;
         if(headless_){const auto found=pixels_.find(id);if(found!=pixels_.end())result.pixels=found->second;else result.pixels.resize(static_cast<std::size_t>(result.width)*result.height*4);return result;}
         Image image=LoadImageFromTexture(texture);if(!IsImageValid(image))throw std::runtime_error("Cannot read texture pixels");
-        if(!id||targets_.count(id))ImageFlipVertical(&image);ImageFormat(&image,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
+        if(!id||targets_.count(id))ImageFlipVertical(&image);
+        if(image.width!=result.width||image.height!=result.height)ImageResize(&image,result.width,result.height);
+        ImageFormat(&image,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);
         const auto* data=static_cast<const std::uint8_t*>(image.data);result.pixels.assign(data,data+static_cast<std::size_t>(result.width)*result.height*4);UnloadImage(image);return result;
     }
     void unloadTexture(std::uint32_t id) override {
         validateTexture(id);auto target=targets_.find(id);
         if(target!=targets_.end()){if(!headless_)UnloadRenderTexture(target->second);targets_.erase(target);}
         else if(!headless_)UnloadTexture(textures_.at(id));
-        textures_.erase(id);pixels_.erase(id);samplerStates_.erase(id);
+        textures_.erase(id);pixels_.erase(id);samplerStates_.erase(id);canvasTargets_.erase(id);
     }
     void unloadSound(std::uint32_t id) override {
         auto found=sounds_.find(id);if(found==sounds_.end())throw std::runtime_error("Unknown sound id: "+std::to_string(id));
@@ -377,13 +399,15 @@ public:
         const auto id = nextId_++;
         RenderTexture2D target{};
         if (!headless_) {
-            target = LoadRenderTexture(width, height);
+            target = LoadRenderTexture(width==canvasWidth && height==canvasHeight ? canvas_.texture.width : width,
+                width==canvasWidth && height==canvasHeight ? canvas_.texture.height : height);
             if (!IsRenderTextureValid(target)) throw std::runtime_error("Cannot allocate render target");
             SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR);
             SetTextureWrap(target.texture,TEXTURE_WRAP_CLAMP);
             BeginTextureMode(target);ClearBackground(BLANK);EndTextureMode();
         } else { target.texture.width = width; target.texture.height = height; }
         targets_[id] = target;
+        if(width==canvasWidth && height==canvasHeight)canvasTargets_.insert(id);
         textures_[id] = target.texture;
         if(headless_)pixels_[id].resize(static_cast<std::size_t>(width)*height*4);
         return id;
@@ -425,7 +449,9 @@ public:
             UnloadFont(resource.font);
             resource.font = replacement;
         }
-        BeginTextureMode(canvas_);
+        resizeDisplayCanvas();
+        beginCanvasPass(canvas_,true);
+        float passScaleX=static_cast<float>(canvas_.texture.width)/canvasWidth,passScaleY=static_cast<float>(canvas_.texture.height)/canvasHeight;
         ClearBackground(BLACK);
         struct BlendState{int mode=BLEND_ALPHA;std::array<int,6> factors{};bool operator==(const BlendState& other)const{return mode==other.mode&&(mode!=BLEND_CUSTOM_SEPARATE||factors==other.factors);}};
         BlendState desiredBlend,appliedBlend;
@@ -481,7 +507,7 @@ public:
                 if ((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x) > 0) std::swap(b, c);
                 DrawTriangle(a,b,c,color); break;
             }
-            case DrawKind::Scissor: BeginScissorMode(static_cast<int>(v[0]),static_cast<int>(v[1]),static_cast<int>(v[2]),static_cast<int>(v[3])); break;
+            case DrawKind::Scissor: BeginScissorMode(static_cast<int>(std::lround(v[0]*passScaleX)),static_cast<int>(std::lround(v[1]*passScaleY)),static_cast<int>(std::lround((v[0]+v[2])*passScaleX))-static_cast<int>(std::lround(v[0]*passScaleX)),static_cast<int>(std::lround((v[1]+v[3])*passScaleY))-static_cast<int>(std::lround(v[1]*passScaleY))); break;
             case DrawKind::ScissorEnd: EndScissorMode(); break;
             case DrawKind::Sprite: {
                 const auto texture = textures_.at(command.resource);
@@ -491,7 +517,9 @@ public:
             case DrawKind::SpriteRegion: {
                 const auto texture = textures_.at(command.resource);
                 const bool target = targets_.count(command.resource) != 0;
-                DrawTexturePro(texture, {v[0],target?texture.height-v[1]-v[3]:v[1],v[2],target?-v[3]:v[3]}, {v[4],v[5],v[6],v[7]},
+                const float sx=canvasTargets_.count(command.resource)?static_cast<float>(texture.width)/canvasWidth:1.f;
+                const float sy=canvasTargets_.count(command.resource)?static_cast<float>(texture.height)/canvasHeight:1.f;
+                DrawTexturePro(texture, {v[0]*sx,target?texture.height-(v[1]+v[3])*sy:v[1],v[2]*sx,target?-v[3]*sy:v[3]}, {v[4],v[5],v[6],v[7]},
                     {v[6]/2,v[7]/2}, v[8]*RAD2DEG, color); break;
             }
             case DrawKind::Blend:
@@ -574,9 +602,13 @@ public:
                 rlSetMatrixProjection(savedProjection);rlSetMatrixModelview(savedModelview);rlEnableBackfaceCulling();break;
             }
             case DrawKind::TargetBegin:
-                EndTextureMode(); BeginTextureMode(targets_.at(command.resource)); ClearBackground(color); break;
+                EndTextureMode(); beginCanvasPass(targets_.at(command.resource),canvasTargets_.count(command.resource)!=0);
+                passScaleX=canvasTargets_.count(command.resource)?static_cast<float>(canvas_.texture.width)/canvasWidth:1.f;
+                passScaleY=canvasTargets_.count(command.resource)?static_cast<float>(canvas_.texture.height)/canvasHeight:1.f;
+                ClearBackground(color); break;
             case DrawKind::TargetEnd:
-                EndTextureMode(); BeginTextureMode(canvas_); break;
+                EndTextureMode(); beginCanvasPass(canvas_,true);
+                passScaleX=static_cast<float>(canvas_.texture.width)/canvasWidth;passScaleY=static_cast<float>(canvas_.texture.height)/canvasHeight;break;
             case DrawKind::BlendFactors:
                 desiredBlend.mode=BLEND_CUSTOM_SEPARATE;
                 for(unsigned i=0;i<6;++i)desiredBlend.factors[i]=(i==2||i==5)?blendEquation(command.modes[i]):blendFactor(command.modes[i]);break;
@@ -595,7 +627,7 @@ public:
         // Screen coordinates already match raylib's DPI-aware drawing space.
         // The framebuffer may have a different physical size on high-DPI displays.
         const auto viewport = fitDisplayViewport(GetScreenWidth(), GetScreenHeight());
-        DrawTexturePro(canvas_.texture, {0,0,static_cast<float>(canvasWidth),-static_cast<float>(canvasHeight)},
+        DrawTexturePro(canvas_.texture, {0,0,static_cast<float>(canvas_.texture.width),-static_cast<float>(canvas_.texture.height)},
             {viewport.x,viewport.y,viewport.width,viewport.height},{0,0},0,WHITE);
         EndBlendMode();if(shaderActive)EndShaderMode();
         // Submit drawing before the measured swap/frame-cap section. An empty
@@ -644,6 +676,30 @@ public:
         if (!success) throw std::runtime_error("Cannot export screenshot: " + path.u8string());
     }
 private:
+    // Allocate at the physical 4:3 viewport, including DPI, up to 4x. The
+    // simulation and command coordinates stay at 960x720. Small pixel buffers
+    // retain exact sizes; full-canvas passes share this presentation density.
+    static void beginCanvasPass(RenderTexture2D target,bool logical){
+        BeginTextureMode(target);
+        if(logical){rlMatrixMode(RL_PROJECTION);rlLoadIdentity();rlOrtho(0,canvasWidth,canvasHeight,0,0,1);rlMatrixMode(RL_MODELVIEW);rlLoadIdentity();}
+    }
+    static void resizeSurface(RenderTexture2D& target,int width,int height){
+        const auto previous=target;auto replacement=LoadRenderTexture(width,height);
+        if(!IsRenderTextureValid(replacement))throw std::runtime_error("Cannot resize display canvas");
+        SetTextureFilter(replacement.texture,TEXTURE_FILTER_BILINEAR);SetTextureWrap(replacement.texture,TEXTURE_WRAP_CLAMP);
+        BeginTextureMode(replacement);ClearBackground(BLANK);
+        rlSetBlendFactorsSeparate(GL_ONE,GL_ZERO,GL_ONE,GL_ZERO,GL_FUNC_ADD,GL_FUNC_ADD);BeginBlendMode(BLEND_CUSTOM_SEPARATE);
+        DrawTexturePro(previous.texture,{0,0,static_cast<float>(previous.texture.width),-static_cast<float>(previous.texture.height)},
+            {0,0,static_cast<float>(width),static_cast<float>(height)},{0,0},0,WHITE);
+        EndBlendMode();EndTextureMode();UnloadRenderTexture(previous);target=replacement;
+    }
+    void resizeDisplayCanvas(){
+        const auto size=displayCanvasSize(GetRenderWidth(),GetRenderHeight());
+        if(canvas_.texture.width==size.width&&canvas_.texture.height==size.height)return;
+        resizeSurface(canvas_,size.width,size.height);
+        for(auto id:canvasTargets_){auto& target=targets_.at(id);resizeSurface(target,size.width,size.height);textures_[id]=target.texture;samplerStates_.erase(id);}
+    }
+    std::set<std::uint32_t> canvasTargets_;
     void ensureAlphaShader(){
         if(alphaShader_.id)return;
         static const char* fragment="#version 330\nin vec2 fragTexCoord;in vec4 fragColor;uniform sampler2D texture0;uniform vec4 colDiffuse;uniform float alphaCutoff;out vec4 finalColor;void main(){finalColor=texture(texture0,fragTexCoord)*colDiffuse*fragColor;if(finalColor.a<alphaCutoff)discard;}";

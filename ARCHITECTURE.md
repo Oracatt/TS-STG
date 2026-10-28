@@ -8,9 +8,16 @@ The native host owns `DisplayOptions`, physical window creation, desktop fullscr
 Alt+Enter and optional Windows startup display selection. Consumers opt into the
 startup prompt through `--display-config`; their scripts need no windowing rules.
 The script ABI's width/height and every draw command remain in the 960×720 logical
-canvas. Presentation scales that complete canvas into the current screen-coordinate
+canvas. Presentation fits that complete canvas into the current screen-coordinate
 viewport with 4:3 letterboxing, including when the OS framebuffer has a different
-DPI scale. `--screenshot` still exports the logical canvas, not a desktop capture.
+DPI scale. The canvas framebuffer follows the physical 4:3 viewport (960×720
+minimum, 3840×2880 maximum), allowing high-resolution textures and geometry to
+reach the display without first being reduced to 960×720. Full-canvas 960×720
+render targets follow the same density; other target sizes remain exact. Resize
+preserves target contents and public handles. Projection, clipping and target
+region sampling retain logical coordinates. Pixel reads/writes and frame streams
+retain logical dimensions; `--screenshot` exports the physical canvas without
+letterboxing, not a desktop capture.
 Display toggles consume their Enter key until release and never enter replay input.
 Minimization suspends simulation while the host continues pumping window events;
 restoring the window does not replay elapsed wall-clock time.

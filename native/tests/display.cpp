@@ -29,6 +29,15 @@ int main() {
         check(equal(small.x,0) && equal(small.y,0) && equal(small.width,640) && equal(small.height,480),"Original-style small window must scale the same canvas");
         const auto zero = tsstg::fitDisplayViewport(0,0);
         check(zero.width == 0 && zero.height == 0,"Empty surfaces must not produce invalid geometry");
+        struct CanvasCase { int inputWidth, inputHeight, width, height; };
+        for (const auto& test : {CanvasCase{960,720,960,720}, {640,480,960,720},
+             {1920,1080,1440,1080}, {1920,1440,1920,1440}, {3840,2160,2880,2160},
+             {1440,2560,1440,1080}, {2133,1600,2132,1599}, {7680,5760,3840,2880},
+             {0,0,960,720}, {-1,720,960,720}}) {
+            const auto size = tsstg::displayCanvasSize(test.inputWidth,test.inputHeight);
+            check(size.width==test.width && size.height==test.height,"Physical canvas density or cap is incorrect");
+            check(size.width*3==size.height*4,"Physical canvas must remain exactly 4:3");
+        }
         std::cout << "Display size validation and aspect-preserving presentation passed\n";
         return 0;
     } catch (const std::exception& error) {

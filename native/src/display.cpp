@@ -1,6 +1,7 @@
 #include "tsstg/display.hpp"
 #include <algorithm>
 #include <charconv>
+#include <cmath>
 #include <stdexcept>
 
 namespace tsstg {
@@ -30,5 +31,12 @@ DisplayViewport fitDisplayViewport(int width, int height) {
     const float scale = std::min(width / 960.f, height / 720.f);
     const float canvasWidth = 960.f * scale, canvasHeight = 720.f * scale;
     return {(width-canvasWidth)/2, (height-canvasHeight)/2, canvasWidth, canvasHeight};
+}
+DisplayCanvasSize displayCanvasSize(int renderWidth, int renderHeight) {
+    const auto view = fitDisplayViewport(renderWidth, renderHeight);
+    // Rounding the width to a multiple of four keeps both axes at exactly the
+    // same density, including odd pixel sizes and non-integer desktop DPI.
+    const int width = std::clamp(static_cast<int>(std::lround(view.width/4))*4, 960, 3840);
+    return {width, width*3/4};
 }
 }

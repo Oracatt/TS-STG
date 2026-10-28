@@ -8,7 +8,7 @@ export interface NativeHost {
  updateTexture(id:number,pixels:Uint8Array|Uint8ClampedArray):void;
  /** Updates a top-left-origin RGBA subrectangle without a full texture readback. */
  updateTextureRegion(id:number,x:number,y:number,width:number,height:number,pixels:Uint8Array|Uint8ClampedArray):void;
- /** id0/default reads the previous completed logical canvas. Headless canvas is transparent zero. */
+ /** id0/default reads the previous completed 960x720 logical canvas. Full-canvas targets also read at logical size, independent of display density. Headless canvas is transparent zero. */
  readTexturePixels(id?:number):{width:number;height:number;pixels:Uint8Array};
  /** Also releases a render target and its color/depth attachments. */
  unloadTexture(id:number):void;
