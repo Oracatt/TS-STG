@@ -2,6 +2,8 @@
 export interface NativeHost {
  readonly version:string;readonly backend:string;readonly width:number;readonly height:number;
  quit():void;log(text:string):void;readText(path:string):string;writeText(path:string,text:string):void;
+ /** Static self-contained GLB. Geometry and embedded textures stay on the GPU until unload. */
+ loadModel(path:string):number;modelInfo(id:number):ModelInfo;unloadModel(id:number):void;
  loadTexture(path:string,paddedWidth?:number,paddedHeight?:number):number;
  createRenderTarget(width:number,height:number):number;
  createTexture(width:number,height:number,pixels:Uint8Array|Uint8ClampedArray):number;
@@ -57,3 +59,8 @@ export interface SystemBitmapTextOptions {
  allowFontSubstitution?:boolean;
 }
 export interface SystemBitmapTextPixels {width:number;height:number;pixels:Uint8Array;extentWidth:number;extentHeight:number;}
+
+export interface ModelInfo {
+ id:number;meshes:number;vertices:number;triangles:number;
+ minimum:[number,number,number];maximum:[number,number,number];
+}

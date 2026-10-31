@@ -7,7 +7,11 @@
 #include <vector>
 
 namespace tsstg {
-enum class DrawKind { Clear, Circle, Ring, Line, Rect, Text, Triangle, Scissor, ScissorEnd, Sprite, SpriteRegion, Blend, BlendEnd, Mesh, TargetBegin, TargetEnd, BlendFactors, Sampler, LineStrip, Point, Mesh3D, AlphaTest, Quad, StatefulQuad, ShaderBegin, ShaderEnd };
+enum class DrawKind { Clear, Circle, Ring, Line, Rect, Text, Triangle, Scissor, ScissorEnd, Sprite, SpriteRegion, Blend, BlendEnd, Mesh, TargetBegin, TargetEnd, BlendFactors, Sampler, LineStrip, Point, Mesh3D, AlphaTest, Quad, StatefulQuad, ShaderBegin, ShaderEnd, ModelSceneBegin, Model3D, ModelSceneEnd };
+struct ModelInfo {
+    std::uint32_t id=0, meshes=0, vertices=0, triangles=0;
+    std::array<float,3> minimum{}, maximum{};
+};
 struct ShaderUniform { std::string name; int type=0; std::array<float,16> values{}; };
 struct MeshVertex { float x, y, u, v; std::uint32_t color; float z=0; };
 struct TexturePixels { int width=0,height=0;std::vector<std::uint8_t> pixels; };
@@ -42,6 +46,7 @@ struct DrawCommand {
     std::vector<std::uint32_t> indices;
     std::array<std::string, 6> modes;
     std::array<float, 16> matrix{};
+    std::array<float, 18> lighting{};
     // Quads reuse values for four xy pairs and matrix[0..3] for the UV
     // rectangle, avoiding two heap allocations for each four-vertex mesh.
     // Scoped quad states use matrix[10..12] for sampler codes and [13] for
@@ -59,6 +64,9 @@ public:
     virtual std::string readText(const std::string& name) const = 0;
     virtual void writeText(const std::string& name, const std::string& text) = 0;
     virtual std::uint32_t loadTexture(const std::string& name, int canvasWidth = 0, int canvasHeight = 0) = 0;
+    virtual std::uint32_t loadModel(const std::string& name) = 0;
+    virtual ModelInfo modelInfo(std::uint32_t id) const = 0;
+    virtual void unloadModel(std::uint32_t id) = 0;
     virtual std::uint32_t loadSound(const std::string& name) = 0;
     virtual std::uint32_t loadMusic(const std::string& name) = 0;
     virtual std::uint32_t loadFont(const std::string& name, int size) = 0;

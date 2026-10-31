@@ -1,4 +1,5 @@
 #include "tsstg/backend.hpp"
+#include "tsstg/models.hpp"
 #include "tsstg/geometry.hpp"
 #include "v8.h"
 #include "v8-version-string.h"
@@ -67,6 +68,10 @@ JSValue JS_GetPropertyUint32(JSContext* c, JSValue v, std::uint32_t key) {
 }
 void JS_SetPropertyStr(JSContext* c, JSValue v, const char* key, JSValue value) {
     if(!v.As<v8::Object>()->Set(current(c),utf8(c,key),value).FromMaybe(false)) throw ScriptFailure{};
+}
+JSValue JS_NewArray(JSContext* c) { return v8::Array::New(c->isolate); }
+void JS_SetPropertyUint32(JSContext* c, JSValue v, std::uint32_t key, JSValue value) {
+    if(!v.As<v8::Object>()->Set(current(c),key,value).FromMaybe(false)) throw ScriptFailure{};
 }
 JSValue JS_NewObject(JSContext* c) { return v8::Object::New(c->isolate); }
 JSValue JS_NewStringLen(JSContext* c, const char* s, std::size_t n) { return utf8(c,s,n); }
@@ -177,7 +182,7 @@ public:
         if (count > 200000) throw std::runtime_error("render() exceeds 200000 command limit");
         std::vector<DrawCommand> commands;
         commands.reserve(count);
-        bool scissor = false, blend = false, shader = false;
+        bool scissor = false, blend = false, shader = false, modelScene = false;
         double alphaCutoff = 0;
         std::uint32_t activeTarget = 0;
         for (std::uint32_t index = 0; index < count; ++index) {
@@ -188,9 +193,31 @@ public:
                 auto property = [&](std::uint32_t n) { return Value(context_, JS_GetPropertyUint32(context_, item.get(), n)); };
                 Value kindValue = property(0);
                 const auto kind = string(kindValue.get());
+                if(modelScene && kind!="model3d" && kind!="modelSceneEnd")
+                    throw std::runtime_error("Only model3d and modelSceneEnd are allowed inside a model scene");
                 DrawCommand command{};
                 unsigned size = 0, numbers = 0, offset = 1, colorIndex = 0;
-                if (kind == "clear") { command.kind = DrawKind::Clear; size = 2; colorIndex = 1; }
+                if(kind=="modelSceneBegin" || kind=="model3d") {
+                    const bool begin=kind=="modelSceneBegin";
+                    if(begin && (modelScene||shader||blend||alphaCutoff!=0))throw std::runtime_error("Model scenes require default shader/blend/alpha state");
+                    if(!begin && !modelScene)throw std::runtime_error("model3d requires a model scene");
+                    size=begin?3:4;command.kind=begin?DrawKind::ModelSceneBegin:DrawKind::Model3D;
+                    Value matrix=property(begin?1:2);
+                    if(!JS_IsArray(matrix.get())||length(matrix.get())!=16)throw std::runtime_error("Model matrix requires 16 components");
+                    for(std::uint32_t i=0;i<16;i++){Value v(context_,JS_GetPropertyUint32(context_,matrix.get(),i));command.matrix[i]=static_cast<float>(number(v.get()));}
+                    validateModelMatrix(command.matrix,!begin);
+                    if(begin){
+                        Value lighting=property(2);
+                        if(!JS_IsArray(lighting.get())||length(lighting.get())!=18)throw std::runtime_error("Model lighting requires 18 components");
+                        for(std::uint32_t i=0;i<18;i++){Value v(context_,JS_GetPropertyUint32(context_,lighting.get(),i));command.lighting[i]=static_cast<float>(number(v.get()));}
+                        validateModelLighting(command.lighting);modelScene=true;
+                    }else{Value id=property(1);command.resource=unsignedNumber(id.get());services_.modelInfo(command.resource);colorIndex=3;}
+                }
+                else if(kind=="modelSceneEnd") {
+                    if(!modelScene)throw std::runtime_error("No model scene to end");
+                    command.kind=DrawKind::ModelSceneEnd;size=1;modelScene=false;
+                }
+                else if (kind == "clear") { command.kind = DrawKind::Clear; size = 2; colorIndex = 1; }
                 else if (kind == "circle") { command.kind = DrawKind::Circle; size = 5; numbers = 3; colorIndex = 4; }
                 else if (kind == "ring") { command.kind = DrawKind::Ring; size = 6; numbers = 4; colorIndex = 5; }
                 else if (kind == "line") { command.kind = DrawKind::Line; size = 7; numbers = 5; colorIndex = 6; }
@@ -382,6 +409,7 @@ public:
                 throw std::runtime_error("render command " + std::to_string(index) + ": " + error.what());
             }
         }
+        if(modelScene)throw std::runtime_error("render() leaves model scene unclosed");
         if (scissor) throw std::runtime_error("render() leaves scissor unclosed");
         if (blend) throw std::runtime_error("render() leaves blend mode unclosed");
         if (activeTarget) throw std::runtime_error("render() leaves render target unclosed");
@@ -405,7 +433,7 @@ public:
         return string(json);
     }
 private:
-    enum Operation { Quit, Log, ReadText, WriteText, LoadTexture, LoadSound, LoadMusic, PlaySound, StopSound, PlayMusic, StopMusic, SetMusicLoop, SeekMusic, GetMusicTime, LoadFont, CreateRenderTarget, CreateTexture, UpdateTexture, ReadTexturePixels, UnloadTexture, UnloadSound, UnloadMusic, UnloadFont, PauseSound, ResumeSound, IsSoundPlaying, PauseMusic, ResumeMusic, CreateShader, UnloadShader, CreateTextLayout, RasterizeTextLayout, DestroyTextLayout, HasSystemFont, EncodeText, RasterizeBitmapText, UpdateTextureRegion, SetMusicVolume };
+    enum Operation { LoadModel, GetModelInfo, UnloadModel, Quit, Log, ReadText, WriteText, LoadTexture, LoadSound, LoadMusic, PlaySound, StopSound, PlayMusic, StopMusic, SetMusicLoop, SeekMusic, GetMusicTime, LoadFont, CreateRenderTarget, CreateTexture, UpdateTexture, ReadTexturePixels, UnloadTexture, UnloadSound, UnloadMusic, UnloadFont, PauseSound, ResumeSound, IsSoundPlaying, PauseMusic, ResumeMusic, CreateShader, UnloadShader, CreateTextLayout, RasterizeTextLayout, DestroyTextLayout, HasSystemFont, EncodeText, RasterizeBitmapText, UpdateTextureRegion, SetMusicVolume };
     HostServices& services_;
     v8::Isolate* isolate_=nullptr;
     JSContext bridge_{};
@@ -759,6 +787,22 @@ private:
                 Value bytes(context,JS_NewUint8ArrayCopy(context,pixels.pixels.data(),pixels.pixels.size()));self.check(bytes.get());
                 JS_SetPropertyStr(context,result.get(),"pixels",JS_DupValue(context,bytes.get()));return JS_DupValue(context,result.get());
             }
+            case LoadModel:return JS_NewUint32(context,self.services_.loadModel(self.string(argument(0))));
+            case UnloadModel:self.services_.unloadModel(self.unsignedNumber(argument(0)));break;
+            case GetModelInfo:{
+                const auto info=self.services_.modelInfo(self.unsignedNumber(argument(0)));
+                Value result(context,JS_NewObject(context));self.check(result.get());
+                JS_SetPropertyStr(context,result.get(),"id",JS_NewUint32(context,info.id));
+                JS_SetPropertyStr(context,result.get(),"meshes",JS_NewUint32(context,info.meshes));
+                JS_SetPropertyStr(context,result.get(),"vertices",JS_NewUint32(context,info.vertices));
+                JS_SetPropertyStr(context,result.get(),"triangles",JS_NewUint32(context,info.triangles));
+                for(int k=0;k<2;k++){
+                    Value bounds(context,JS_NewArray(context));self.check(bounds.get());
+                    for(std::uint32_t i=0;i<3;i++)JS_SetPropertyUint32(context,bounds.get(),i,JS_NewFloat64(context,k?info.maximum[i]:info.minimum[i]));
+                    JS_SetPropertyStr(context,result.get(),k?"maximum":"minimum",JS_DupValue(context,bounds.get()));
+                }
+                return JS_DupValue(context,result.get());
+            }
             case UnloadTexture:self.services_.unloadTexture(self.unsignedNumber(argument(0)));break;
             case UnloadSound:self.services_.unloadSound(self.unsignedNumber(argument(0)));break;
             case UnloadMusic:self.services_.unloadMusic(self.unsignedNumber(argument(0)));break;
@@ -801,6 +845,7 @@ private:
         JS_SetPropertyStr(context_,native,"height",JS_NewInt32(context_,720));
         const struct { const char* name; int arguments; Operation operation; } functions[] = {
             {"quit",0,Quit},{"log",1,Log},{"readText",1,ReadText},{"writeText",2,WriteText},
+            {"loadModel",1,LoadModel},{"modelInfo",1,GetModelInfo},{"unloadModel",1,UnloadModel},
             {"loadTexture",1,LoadTexture},{"loadSound",1,LoadSound},{"loadMusic",1,LoadMusic},
             {"playSound",1,PlaySound},{"stopSound",1,StopSound},{"playMusic",1,PlayMusic},{"stopMusic",1,StopMusic},{"loadFont",1,LoadFont},{"createRenderTarget",2,CreateRenderTarget}
             ,{"setMusicLoop",3,SetMusicLoop},{"seekMusic",2,SeekMusic},{"getMusicTime",1,GetMusicTime},{"setMusicVolume",2,SetMusicVolume}

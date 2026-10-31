@@ -22,6 +22,15 @@ Display toggles consume their Enter key until release and never enter replay inp
 Minimization suspends simulation while the host continues pumping window events;
 restoring the window does not replay elapsed wall-clock time.
 
+## Static model scenes
+
+`loadModel`, `modelInfo` and `unloadModel` manage self-contained static GLB resources.
+`modelSceneBegin` / `model3d` / `modelSceneEnd` draw cached GPU geometry with
+per-instance matrices, diffuse lighting, distance fog and a scoped depth buffer.
+The camera, environment composition and effects stay in application TypeScript.
+Both script backends validate the same commands and resource lifetimes. See
+[static model contract](docs/static-models.md) for the supported glTF subset and limits.
+
 ## Host ABI v1
 
 Entry module sets `globalThis.__tsstg_game = { update(inputMask), render(), snapshot?() }`.

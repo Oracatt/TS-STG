@@ -63,6 +63,7 @@ add_executable(ts-stg
   native/src/main.cpp
   native/src/console.cpp
   native/src/host.cpp
+  native/src/models.cpp
   native/src/display.cpp
   native/src/display_setup.cpp
   native/src/frame_stream.cpp
@@ -294,6 +295,13 @@ if(BUILD_TESTING)
   endforeach()
   add_script_test(NAME native.thlib-replay COMMAND ts-stg tests/fixtures/replay-native.js
     --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 1800)
+  add_script_test(NAME native.models COMMAND ts-stg native/tests/models.js
+    --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 3)
+  foreach(model_invalid RANGE 0 10)
+    add_script_test(NAME native.reject-model-${model_invalid} COMMAND ts-stg native/tests/models-invalid.js
+      --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 1 --input ${model_invalid})
+    set_tests_properties(native.reject-model-${model_invalid} PROPERTIES WILL_FAIL TRUE)
+  endforeach()
   add_script_test(NAME native.mesh3d COMMAND ts-stg native/tests/mesh3d.js
     --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 2)
   add_script_test(NAME native.alpha-test COMMAND ts-stg native/tests/alpha-test.js

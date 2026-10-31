@@ -4,6 +4,16 @@ import { clamp } from './math.js';
 export const rgba = (r: number, g: number, b: number, a: number = 255): number => ((clamp(r, 0, 255) << 24) | (clamp(g, 0, 255) << 16) | (clamp(b, 0, 255) << 8) | clamp(a, 0, 255)) >>> 0;
 export const withAlpha = (color: number, alpha: number): number => ((color & 0xffffff00) | Math.round(clamp(alpha, 0, 1) * 255)) >>> 0;
 
+/** Generic static scene lighting in world units; all vectors use RGB/XYZ components. */
+export interface ModelSceneOptions {
+ eye:readonly [number,number,number];
+ lightDirection?:readonly [number,number,number];
+ ambient?:readonly [number,number,number];
+ sunlight?:readonly [number,number,number];
+ fogColor?:readonly [number,number,number];
+ fogStart?:number;fogEnd?:number;exposure?:number;
+}
+
 /** The sole rendering boundary: serializable commands, no graphics/backend dependencies. */
 export class DrawList {
 
@@ -47,6 +57,13 @@ export class DrawList {
     return this.push(['statefulQuad', textureId, corners, worldX, worldY, scale, offsetX, offsetY, u0, v0, u1, v1, color0 >>> 0, color1 >>> 0, color2 >>> 0, color3 >>> 0, !!pixelSnap, state]);
   }
   mesh3d(textureId: number, vertices: Array<[number, number, number, number, number, number]>, indices: number[], mvp: number[]): this { return this.push(['mesh3d', textureId, vertices, indices, mvp]); }
+  /** Starts a depth-tested scene. VP and transforms are column-major. Only model3d may be drawn until end. */
+  modelSceneBegin(viewProjection:readonly number[], options:ModelSceneOptions):this {
+    const {eye,lightDirection=[-.4,.8,-.3],ambient=[.35,.35,.4],sunlight=[.7,.65,.6],fogColor=[.2,.25,.3],fogStart=80,fogEnd=200,exposure=1}=options;
+    return this.push(['modelSceneBegin',viewProjection,[...eye,...lightDirection,...ambient,...sunlight,...fogColor,fogStart,fogEnd,exposure]]);
+  }
+  model3d(id:number,transform:readonly number[],color:number=0xffffffff):this { return this.push(['model3d',id,transform,color>>>0]); }
+  modelSceneEnd():this { return this.push(['modelSceneEnd']); }
   targetBegin(id: number, clearColor: number = 0): this { return this.push(['targetBegin', id, clearColor >>> 0]); }
   targetEnd(): this { return this.push(['targetEnd']); }
   blendFactors(src: string, dst: string, op: string = 'add', srcAlpha: string = 'one', dstAlpha: string = 'zero', alphaOp: string = 'add'): this { return this.push(['blendFactors', src, dst, op, srcAlpha, dstAlpha, alphaOp]); }

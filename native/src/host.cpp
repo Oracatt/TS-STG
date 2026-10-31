@@ -1,4 +1,5 @@
 #include "tsstg/host.hpp"
+#include "tsstg/models.hpp"
 #include "tsstg/profile.hpp"
 #include "tsstg/text.hpp"
 #include "tsstg/music_stream.hpp"
@@ -74,6 +75,7 @@ class Host final : public HostServices {
 public:
     explicit Host(const Options& options) : root_(fs::canonical(options.root)), headless_(options.headless), profiling_(options.profile.has_value()) {
         SetTraceLogLevel(LOG_WARNING);
+        models_ = std::make_unique<ModelStore>(headless_);
         if (options.frameStream) {
             if (headless_) throw std::runtime_error("--frame-stream requires graphical mode");
             frameStream_ = std::make_unique<FrameStream>(*options.frameStream);
@@ -100,6 +102,7 @@ public:
         }
     }
     ~Host() override {
+        models_.reset();
         if(!headless_)for(auto query:queries_)if(query)glDeleteQueries(1,&query);
         if(alphaShader_.id)UnloadShader(alphaShader_);
         for(const auto& entry:shaders_)if(!headless_&&entry.second.id)UnloadShader(entry.second);
@@ -154,6 +157,11 @@ public:
         const auto data = safePath(root_, root_ / "userdata");
         writeFile(relativePath(data, name), text);
     }
+    std::uint32_t loadModel(const std::string& name) override {
+        const auto id=nextId_++;models_->load(id,relativePath(root_,name));return id;
+    }
+    ModelInfo modelInfo(std::uint32_t id) const override { return models_->info(id); }
+    void unloadModel(std::uint32_t id) override { models_->unload(id); }
     std::uint32_t loadTexture(const std::string& name, int paddedWidth, int paddedHeight) override {
         const auto path = resourcePath(name);
         const auto id = nextId_++;
@@ -485,6 +493,9 @@ public:
             // command so adjacent identical sprite scopes share one GPU batch.
             switch(command.kind){case DrawKind::Circle:case DrawKind::Ring:case DrawKind::Line:case DrawKind::Point:case DrawKind::LineStrip:case DrawKind::Rect:case DrawKind::Text:case DrawKind::Triangle:case DrawKind::Sprite:case DrawKind::SpriteRegion:case DrawKind::Mesh:case DrawKind::Mesh3D:case DrawKind::Quad:applyStates();break;default:break;}
             switch (command.kind) {
+            case DrawKind::ModelSceneBegin: applyStates();models_->begin(command.matrix,command.lighting);break;
+            case DrawKind::Model3D: models_->draw(command.resource,command.matrix,command.color);break;
+            case DrawKind::ModelSceneEnd: models_->end();break;
             case DrawKind::Clear: rlDrawRenderBatchActive();ClearBackground(color); break;
             case DrawKind::Circle: DrawCircleV({v[0], v[1]}, v[2], color); break;
             case DrawKind::Ring: DrawRing({v[0], v[1]}, v[2], v[3], 0, 360, 48, color); break;
@@ -740,6 +751,7 @@ private:
     std::vector<double> gpuMs_;
     std::size_t queryRead_=0;
     RenderTexture2D canvas_{};
+    std::unique_ptr<ModelStore> models_;
     std::uint32_t nextId_ = 1;
     std::map<std::uint32_t, Texture2D> textures_;
     std::map<std::uint32_t,std::array<int,3>> samplerStates_;
