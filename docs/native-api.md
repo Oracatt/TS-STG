@@ -26,6 +26,17 @@ On Windows, the native executable uses the GUI subsystem and starts without a co
 
 ## Textures and ownership
 
+`loadResourceAsync(kind,path,width?,height?)` starts CPU preparation for a
+`texture`, `model`, `sound`, or `music` and returns a ticket. The queue accepts
+up to eight pending requests. `pollResourceLoad(ticket)` returns `{state:'pending'}`,
+`{state:'ready',handle}`, or `{state:'error',error}`; terminal results consume the
+ticket. A ready handle uses the corresponding ordinary unload method.
+`cancelResourceLoad(ticket)` releases pending or partially uploaded resources.
+Polling never waits for the worker and uploads at most one image/model part
+per native presentation frame, including fixed-step catch-up. All paths retain
+the ordinary resource root restrictions. See [loading ownership and replay
+barriers](async-loading.md) for the portable thlib queue and scene lifecycle.
+
 | Method | Behavior |
 | --- | --- |
 | `loadTexture(path, paddedWidth?, paddedHeight?)` | Decodes a project-relative image; optional canvas puts the original at top-left and pads with transparent RGBA. Both dimensions are required together. |

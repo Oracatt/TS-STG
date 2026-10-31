@@ -173,6 +173,7 @@ bool ModelStore::upload(std::uint32_t id,PreparedModel& prepared){
             if(part.image>=0)part.material.maps[MATERIAL_MAP_ALBEDO].texture=r.textures.at(static_cast<std::size_t>(part.image));}
         return false;
     }
+    if(!impl_->headless)impl_->ensureShader();
     r.info.id=id;impl_->resources.emplace(id,std::move(prepared.resource));return true;
 }
 ModelInfo ModelStore::load(std::uint32_t id,const std::filesystem::path& path){auto prepared=prepare(path);while(!upload(id,*prepared)){}return info(id);}

@@ -33,6 +33,13 @@ Both script backends validate the same commands and resource lifetimes. See
 
 ## Host ABI v1
 
+File reads and image/GLB decoding can run on the native resource worker.
+GPU uploads stay on the rendering thread, limited to one texture/model part
+per presentation even when fixed-step catch-up runs several updates. thlib's
+`AssetLoader` owns cached handles and `TouhouApplication.prepareScene` holds
+activation until dependencies are ready. Gameplay/replay clocks never include
+waiting frames. See [asynchronous loading](docs/async-loading.md).
+
 Entry module sets `globalThis.__tsstg_game = { update(inputMask), render(), snapshot?() }`.
 Host uses fixed 60 Hz updates; `render()` returns an array of drawing command arrays. Logical canvas 960x720. The host never knows about bullets, player, boss, score, stages, or menus.
 

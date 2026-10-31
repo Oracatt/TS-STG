@@ -74,7 +74,7 @@ foreach ($directory in @('src','dist','assets')) { Copy-OwnedTree (Join-Path $li
 foreach ($file in @('package.json','README.md','LICENSE','tsconfig.json','tsconfig.base.json')) { Copy-Item -LiteralPath (Join-Path $librarySource $file) -Destination $libraryTarget }
 New-Item -ItemType Directory -Path (Join-Path $staging 'docs') | Out-Null
 Copy-Item -LiteralPath (Join-Path $projectRoot 'docs/typescript.md') -Destination (Join-Path $staging 'docs')
-foreach ($document in @('native-api.md','thlib-guide.md','touhou-prefabs.md','touhou-scene-transition.md','touhou-stage-flow.md','touhou-dialogue.md','touhou-rendering.md','touhou-end-feedback.md','touhou-boss-death.md','touhou-boss-defeat.md','touhou-boss-entrance.md','touhou-boss-hud.md','touhou-item-drops.md','touhou-projectile-rules.md','touhou-marisa-bomb-release.md','touhou-reimu-bomb-release.md','touhou-music.md','touhou-player-stage-visibility.md')) {
+foreach ($document in @('native-api.md','async-loading.md','static-models.md','thlib-guide.md','touhou-prefabs.md','touhou-scene-transition.md','touhou-stage-flow.md','touhou-dialogue.md','touhou-rendering.md','touhou-end-feedback.md','touhou-boss-death.md','touhou-boss-defeat.md','touhou-boss-entrance.md','touhou-boss-hud.md','touhou-item-drops.md','touhou-projectile-rules.md','touhou-marisa-bomb-release.md','touhou-reimu-bomb-release.md','touhou-music.md','touhou-player-stage-visibility.md')) {
     Copy-Item -LiteralPath (Join-Path $projectRoot "docs/$document") -Destination (Join-Path $staging 'docs')
 }
 $readmeSource = 'docs/engine-sdk.md'

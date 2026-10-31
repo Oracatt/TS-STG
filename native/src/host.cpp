@@ -171,13 +171,14 @@ public:
     }
     ResourceLoadStatus pollResourceLoad(std::uint32_t ticket) override {
         if(!async_)throw std::runtime_error("No asynchronous resource queue");
+        if(uploadedThisFrame_)return {};
         try{
             auto found=uploads_.find(ticket);
             if(found==uploads_.end()){
                 auto prepared=async_->take(ticket);if(!prepared)return {};
                 prepared->handle=nextId_++;found=uploads_.emplace(ticket,std::move(prepared)).first;
             }
-            auto& p=*found->second;const auto id=p.handle;
+            auto& p=*found->second;const auto id=p.handle;uploadedThisFrame_=true;
             if(p.kind=="model") {if(!models_->upload(id,*p.model))return {};}
             else if(p.kind=="texture"){
                 Texture2D texture{};
@@ -199,6 +200,7 @@ public:
         if(uploads_.erase(ticket))return;
         if(!async_)throw std::runtime_error("No asynchronous resource queue");async_->cancel(ticket);
     }
+    void beginFrame(){uploadedThisFrame_=false;}
     std::uint32_t loadTexture(const std::string& name, int paddedWidth, int paddedHeight) override {
         const auto path = resourcePath(name);
         const auto id = nextId_++;
@@ -790,6 +792,7 @@ private:
     RenderTexture2D canvas_{};
     std::unique_ptr<ModelStore> models_;
     std::unique_ptr<AsyncResources> async_;
+    bool uploadedThisFrame_=false;
     std::map<std::uint32_t,std::unique_ptr<PreparedResource>> uploads_;
     std::map<std::uint32_t,std::vector<unsigned char>> musicBytes_;
     std::uint32_t nextId_ = 1;
@@ -842,6 +845,7 @@ int runHost(const Options& options) {
     const auto profileStart=ProfileClock::now();
     if (options.headless) {
         while (!host.quit() && frame < options.frames.value_or(1)) {
+            host.beginFrame();
             const auto start=ProfileClock::now();ProfileFrame sample;
             backend->update(options.input.value_or(0));
             sample.update=elapsedMs(start);sample.updates=1;
@@ -880,6 +884,7 @@ int runHost(const Options& options) {
             }
             const auto start=ProfileClock::now();ProfileFrame sample;
             const double now = GetTime();
+            host.beginFrame();
             accumulator += std::min(now - previous, 0.25);
             previous = now;
             if(options.benchmark)accumulator=timestep;
