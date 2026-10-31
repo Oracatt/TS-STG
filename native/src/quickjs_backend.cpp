@@ -325,7 +325,7 @@ public:
         return string(json.get());
     }
 private:
-    enum Operation { LoadModel, GetModelInfo, UnloadModel, Quit, Log, ReadText, WriteText, LoadTexture, LoadSound, LoadMusic, PlaySound, StopSound, PlayMusic, StopMusic, SetMusicLoop, SeekMusic, GetMusicTime, LoadFont, CreateRenderTarget, CreateTexture, UpdateTexture, ReadTexturePixels, UnloadTexture, UnloadSound, UnloadMusic, UnloadFont, PauseSound, ResumeSound, IsSoundPlaying, PauseMusic, ResumeMusic, CreateShader, UnloadShader, CreateTextLayout, RasterizeTextLayout, DestroyTextLayout, HasSystemFont, EncodeText, RasterizeBitmapText, UpdateTextureRegion, SetMusicVolume };
+    enum Operation { LoadResourceAsync, PollResourceLoad, CancelResourceLoad, LoadModel, GetModelInfo, UnloadModel, Quit, Log, ReadText, WriteText, LoadTexture, LoadSound, LoadMusic, PlaySound, StopSound, PlayMusic, StopMusic, SetMusicLoop, SeekMusic, GetMusicTime, LoadFont, CreateRenderTarget, CreateTexture, UpdateTexture, ReadTexturePixels, UnloadTexture, UnloadSound, UnloadMusic, UnloadFont, PauseSound, ResumeSound, IsSoundPlaying, PauseMusic, ResumeMusic, CreateShader, UnloadShader, CreateTextLayout, RasterizeTextLayout, DestroyTextLayout, HasSystemFont, EncodeText, RasterizeBitmapText, UpdateTextureRegion, SetMusicVolume };
     HostServices& services_;
     JSRuntime* runtime_ = nullptr;
     JSContext* context_ = nullptr;
@@ -569,6 +569,20 @@ private:
                 Value bytes(context,JS_NewUint8ArrayCopy(context,pixels.pixels.data(),pixels.pixels.size()));self.check(bytes.get());
                 JS_SetPropertyStr(context,result.get(),"pixels",JS_DupValue(context,bytes.get()));return JS_DupValue(context,result.get());
             }
+            case LoadResourceAsync: {
+                const int width=argc>2?static_cast<int>(self.unsignedNumber(argument(2))):0;
+                const int height=argc>3?static_cast<int>(self.unsignedNumber(argument(3))):0;
+                return JS_NewUint32(context,self.services_.loadResourceAsync(self.string(argument(0)),self.string(argument(1)),width,height));
+            }
+            case CancelResourceLoad:self.services_.cancelResourceLoad(self.unsignedNumber(argument(0)));break;
+            case PollResourceLoad:{
+                const auto state=self.services_.pollResourceLoad(self.unsignedNumber(argument(0)));
+                Value result(context,JS_NewObject(context));self.check(result.get());
+                JS_SetPropertyStr(context,result.get(),"state",JS_NewString(context,state.state.c_str()));
+                JS_SetPropertyStr(context,result.get(),"handle",JS_NewUint32(context,state.handle));
+                JS_SetPropertyStr(context,result.get(),"error",JS_NewString(context,state.error.c_str()));
+                return JS_DupValue(context,result.get());
+            }
             case LoadModel:return JS_NewUint32(context,self.services_.loadModel(self.string(argument(0))));
             case UnloadModel:self.services_.unloadModel(self.unsignedNumber(argument(0)));break;
             case GetModelInfo:{
@@ -627,6 +641,7 @@ private:
         JS_SetPropertyStr(context_, native.get(), "height", JS_NewInt32(context_, 720));
         const struct { const char* name; int arguments; Operation operation; } functions[] = {
             {"quit",0,Quit},{"log",1,Log},{"readText",1,ReadText},{"writeText",2,WriteText},
+            {"loadResourceAsync",2,LoadResourceAsync},{"pollResourceLoad",1,PollResourceLoad},{"cancelResourceLoad",1,CancelResourceLoad},
             {"loadModel",1,LoadModel},{"modelInfo",1,GetModelInfo},{"unloadModel",1,UnloadModel},
             {"loadTexture",1,LoadTexture},{"loadSound",1,LoadSound},{"loadMusic",1,LoadMusic},
             {"playSound",1,PlaySound},{"stopSound",1,StopSound},{"playMusic",1,PlayMusic},{"stopMusic",1,StopMusic},{"loadFont",1,LoadFont},{"createRenderTarget",2,CreateRenderTarget}

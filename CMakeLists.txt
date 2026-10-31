@@ -64,6 +64,7 @@ add_executable(ts-stg
   native/src/console.cpp
   native/src/host.cpp
   native/src/models.cpp
+  native/src/async_resources.cpp
   native/src/display.cpp
   native/src/display_setup.cpp
   native/src/frame_stream.cpp
@@ -345,6 +346,8 @@ if(BUILD_TESTING)
   endforeach()
   add_script_test(NAME native.backend-esm-contract COMMAND ts-stg native/tests/backend.js
     --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 8 --input 16)
+  add_script_test(NAME native.async-resources COMMAND ts-stg native/tests/async-resources.js
+    --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 1000000)
   add_script_test(NAME native.backend-import-errors COMMAND ts-stg native/tests/backend-import-errors.js
     --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 2)
   foreach(backend_failure unresolved-await missing-render)

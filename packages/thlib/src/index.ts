@@ -21,6 +21,7 @@ export * from './replay.js';
 export * from './game.js';
 export * from './animation.js';
 export * from './resources.js';
+export * from './asset-loader.js';
 export * from './float32.js';
 export * from './grid-mesh.js';
 export * from './radial-distortion.js';

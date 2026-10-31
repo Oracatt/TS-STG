@@ -58,16 +58,20 @@ vec3 rgb=(base.rgb*light+emission)*exposure;
 float fog=smoothstep(fogRange.x,fogRange.y,length(world-eye));
 finalColor=vec4(mix(rgb,fogColor,fog),1.0);}
 )";
-struct Part { Mesh mesh{}; Material material{}; Vector3 emission{};float cutoff=0,unlit=0; };
+struct Part { Mesh mesh{}; Material material{}; Vector3 emission{};float cutoff=0,unlit=0;Color base{255,255,255,255};int image=-1; };
 struct Resource {
-    bool headless;ModelInfo info;std::vector<Part> parts;std::vector<Texture2D> textures;
-    explicit Resource(bool value):headless(value){}
-    ~Resource(){if(!headless){for(auto& p:parts){UnloadMesh(p.mesh);if(p.material.maps)MemFree(p.material.maps);}for(auto t:textures)UnloadTexture(t);}}
+    ModelInfo info;std::vector<Part> parts;std::vector<Texture2D> textures;std::vector<Image> images;
+    ~Resource(){for(auto& p:parts){
+        if(p.mesh.vboId)UnloadMesh(p.mesh);
+        else {MemFree(p.mesh.vertices);MemFree(p.mesh.normals);MemFree(p.mesh.texcoords);MemFree(p.mesh.colors);}
+        if(p.material.maps)MemFree(p.material.maps);
+    }for(auto t:textures)if(t.id)UnloadTexture(t);for(auto image:images)if(image.data)UnloadImage(image);}
 };
 void check(bool valid,const char* message){if(!valid)throw std::runtime_error(message);}
 const cgltf_accessor* attribute(const cgltf_primitive& p,cgltf_attribute_type type){for(std::size_t i=0;i<p.attributes_count;i++)if(p.attributes[i].type==type&&p.attributes[i].index==0)return p.attributes[i].data;return nullptr;}
 void values(const cgltf_accessor* a,std::size_t index,float* out,std::size_t count){check(cgltf_accessor_read_float(a,index,out,count)!=0,"Invalid model accessor");for(std::size_t i=0;i<count;i++)check(std::isfinite(out[i])&&std::abs(out[i])<=10000000,"Nonfinite or excessive model coordinate");}
 }
+struct PreparedModel {std::unique_ptr<Resource> resource;std::size_t image=0,part=0;};
 void validateModelMatrix(const std::array<float,16>& m,bool affine){
     for(float x:m)check(std::isfinite(x)&&std::abs(x)<=10000000,"Invalid model matrix");
     if(affine){check(std::abs(m[3])+std::abs(m[7])+std::abs(m[11])+std::abs(m[15]-1)<.00001f,"Model transform must be affine");check(std::abs(MatrixDeterminant(matrix(m)))>1e-12f,"Model transform must be invertible");}
@@ -91,7 +95,7 @@ ModelStore::ModelStore(bool headless):impl_(std::make_unique<Impl>(headless)){}
 ModelStore::~ModelStore()=default;
 const ModelInfo& ModelStore::info(std::uint32_t id) const {const auto found=impl_->resources.find(id);if(found==impl_->resources.end())throw std::runtime_error("Unknown model id: "+std::to_string(id));return found->second->info;}
 void ModelStore::unload(std::uint32_t id){info(id);impl_->resources.erase(id);}
-ModelInfo ModelStore::load(std::uint32_t id,const std::filesystem::path& path){
+std::shared_ptr<PreparedModel> ModelStore::prepare(const std::filesystem::path& path){
     check(path.extension()==".glb","Models must be self-contained .glb files");check(std::filesystem::is_regular_file(path),"Model file not found");
     const auto size=std::filesystem::file_size(path);check(size>=20&&size<=maxBytes,"Model size must be 20 bytes..64 MiB");
     std::ifstream stream(path,std::ios::binary);std::vector<char> bytes(static_cast<std::size_t>(size));check(static_cast<bool>(stream.read(bytes.data(),bytes.size())),"Cannot read model");
@@ -102,7 +106,7 @@ ModelInfo ModelStore::load(std::uint32_t id,const std::filesystem::path& path){
     check(!data->extensions_required_count&&!data->skins_count&&!data->animations_count,"Required extensions, skins and animations are not supported by static models");
     check(cgltf_load_buffers(&options,data.get(),nullptr)==cgltf_result_success&&cgltf_validate(data.get())==cgltf_result_success,"Invalid GLB buffer/accessor data");
     check(data->nodes_count<=2048&&data->meshes_count<=256&&data->images_count<=32,"Model has too many nodes, meshes or images");
-    auto resource=std::make_unique<Resource>(impl_->headless);resource->info.id=id;
+    auto resource=std::make_unique<Resource>();
     resource->info.minimum.fill(std::numeric_limits<float>::max());resource->info.maximum.fill(-std::numeric_limits<float>::max());
     for(std::size_t i=0;i<data->images_count;i++){
         const auto& source=data->images[i];check(!source.uri&&source.buffer_view&&source.mime_type,"Model images must be embedded PNG or JPEG");
@@ -110,8 +114,7 @@ ModelInfo ModelStore::load(std::uint32_t id,const std::filesystem::path& path){
         check(source.buffer_view->size<=maxBytes,"Model image too large");
         auto image=LoadImageFromMemory(mime=="image/png"?".png":".jpg",static_cast<const unsigned char*>(cgltf_buffer_view_data(source.buffer_view)),static_cast<int>(source.buffer_view->size));
         if(!image.data||image.width>4096||image.height>4096){if(image.data)UnloadImage(image);throw std::runtime_error("Model image must decode within 4096x4096");}
-        Texture2D texture{};if(!impl_->headless){texture=LoadTextureFromImage(image);GenTextureMipmaps(&texture);SetTextureFilter(texture,TEXTURE_FILTER_TRILINEAR);SetTextureWrap(texture,TEXTURE_WRAP_REPEAT);}
-        UnloadImage(image);resource->textures.push_back(texture);
+        resource->images.push_back(image);
     }
     std::vector<cgltf_node*> nodes;
     const auto visit=[&](auto&& self,cgltf_node* node,std::size_t depth)->void {check(depth<128,"Model node hierarchy too deep or cyclic");check(std::find(nodes.begin(),nodes.end(),node)==nodes.end(),"Model node reused or cyclic");nodes.push_back(node);for(std::size_t i=0;i<node->children_count;i++)self(self,node->children[i],depth+1);};
@@ -138,25 +141,41 @@ ModelInfo ModelStore::load(std::uint32_t id,const std::filesystem::path& path){
                 if(colors){value[3]=1;values(colors,index,value,colors->type==cgltf_type_vec4?4:3);for(int n=0;n<4;n++)vertexColors[k*4+n]=static_cast<unsigned char>(std::lround(std::clamp(value[n],0.f,1.f)*255));}
             }
             if(!normals)for(std::size_t k=0;k<count;k+=3){const auto point=[&](int n){return Vector3{vertices[(k+n)*3],vertices[(k+n)*3+1],vertices[(k+n)*3+2]};};const auto n=Vector3Normalize(Vector3CrossProduct(Vector3Subtract(point(1),point(0)),Vector3Subtract(point(2),point(0))));for(int q=0;q<3;q++){normalValues[(k+q)*3]=n.x;normalValues[(k+q)*3+1]=n.y;normalValues[(k+q)*3+2]=n.z;}}
-            if(!impl_->headless){
+            {
                 const auto copy=[](const auto& v){void* p=MemAlloc(static_cast<unsigned int>(v.size()*sizeof(v[0])));if(!p)throw std::bad_alloc();std::copy(v.begin(),v.end(),static_cast<typename std::decay_t<decltype(v)>::value_type*>(p));return p;};
-                part.mesh.vertices=static_cast<float*>(copy(vertices));part.mesh.normals=static_cast<float*>(copy(normalValues));part.mesh.texcoords=static_cast<float*>(copy(texcoords));part.mesh.colors=static_cast<unsigned char*>(copy(vertexColors));UploadMesh(&part.mesh,false);
-                part.material=LoadMaterialDefault();
+                part.mesh.vertices=static_cast<float*>(copy(vertices));part.mesh.normals=static_cast<float*>(copy(normalValues));part.mesh.texcoords=static_cast<float*>(copy(texcoords));part.mesh.colors=static_cast<unsigned char*>(copy(vertexColors));
             }
             if(const auto* m=source.material){
                 check(m->alpha_mode!=cgltf_alpha_mode_blend,"Transparent BLEND models are not supported; use OPAQUE or MASK");
                 part.cutoff=m->alpha_mode==cgltf_alpha_mode_mask?m->alpha_cutoff:0;part.unlit=m->unlit?1.f:0.f;
                 part.emission={m->emissive_factor[0],m->emissive_factor[1],m->emissive_factor[2]};
                 if(m->has_pbr_metallic_roughness){const auto& pbr=m->pbr_metallic_roughness;
-                    if(!impl_->headless){const auto* c=pbr.base_color_factor;part.material.maps[MATERIAL_MAP_ALBEDO].color={static_cast<unsigned char>(std::clamp(c[0],0.f,1.f)*255),static_cast<unsigned char>(std::clamp(c[1],0.f,1.f)*255),static_cast<unsigned char>(std::clamp(c[2],0.f,1.f)*255),static_cast<unsigned char>(std::clamp(c[3],0.f,1.f)*255)};}
-                    if(pbr.base_color_texture.texture){check(!pbr.base_color_texture.has_transform&&pbr.base_color_texture.texcoord==0,"Model base color texture requires untransformed TEXCOORD_0");const auto* image=pbr.base_color_texture.texture->image;check(image,"Model base color image is missing");if(!impl_->headless)part.material.maps[MATERIAL_MAP_ALBEDO].texture=resource->textures.at(static_cast<std::size_t>(image-data->images));}
+                    {const auto* c=pbr.base_color_factor;part.base={static_cast<unsigned char>(std::clamp(c[0],0.f,1.f)*255),static_cast<unsigned char>(std::clamp(c[1],0.f,1.f)*255),static_cast<unsigned char>(std::clamp(c[2],0.f,1.f)*255),static_cast<unsigned char>(std::clamp(c[3],0.f,1.f)*255)};}
+                    if(pbr.base_color_texture.texture){check(!pbr.base_color_texture.has_transform&&pbr.base_color_texture.texcoord==0,"Model base color texture requires untransformed TEXCOORD_0");const auto* image=pbr.base_color_texture.texture->image;check(image,"Model base color image is missing");part.image=static_cast<int>(image-data->images);}
                 }
             }
             resource->info.meshes++;resource->info.vertices+=static_cast<std::uint32_t>(positions->count);resource->info.triangles+=static_cast<std::uint32_t>(count/3);
         }
     }
-    check(resource->info.meshes>0,"Model has no scene triangle meshes");const auto result=resource->info;impl_->resources.emplace(id,std::move(resource));return result;
+    check(resource->info.meshes>0,"Model has no scene triangle meshes");auto prepared=std::make_shared<PreparedModel>();prepared->resource=std::move(resource);return prepared;
 }
+bool ModelStore::upload(std::uint32_t id,PreparedModel& prepared){
+    check(!!prepared.resource,"Model preparation has already been consumed");auto& r=*prepared.resource;
+    if(prepared.image<r.images.size()){
+        auto& image=r.images[prepared.image++];Texture2D texture{};
+        if(!impl_->headless){texture=LoadTextureFromImage(image);check(IsTextureValid(texture),"Cannot upload model image");
+            GenTextureMipmaps(&texture);SetTextureFilter(texture,TEXTURE_FILTER_TRILINEAR);SetTextureWrap(texture,TEXTURE_WRAP_REPEAT);}
+        r.textures.push_back(texture);UnloadImage(image);image={};return false;
+    }
+    if(prepared.part<r.parts.size()){
+        auto& part=r.parts[prepared.part++];if(!impl_->headless){UploadMesh(&part.mesh,false);part.material=LoadMaterialDefault();
+            part.material.maps[MATERIAL_MAP_ALBEDO].color=part.base;
+            if(part.image>=0)part.material.maps[MATERIAL_MAP_ALBEDO].texture=r.textures.at(static_cast<std::size_t>(part.image));}
+        return false;
+    }
+    r.info.id=id;impl_->resources.emplace(id,std::move(prepared.resource));return true;
+}
+ModelInfo ModelStore::load(std::uint32_t id,const std::filesystem::path& path){auto prepared=prepare(path);while(!upload(id,*prepared)){}return info(id);}
 void ModelStore::begin(const std::array<float,16>& vp,const std::array<float,18>& p){
     auto& s=*impl_;check(!s.active,"Model scene already active");validateModelMatrix(vp,false);validateModelLighting(p);s.active=true;if(s.headless)return;
     s.ensureShader();rlDrawRenderBatchActive();s.projection=rlGetMatrixProjection();s.modelview=rlGetMatrixModelview();

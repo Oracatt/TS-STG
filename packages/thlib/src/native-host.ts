@@ -5,6 +5,11 @@ export interface NativeHost {
  /** Static self-contained GLB. Geometry and embedded textures stay on the GPU until unload. */
  loadModel(path:string):number;modelInfo(id:number):ModelInfo;unloadModel(id:number):void;
  loadTexture(path:string,paddedWidth?:number,paddedHeight?:number):number;
+ /** CPU file/decode worker; poll uploads at most one texture/model part. A terminal
+  * poll consumes the ticket. A ready handle has ordinary load/unload ownership. */
+ loadResourceAsync(kind:ResourceKind,path:string,paddedWidth?:number,paddedHeight?:number):number;
+ pollResourceLoad(ticket:number):ResourceLoadStatus;
+ cancelResourceLoad(ticket:number):void;
  createRenderTarget(width:number,height:number):number;
  createTexture(width:number,height:number,pixels:Uint8Array|Uint8ClampedArray):number;
  updateTexture(id:number,pixels:Uint8Array|Uint8ClampedArray):void;
@@ -38,6 +43,8 @@ export interface NativeHost {
  setMusicLoop(id:number,startSeconds:number,endSeconds:number):void;
  seekMusic(id:number,seconds:number):void;getMusicTime(id:number):number;
 }
+export type ResourceKind='texture'|'model'|'sound'|'music';
+export type ResourceLoadStatus={state:'pending'}|{state:'ready';handle:number}|{state:'error';error:string};
 
 export interface SystemTextLayoutOptions {
  fontFamily?:string;fontSize?:number;locale?:string;width?:number;height?:number;

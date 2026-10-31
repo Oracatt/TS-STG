@@ -1,5 +1,6 @@
 #include "tsstg/host.hpp"
 #include "tsstg/models.hpp"
+#include "tsstg/async_resources.hpp"
 #include "tsstg/profile.hpp"
 #include "tsstg/text.hpp"
 #include "tsstg/music_stream.hpp"
@@ -102,6 +103,7 @@ public:
         }
     }
     ~Host() override {
+        async_.reset();uploads_.clear();
         models_.reset();
         if(!headless_)for(auto query:queries_)if(query)glDeleteQueries(1,&query);
         if(alphaShader_.id)UnloadShader(alphaShader_);
@@ -162,6 +164,41 @@ public:
     }
     ModelInfo modelInfo(std::uint32_t id) const override { return models_->info(id); }
     void unloadModel(std::uint32_t id) override { models_->unload(id); }
+    std::uint32_t loadResourceAsync(const std::string& kind,const std::string& name,int width,int height) override {
+        if(!async_)async_=std::make_unique<AsyncResources>();
+        if(uploads_.size()>=8)throw std::runtime_error("Asynchronous upload queue is full");
+        return async_->request(kind,fs::u8path(resourcePath(name)),width,height);
+    }
+    ResourceLoadStatus pollResourceLoad(std::uint32_t ticket) override {
+        if(!async_)throw std::runtime_error("No asynchronous resource queue");
+        try{
+            auto found=uploads_.find(ticket);
+            if(found==uploads_.end()){
+                auto prepared=async_->take(ticket);if(!prepared)return {};
+                prepared->handle=nextId_++;found=uploads_.emplace(ticket,std::move(prepared)).first;
+            }
+            auto& p=*found->second;const auto id=p.handle;
+            if(p.kind=="model") {if(!models_->upload(id,*p.model))return {};}
+            else if(p.kind=="texture"){
+                Texture2D texture{};
+                if(headless_){texture.width=p.image.width;texture.height=p.image.height;texture.format=PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+                    const auto* data=static_cast<const std::uint8_t*>(p.image.data);pixels_[id]={data,data+static_cast<std::size_t>(p.image.width)*p.image.height*4};}
+                else{texture=LoadTextureFromImage(p.image);if(!IsTextureValid(texture))throw std::runtime_error("Cannot upload texture");}
+                textures_[id]=texture;
+            }else if(p.kind=="sound"){
+                Sound sound{};if(audioReady_){sound=LoadSoundFromWave(p.wave);if(!IsSoundValid(sound))throw std::runtime_error("Cannot create sound");}sounds_[id]=sound;
+            }else if(p.kind=="music"){
+                Music music{};if(audioReady_){music=LoadMusicStreamFromMemory(p.extension.c_str(),p.bytes.data(),static_cast<int>(p.bytes.size()));
+                    if(!IsMusicValid(music))throw std::runtime_error("Cannot create music stream");music.looping=true;}
+                music_[id]=music;musicVolumes_[id]=1.f;musicBytes_[id]=std::move(p.bytes);
+            }
+            uploads_.erase(found);return {"ready","",id};
+        }catch(const std::exception& e){uploads_.erase(ticket);return {"error",e.what(),0};}
+    }
+    void cancelResourceLoad(std::uint32_t ticket) override {
+        if(uploads_.erase(ticket))return;
+        if(!async_)throw std::runtime_error("No asynchronous resource queue");async_->cancel(ticket);
+    }
     std::uint32_t loadTexture(const std::string& name, int paddedWidth, int paddedHeight) override {
         const auto path = resourcePath(name);
         const auto id = nextId_++;
@@ -391,7 +428,7 @@ public:
     }
     void unloadMusic(std::uint32_t id) override {
         auto found=music_.find(id);if(found==music_.end())throw std::runtime_error("Unknown music id: "+std::to_string(id));
-        if(audioReady_){StopMusicStream(found->second);UnloadMusicStream(found->second);}music_.erase(found);musicLoops_.erase(id);musicPlaying_.erase(id);musicVolumes_.erase(id);pausedMusic_.erase(id);
+        if(audioReady_){StopMusicStream(found->second);UnloadMusicStream(found->second);}music_.erase(found);musicBytes_.erase(id);musicLoops_.erase(id);musicPlaying_.erase(id);musicVolumes_.erase(id);pausedMusic_.erase(id);
     }
     void unloadFont(std::uint32_t id) override {
         auto found=fonts_.find(id);if(found==fonts_.end())throw std::runtime_error("Unknown font id: "+std::to_string(id));
@@ -752,6 +789,9 @@ private:
     std::size_t queryRead_=0;
     RenderTexture2D canvas_{};
     std::unique_ptr<ModelStore> models_;
+    std::unique_ptr<AsyncResources> async_;
+    std::map<std::uint32_t,std::unique_ptr<PreparedResource>> uploads_;
+    std::map<std::uint32_t,std::vector<unsigned char>> musicBytes_;
     std::uint32_t nextId_ = 1;
     std::map<std::uint32_t, Texture2D> textures_;
     std::map<std::uint32_t,std::array<int,3>> samplerStates_;

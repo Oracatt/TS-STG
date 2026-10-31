@@ -12,6 +12,7 @@ struct ModelInfo {
     std::uint32_t id=0, meshes=0, vertices=0, triangles=0;
     std::array<float,3> minimum{}, maximum{};
 };
+struct ResourceLoadStatus {std::string state="pending",error;std::uint32_t handle=0;};
 struct ShaderUniform { std::string name; int type=0; std::array<float,16> values{}; };
 struct MeshVertex { float x, y, u, v; std::uint32_t color; float z=0; };
 struct TexturePixels { int width=0,height=0;std::vector<std::uint8_t> pixels; };
@@ -64,6 +65,9 @@ public:
     virtual std::string readText(const std::string& name) const = 0;
     virtual void writeText(const std::string& name, const std::string& text) = 0;
     virtual std::uint32_t loadTexture(const std::string& name, int canvasWidth = 0, int canvasHeight = 0) = 0;
+    virtual std::uint32_t loadResourceAsync(const std::string& kind,const std::string& name,int width,int height) = 0;
+    virtual ResourceLoadStatus pollResourceLoad(std::uint32_t ticket) = 0;
+    virtual void cancelResourceLoad(std::uint32_t ticket) = 0;
     virtual std::uint32_t loadModel(const std::string& name) = 0;
     virtual ModelInfo modelInfo(std::uint32_t id) const = 0;
     virtual void unloadModel(std::uint32_t id) = 0;

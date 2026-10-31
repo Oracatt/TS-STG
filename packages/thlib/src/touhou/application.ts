@@ -15,6 +15,9 @@ export interface TouhouApplicationScene {
 }
 
 export interface TouhouApplicationGameScene extends TouhouApplicationScene { readonly paused?:boolean; readonly pauseVisual?:unknown; }
+/** Presentation-only barrier. Completion timing must never enter game snapshots
+ * or replay input streams. Errors keep the outgoing scene owned and intact. */
+export interface TouhouScenePreparation {readonly ready:boolean;readonly error?:Error|null;update():void;cancel?():void;}
 
 export interface TouhouSceneContext {selection:TouhouStartSelection;data:unknown;createBank(name:string):AnmBank;}
 
@@ -23,6 +26,7 @@ export type TouhouSceneFactory<GameScene extends TouhouApplicationGameScene=Touh
 export interface TouhouSceneRequest {selection?:Partial<TouhouStartSelection>;transition?:boolean;data?:unknown;}
 
 export interface TouhouApplicationOptions<GameScene extends TouhouApplicationGameScene=TouhouGame> {
+ prepareScene?:(mode:string,selection:TouhouStartSelection)=>TouhouScenePreparation|null;
  /** Caller-owned music transport, automatically used by the built-in game-over flow. */
  musicPlayer?:Pick<TouhouMusic,'interrupt'>|null;
  resources?:TouhouResources|null;createBank?:(name:string)=>AnmBank;pixels?:TouhouPixelServices|null;
@@ -53,6 +57,9 @@ import { TouhouSceneTransition } from './scene-transition.js';
  * pause/result → retry/title flow. Resource I/O, music and authored stages are
  * adapters; the scene ownership and transition rules belong to thlib. */
 export class TouhouApplication<GameScene extends TouhouApplicationGameScene=TouhouGame> {
+  private prepareScene?:TouhouApplicationOptions<GameScene>['prepareScene'];
+  private _loading:{preparation:TouhouScenePreparation;mode:string;selection?:Partial<TouhouStartSelection>;data:unknown}|null=null;
+  get loading(){return this._loading?.preparation??null;}
   declare _pending: SceneRequest | null;
   declare _banks: AnmBank[];
   declare _transitionBanks: AnmBank[];
@@ -93,7 +100,8 @@ export class TouhouApplication<GameScene extends TouhouApplicationGameScene=Touh
     createGame=options=>new TouhouGame(options) as unknown as GameScene, createMenu=options=>new TouhouTitleMenu(options),
     onSceneChange, onPauseChange, onAfterUpdate, onQuit, clock=null, initialSelection={},
     autostart=false, clearColor=0x000000ff, ownResources=false, transitionOptions={},
-    createTransition=options=>new TouhouSceneTransition(options),scenes={},initialScene=null,musicPlayer=null }: TouhouApplicationOptions<GameScene>={} as TouhouApplicationOptions<GameScene>) {
+    createTransition=options=>new TouhouSceneTransition(options),scenes={},initialScene=null,musicPlayer=null,prepareScene }: TouhouApplicationOptions<GameScene>={} as TouhouApplicationOptions<GameScene>) {
+    this.prepareScene=prepareScene;
     Object.assign(this,{resources,pixels,gameOptions,menuOptions,createGame,createMenu,
       onSceneChange,onPauseChange,onAfterUpdate,onQuit,clock,clearColor,ownResources,transitionOptions,createTransition,musicPlayer});
     if(clock!==null&&typeof clock!=='function')throw new TypeError('Touhou application clock must return platform time in seconds');
@@ -117,6 +125,7 @@ export class TouhouApplication<GameScene extends TouhouApplicationGameScene=Touh
     if(this.disposed)throw new Error('Touhou application has been disposed');
     if(!this.scenes.has(mode)&&mode!=='title'&&mode!=='game')throw new RangeError(`Unknown application scene: ${mode}`);
     if(this._updating){this._pending={mode,selection,transition,data};return;}
+    this._loading?.preparation.cancel?.();this._loading=null;
     if(transition&&this.transitionOptions!==false){this._beginTransition(mode,selection,data);return;}
     this._clearTransition();
     this._enter(mode,selection,data);
@@ -138,7 +147,9 @@ export class TouhouApplication<GameScene extends TouhouApplicationGameScene=Touh
       this.transition=this.createTransition(options as TouhouSceneTransitionOptions,this);this._transitionSelection=selection;this._transitionTarget={mode,data};
     }catch(error){this._clearTransition();throw error;}
   }
-  _enter(mode: string,selection: Partial<TouhouStartSelection> | undefined,data: unknown=null){
+  _enter(mode: string,selection: Partial<TouhouStartSelection> | undefined,data: unknown=null,prepared=false){
+    if(!prepared){const preparation=this.prepareScene?.(mode,{...this.selection,...selection});
+      if(preparation){if(preparation.error)throw preparation.error;if(!preparation.ready){this._loading={preparation,mode,selection,data};return;}}}
     // Lifecycle callbacks may request another scene. Finish owning the current
     // scene first, then process that request just like a request from update().
     const updating=this._updating;this._updating=true;
@@ -212,12 +223,19 @@ export class TouhouApplication<GameScene extends TouhouApplicationGameScene=Touh
   update(mask: number=0): void{
     if(this.disposed)return;
     this.sceneUpdated=false;
+    if(this._loading){
+      const loading=this._loading;loading.preparation.update();
+      if(loading.preparation.error)throw loading.preparation.error;
+      if(!loading.preparation.ready)return;
+      this._loading=null;this._enter(loading.mode,loading.selection,loading.data,true);
+      if(this.transition?.phase==='cover')this.transition.reveal();return;
+    }
     if(this.transition?.phase==='cover'){
       this.transition.update();
       if(this.transition.ready){
         const selection=this._transitionSelection,target=this._transitionTarget,transition=this.transition;this._transitionSelection=null;this._transitionTarget=null;
         this._enter(target!.mode,selection!,target!.data);
-        if(this.transition===transition)transition.reveal();
+        if(this.transition===transition&&!this._loading)transition.reveal();
       }
     }else{
       this._updating=true;
@@ -238,6 +256,7 @@ export class TouhouApplication<GameScene extends TouhouApplicationGameScene=Touh
   postFrame(nowSeconds: number): number|null{return this.scene?.postFrame?.(nowSeconds)??null;}
   render(): unknown[][]{
     if(this.disposed)return [];
+    if(!this.scene)return this.drawList.reset().clear(this.clearColor).commands;
     if(typeof this.scene!.render==='function'){
       const commands=this.scene!.render!();if(!this.transition)return commands;
       const draw=this.drawList.reset();for(const command of commands)draw.push(command as DrawCommand);
@@ -248,6 +267,7 @@ export class TouhouApplication<GameScene extends TouhouApplicationGameScene=Touh
   snapshot(): Record<string,unknown>{return{mode:this.mode,...this.scene?.snapshot?.(),...(this.transition?{transition:this.transition.snapshot()}: {})};}
   destroy(): void{
     if(this.disposed)return;this.disposed=true;this._pending=null;
+    this._loading?.preparation.cancel?.();this._loading=null;
     this._clearTransition();
     this.scene?.destroy?.();for(const bank of this._banks)bank.dispose?.();this._banks=[];
     this.scene=this.game=this.menu=null;

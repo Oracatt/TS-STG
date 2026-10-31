@@ -3,6 +3,7 @@
 #include <memory>
 
 namespace tsstg {
+struct PreparedModel;
 // Static, embedded GLB resources. Geometry/materials are uploaded once, not
 // serialized from a script on every frame. No game or stage rules live here.
 class ModelStore {
@@ -10,6 +11,10 @@ public:
     explicit ModelStore(bool headless);
     ~ModelStore();
     ModelInfo load(std::uint32_t id, const std::filesystem::path& path);
+    // CPU-only preparation may run on a worker. Upload one image/mesh per call
+    // on the render thread. Prepared objects also own partially uploaded data.
+    static std::shared_ptr<PreparedModel> prepare(const std::filesystem::path& path);
+    bool upload(std::uint32_t id, PreparedModel& prepared);
     const ModelInfo& info(std::uint32_t id) const;
     void unload(std::uint32_t id);
     void begin(const std::array<float,16>& viewProjection, const std::array<float,18>& lighting);
