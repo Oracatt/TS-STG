@@ -12,7 +12,6 @@ struct ModelInfo {
     std::uint32_t id=0, meshes=0, vertices=0, triangles=0;
     std::array<float,3> minimum{}, maximum{};
 };
-struct ResourceLoadStatus {std::string state="pending",error;std::uint32_t handle=0;};
 struct ShaderUniform { std::string name; int type=0; std::array<float,16> values{}; };
 struct MeshVertex { float x, y, u, v; std::uint32_t color; float z=0; };
 struct TexturePixels { int width=0,height=0;std::vector<std::uint8_t> pixels; };
@@ -28,6 +27,7 @@ struct TextRasterOptions {
 };
 struct RasterizedText { int x=0,y=0,width=0,height=0;std::vector<std::uint8_t> pixels; };
 struct TextTexture { std::uint32_t texture=0;int x=0,y=0,width=0,height=0; };
+struct ResourceLoadStatus {std::string state="pending",error;std::uint32_t handle=0;bool isText=false;TextTexture text;};
 struct BitmapTextOptions {
     std::string fontFamily="Arial";
     int width=300,height=50,x=0,y=0,fontSize=20,fontWeight=400,spacing=0;
@@ -66,6 +66,7 @@ public:
     virtual void writeText(const std::string& name, const std::string& text) = 0;
     virtual std::uint32_t loadTexture(const std::string& name, int canvasWidth = 0, int canvasHeight = 0) = 0;
     virtual std::uint32_t loadResourceAsync(const std::string& kind,const std::string& name,int width,int height) = 0;
+    virtual std::uint32_t loadTextTextureAsync(const std::string& text,const TextLayoutOptions& layout,const TextRasterOptions& raster) = 0;
     virtual ResourceLoadStatus pollResourceLoad(std::uint32_t ticket) = 0;
     virtual void cancelResourceLoad(std::uint32_t ticket) = 0;
     virtual std::uint32_t loadModel(const std::string& name) = 0;

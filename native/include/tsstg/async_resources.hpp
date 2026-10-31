@@ -14,6 +14,7 @@ struct PreparedResource {
     Wave wave{};
     std::vector<unsigned char> bytes;
     std::shared_ptr<PreparedModel> model;
+    RasterizedText text;
     std::uint32_t handle=0;
     ~PreparedResource();
 };
@@ -24,11 +25,13 @@ public:
     AsyncResources();
     ~AsyncResources();
     std::uint32_t request(std::string kind,std::filesystem::path path,int width,int height);
+    std::uint32_t requestText(std::string text,const TextLayoutOptions& layout,const TextRasterOptions& raster);
     std::unique_ptr<PreparedResource> take(std::uint32_t ticket); // null = pending
     void cancel(std::uint32_t ticket);
 private:
     struct Job {
         std::string kind,error;std::filesystem::path path;int width=0,height=0;
+        std::string text;TextLayoutOptions layout;TextRasterOptions raster;
         bool done=false,cancelled=false;std::unique_ptr<PreparedResource> result;
     };
     void run();

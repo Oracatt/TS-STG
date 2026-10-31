@@ -325,7 +325,7 @@ public:
         return string(json.get());
     }
 private:
-    enum Operation { LoadResourceAsync, PollResourceLoad, CancelResourceLoad, LoadModel, GetModelInfo, UnloadModel, Quit, Log, ReadText, WriteText, LoadTexture, LoadSound, LoadMusic, PlaySound, StopSound, PlayMusic, StopMusic, SetMusicLoop, SeekMusic, GetMusicTime, LoadFont, CreateRenderTarget, CreateTexture, UpdateTexture, ReadTexturePixels, UnloadTexture, UnloadSound, UnloadMusic, UnloadFont, PauseSound, ResumeSound, IsSoundPlaying, PauseMusic, ResumeMusic, CreateShader, UnloadShader, CreateTextLayout, RasterizeTextLayout, DestroyTextLayout, HasSystemFont, EncodeText, RasterizeBitmapText, UpdateTextureRegion, SetMusicVolume };
+    enum Operation { LoadTextTextureAsync, LoadResourceAsync, PollResourceLoad, CancelResourceLoad, LoadModel, GetModelInfo, UnloadModel, Quit, Log, ReadText, WriteText, LoadTexture, LoadSound, LoadMusic, PlaySound, StopSound, PlayMusic, StopMusic, SetMusicLoop, SeekMusic, GetMusicTime, LoadFont, CreateRenderTarget, CreateTexture, UpdateTexture, ReadTexturePixels, UnloadTexture, UnloadSound, UnloadMusic, UnloadFont, PauseSound, ResumeSound, IsSoundPlaying, PauseMusic, ResumeMusic, CreateShader, UnloadShader, CreateTextLayout, RasterizeTextLayout, DestroyTextLayout, HasSystemFont, EncodeText, RasterizeBitmapText, UpdateTextureRegion, SetMusicVolume };
     HostServices& services_;
     JSRuntime* runtime_ = nullptr;
     JSContext* context_ = nullptr;
@@ -478,8 +478,8 @@ private:
                 const auto codePage=self.unsignedNumber(argument(1));const auto bytes=self.services_.encodeText(text,codePage);
                 return JS_NewUint8ArrayCopy(context,bytes.data(),bytes.size());
             }
-            case CreateTextLayout: case RasterizeTextLayout: case RasterizeBitmapText: {
-                const auto options=argc>1?argv[1]:JS_UNDEFINED;
+            case LoadTextTextureAsync: case CreateTextLayout: case RasterizeTextLayout: case RasterizeBitmapText: {
+                auto options=argc>1?argv[1]:JS_UNDEFINED;
                 if(!JS_IsUndefined(options)&&(!JS_IsObject(options)||JS_IsArray(options)))throw std::runtime_error("Text options must be an object");
                 auto property=[&](const char* name){return Value(context,JS_IsUndefined(options)?JS_UNDEFINED:JS_GetPropertyStr(context,options,name));};
                 auto stringOption=[&](const char* name,const std::string& fallback){Value value=property(name);self.check(value.get());if(JS_IsUndefined(value.get()))return fallback;
@@ -512,7 +512,8 @@ private:
                     Value pixels(context,JS_NewUint8ArrayCopy(context,raster.pixels.data(),raster.pixels.size()));self.check(pixels.get());
                     JS_SetPropertyStr(context,result.get(),"pixels",JS_DupValue(context,pixels.get()));return JS_DupValue(context,result.get());
                 }
-                if(magic==CreateTextLayout){
+                TextLayoutOptions asyncLayout;std::string asyncText;
+                if(magic==CreateTextLayout||magic==LoadTextTextureAsync){
                     const auto text=self.string(argument(0));if(text.size()>16384)throw std::runtime_error("Text layout exceeds 16384 bytes");
                     TextLayoutOptions settings;
                     settings.fontFamily=stringOption("fontFamily",settings.fontFamily);settings.locale=stringOption("locale",settings.locale);
@@ -521,7 +522,9 @@ private:
                     if(settings.verticalAlign!="top"&&settings.verticalAlign!="center"&&settings.verticalAlign!="bottom")throw std::runtime_error("Unknown text vertical alignment");
                     settings.fontSize=static_cast<float>(numberOption("fontSize",settings.fontSize,1,4096));
                     settings.width=static_cast<float>(numberOption("width",settings.width,0.0001,10000000));settings.height=static_cast<float>(numberOption("height",settings.height,0.0001,10000000));
-                    return JS_NewUint32(context,self.services_.createTextLayout(text,settings));
+                    if(magic==CreateTextLayout)return JS_NewUint32(context,self.services_.createTextLayout(text,settings));
+                    asyncLayout=settings;asyncText=text;options=argc>2?argv[2]:JS_UNDEFINED;
+                    if(!JS_IsUndefined(options)&&(!JS_IsObject(options)||JS_IsArray(options)))throw std::runtime_error("Text raster options must be an object");
                 }
                 TextRasterOptions settings;
                 settings.width=static_cast<int>(numberOption("width",settings.width,1,4096,true));settings.height=static_cast<int>(numberOption("height",settings.height,1,4096,true));
@@ -532,6 +535,7 @@ private:
                 Value fill=property("fill"),outline=property("outline"),premultiplied=property("premultiplied");self.check(fill.get());self.check(outline.get());self.check(premultiplied.get());
                 if(!JS_IsUndefined(fill.get()))settings.fill=self.unsignedNumber(fill.get());if(!JS_IsUndefined(outline.get()))settings.outline=self.unsignedNumber(outline.get());
                 if(!JS_IsUndefined(premultiplied.get())){if(!JS_IsBool(premultiplied.get()))throw std::runtime_error("Text premultiplied option must be a boolean");settings.premultiplied=JS_ToBool(context,premultiplied.get())!=0;}
+                if(magic==LoadTextTextureAsync)return JS_NewUint32(context,self.services_.loadTextTextureAsync(asyncText,asyncLayout,settings));
                 const auto image=self.services_.rasterizeTextLayout(self.unsignedNumber(argument(0)),settings);
                 Value result(context,JS_NewObject(context));self.check(result.get());
                 JS_SetPropertyStr(context,result.get(),"texture",JS_NewUint32(context,image.texture));JS_SetPropertyStr(context,result.get(),"x",JS_NewInt32(context,image.x));JS_SetPropertyStr(context,result.get(),"y",JS_NewInt32(context,image.y));
@@ -581,6 +585,11 @@ private:
                 JS_SetPropertyStr(context,result.get(),"state",JS_NewString(context,state.state.c_str()));
                 JS_SetPropertyStr(context,result.get(),"handle",JS_NewUint32(context,state.handle));
                 JS_SetPropertyStr(context,result.get(),"error",JS_NewString(context,state.error.c_str()));
+                if(state.isText){Value text(context,JS_NewObject(context));self.check(text.get());
+                    JS_SetPropertyStr(context,text.get(),"texture",JS_NewUint32(context,state.text.texture));
+                    JS_SetPropertyStr(context,text.get(),"x",JS_NewInt32(context,state.text.x));JS_SetPropertyStr(context,text.get(),"y",JS_NewInt32(context,state.text.y));
+                    JS_SetPropertyStr(context,text.get(),"width",JS_NewInt32(context,state.text.width));JS_SetPropertyStr(context,text.get(),"height",JS_NewInt32(context,state.text.height));
+                    JS_SetPropertyStr(context,result.get(),"text",JS_DupValue(context,text.get()));}
                 return JS_DupValue(context,result.get());
             }
             case LoadModel:return JS_NewUint32(context,self.services_.loadModel(self.string(argument(0))));
@@ -641,7 +650,7 @@ private:
         JS_SetPropertyStr(context_, native.get(), "height", JS_NewInt32(context_, 720));
         const struct { const char* name; int arguments; Operation operation; } functions[] = {
             {"quit",0,Quit},{"log",1,Log},{"readText",1,ReadText},{"writeText",2,WriteText},
-            {"loadResourceAsync",2,LoadResourceAsync},{"pollResourceLoad",1,PollResourceLoad},{"cancelResourceLoad",1,CancelResourceLoad},
+            {"loadTextTextureAsync",1,LoadTextTextureAsync},{"loadResourceAsync",2,LoadResourceAsync},{"pollResourceLoad",1,PollResourceLoad},{"cancelResourceLoad",1,CancelResourceLoad},
             {"loadModel",1,LoadModel},{"modelInfo",1,GetModelInfo},{"unloadModel",1,UnloadModel},
             {"loadTexture",1,LoadTexture},{"loadSound",1,LoadSound},{"loadMusic",1,LoadMusic},
             {"playSound",1,PlaySound},{"stopSound",1,StopSound},{"playMusic",1,PlayMusic},{"stopMusic",1,StopMusic},{"loadFont",1,LoadFont},{"createRenderTarget",2,CreateRenderTarget}

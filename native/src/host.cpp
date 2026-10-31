@@ -179,6 +179,11 @@ public:
                 prepared->handle=nextId_++;found=uploads_.emplace(ticket,std::move(prepared)).first;
             }
             auto& p=*found->second;const auto id=p.handle;uploadedThisFrame_=true;
+            if(p.kind=="text"){
+                const auto& image=p.text;const auto texture=image.width?createTexture(image.width,image.height,image.pixels):0;
+                ResourceLoadStatus status{"ready","",texture};status.isText=true;
+                status.text={texture,image.x,image.y,image.width,image.height};uploads_.erase(found);return status;
+            }
             if(p.kind=="model") {if(!models_->upload(id,*p.model))return {};}
             else if(p.kind=="texture"){
                 Texture2D texture{};
@@ -199,6 +204,11 @@ public:
     void cancelResourceLoad(std::uint32_t ticket) override {
         if(uploads_.erase(ticket))return;
         if(!async_)throw std::runtime_error("No asynchronous resource queue");async_->cancel(ticket);
+    }
+    std::uint32_t loadTextTextureAsync(const std::string& text,const TextLayoutOptions& layout,const TextRasterOptions& raster) override {
+        if(!async_)async_=std::make_unique<AsyncResources>();
+        if(uploads_.size()>=8)throw std::runtime_error("Asynchronous upload queue is full");
+        return async_->requestText(text,layout,raster);
     }
     void beginFrame(){uploadedThisFrame_=false;}
     std::uint32_t loadTexture(const std::string& name, int paddedWidth, int paddedHeight) override {

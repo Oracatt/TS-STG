@@ -1,4 +1,5 @@
 #include "tsstg/async_resources.hpp"
+#include "tsstg/text.hpp"
 #include <fstream>
 #include <stdexcept>
 
@@ -24,12 +25,21 @@ std::unique_ptr<PreparedResource> AsyncResources::take(std::uint32_t ticket){
     auto result=std::move(job.result);auto error=std::move(job.error);jobs_.erase(found);
     if(!error.empty())throw std::runtime_error(error);return result;
 }
+std::uint32_t AsyncResources::requestText(std::string text,const TextLayoutOptions& layout,const TextRasterOptions& raster){
+    std::lock_guard<std::mutex> lock(mutex_);
+    if(jobs_.size()>=8)throw std::runtime_error("Asynchronous resource queue is full (8)");
+    auto job=std::make_shared<Job>();job->kind="text";job->text=std::move(text);job->layout=layout;job->raster=raster;
+    const auto id=next_++;jobs_.emplace(id,job);queue_.push_back(job);wake_.notify_one();return id;
+}
 void AsyncResources::cancel(std::uint32_t ticket){
     std::lock_guard<std::mutex> lock(mutex_);auto found=jobs_.find(ticket);
     if(found==jobs_.end())throw std::runtime_error("Unknown asynchronous resource ticket");
     found->second->cancelled=true;jobs_.erase(found);
 }
 void AsyncResources::run(){
+    // COM, DirectWrite and Direct2D objects are created, used and destroyed on
+    // this worker. Only their immutable RGBA result crosses to the GPU thread.
+    std::unique_ptr<PlatformText> text;
     for(;;){
         std::shared_ptr<Job> job;
         {std::unique_lock<std::mutex> lock(mutex_);wake_.wait(lock,[this]{return stopping_||!queue_.empty();});
@@ -37,7 +47,12 @@ void AsyncResources::run(){
         std::unique_ptr<PreparedResource> result;std::string error;
         try{
             result=std::make_unique<PreparedResource>();result->kind=job->kind;result->extension=job->path.extension().string();
-            if(job->kind=="model")result->model=ModelStore::prepare(job->path);
+            if(job->kind=="text"){
+                if(!text)text=std::make_unique<PlatformText>();
+                text->createLayout(1,job->text,job->layout);
+                try{result->text=text->rasterize(1,job->raster);}catch(...){text->destroyLayout(1);throw;}
+                text->destroyLayout(1);
+            }else if(job->kind=="model")result->model=ModelStore::prepare(job->path);
             else {
                 const auto size=std::filesystem::file_size(job->path);
                 if(!size||size>256*1024*1024)throw std::runtime_error("Resource exceeds 256 MiB or is empty");

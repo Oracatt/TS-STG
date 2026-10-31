@@ -272,6 +272,8 @@ if(BUILD_TESTING)
     --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 6
     --snapshot ${CMAKE_CURRENT_BINARY_DIR}/native-audio-volume.json)
   if(WIN32)
+    add_script_test(NAME native.async-system-text COMMAND ts-stg native/tests/async-text.js
+      --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 1000000)
     add_script_test(NAME native.system-vector-text COMMAND ts-stg native/tests/system-text.js
       --root ${CMAKE_CURRENT_SOURCE_DIR} --headless --frames 2
       --snapshot ${CMAKE_CURRENT_BINARY_DIR}/native-system-vector-text.json)

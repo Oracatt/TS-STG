@@ -15,6 +15,17 @@ hits acquire the preloaded handle without reading or decoding it again.
 `synchronousMisses` helps verify that gameplay never needs an unlisted file.
 Dynamic render targets and mutable text surfaces retain their normal ownership.
 
+System text can also avoid blocking the first visible frame:
+`host.loadTextTextureAsync(text, layoutOptions, rasterOptions)` returns a ticket
+for `pollResourceLoad` / `cancelResourceLoad`. Shaping, font discovery and RGBA
+rasterization run on the same bounded CPU worker. A ready result contains
+`text: {texture, x, y, width, height}` as well as `handle`; the latter is the
+same ordinary texture handle. An empty/clipped string returns texture 0 and
+zero bounds. Unload nonzero handles through `unloadTexture`. COM and drawing
+objects never leave their worker thread. Options, alignment, stroke and pixel
+results match the synchronous text APIs. Include pending text in your readiness
+gate; drawing a loading indicator must not itself request a system font.
+
 Normal load/unload calls retain/release a handle; cached handles remain pinned
 until `retainOnly(nextManifest)` or `dispose()`. Release outgoing scene owners
 before trimming. Do not dispose the loader while consumers still use it.

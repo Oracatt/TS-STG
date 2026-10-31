@@ -8,6 +8,9 @@ export interface NativeHost {
  /** CPU file/decode worker; poll uploads at most one texture/model part. A terminal
   * poll consumes the ticket. A ready handle has ordinary load/unload ownership. */
  loadResourceAsync(kind:ResourceKind,path:string,paddedWidth?:number,paddedHeight?:number):number;
+ /** Shape and rasterize system text on the CPU worker; poll returns text bounds
+  * and an ordinary texture handle. Cancellation uses cancelResourceLoad. */
+ loadTextTextureAsync(text:string,layout?:SystemTextLayoutOptions,raster?:SystemTextRasterOptions):number;
  pollResourceLoad(ticket:number):ResourceLoadStatus;
  cancelResourceLoad(ticket:number):void;
  createRenderTarget(width:number,height:number):number;
@@ -44,7 +47,7 @@ export interface NativeHost {
  seekMusic(id:number,seconds:number):void;getMusicTime(id:number):number;
 }
 export type ResourceKind='texture'|'model'|'sound'|'music';
-export type ResourceLoadStatus={state:'pending'}|{state:'ready';handle:number}|{state:'error';error:string};
+export type ResourceLoadStatus={state:'pending'}|{state:'ready';handle:number;text?:SystemTextTexture}|{state:'error';error:string};
 
 export interface SystemTextLayoutOptions {
  fontFamily?:string;fontSize?:number;locale?:string;width?:number;height?:number;
