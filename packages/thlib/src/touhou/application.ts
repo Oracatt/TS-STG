@@ -224,6 +224,9 @@ export class TouhouApplication<GameScene extends TouhouApplicationGameScene=Touh
     if(this.disposed)return;
     this.sceneUpdated=false;
     if(this._loading){
+      // The cover's scrolling mask/loading ANMs are presentation owners. Keep
+      // them moving while the outgoing scene and its gameplay clocks are held.
+      this.transition?.update();
       const loading=this._loading;loading.preparation.update();
       if(loading.preparation.error)throw loading.preparation.error;
       if(!loading.preparation.ready)return;

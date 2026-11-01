@@ -83,6 +83,29 @@ test('immediate starts, disabled transitions and cancellation retain application
   const immediate=applicationFixture({autostart:true});assert.equal(immediate.app.mode,'game');assert.equal(immediate.app.transition,null);immediate.app.destroy();
 });
 
+test('asynchronous preparation keeps the fully covered source mask scrolling without advancing the scene',()=>{
+  let ready=false,ticks=0,postFrames=0,afterUpdates=0;
+  const app=new TouhouApplication({createBank:name=>makeBank(name),
+    transitionOptions:{loadingBank:null,coverFrames:45},
+    prepareScene:mode=>mode==='game'?{get ready(){return ready;},update(){}}:null,
+    createMenu:()=>({update(){ticks++;},draw:draw=>draw.rect(0,0,960,720,0xffffffff),destroy(){}}),
+    createGame:()=>({update(){ticks++;},render:()=>[],destroy(){}}),
+    clock:()=>{postFrames++;return 0;},onAfterUpdate:()=>afterUpdates++,
+  });
+  app.startTransition();tick(app,45);
+  const transition=app.transition;
+  assert.ok(app.loading);assert.equal(transition.panels[0].renderType,16);
+  assert.deepEqual(transition.panels.map(vm=>vm.alive),[true,false,false,false]);
+  const before=JSON.stringify(app.render()),clocks=[ticks,postFrames,afterUpdates];
+  tick(app,90);
+  assert.equal(app.transition,transition);assert.equal(transition.phase,'cover');
+  assert.equal(transition.age,135);assert.equal(transition.panels[0].renderType,16);
+  assert.notEqual(JSON.stringify(app.render()),before,'UV scrolling continues throughout the wait');
+  assert.deepEqual([ticks,postFrames,afterUpdates],clocks);
+  ready=true;app.update();assert.equal(app.mode,'game');assert.equal(app.transition.phase,'reveal');
+  assert.equal(ticks,0);app.update();assert.equal(ticks,1);app.destroy();
+});
+
 test('stage selection covers at age10 and swaps at age40 without adding a second launch delay',()=>{
   let list,lateSelection=0;
   const {app}=applicationFixture({createMenu:options=>list=new TouhouStageSelect({

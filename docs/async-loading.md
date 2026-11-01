@@ -35,8 +35,11 @@ before preloading.
 
 `TouhouApplication.prepareScene(mode, selection)` accepts a preparation with
 `ready`, optional `error`, `update()`, and optional `cancel()`. An unfinished
-preparation holds the covered transition and retains the outgoing scene. It
-does not call scene update, the post-frame clock, or onAfterUpdate. It also
+preparation retains the outgoing scene and keeps the cover's presentation ANMs
+updating, including its scrolling mask and loading particles. It does not reveal
+the cover until resources are ready, or call scene update, the post-frame clock,
+or onAfterUpdate. Set `transitionOptions.coverFrames` to the skin's fully covered
+frame when loading must begin only after every shutter has closed. It also
 supports initial launch/retry without a transition. Callers may draw their own
 loading indicator using `application.loading`, handle errors, and redirect to
 another scene. Loading progress is deliberately absent from scene snapshots.
