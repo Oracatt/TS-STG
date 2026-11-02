@@ -37,6 +37,8 @@ export interface NativeHost {
  /** Raw GDI glyph raster and natural text extent. No outlines, padding, cropping, or alpha correction. */
  rasterizeBitmapText(text:string,options?:SystemBitmapTextOptions):SystemBitmapTextPixels;
  loadSound(path:string):number;playSound(id:number,volume?:number,pan?:number,loop?:boolean):void;stopSound(id:number):void;unloadSound(id:number):void;
+ /** Independent playback/gain/pan sharing decoded samples. Either handle may be released first. */
+ cloneSound(id:number):number;
  pauseSound(id:number):void;resumeSound(id:number):void;isSoundPlaying(id:number):boolean;
  loadMusic(path:string):number;playMusic(id:number,volume?:number):void;stopMusic(id:number):void;unloadMusic(id:number):void;
  pauseMusic(id:number):void;resumeMusic(id:number):void;

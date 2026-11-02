@@ -73,6 +73,7 @@ public:
     virtual ModelInfo modelInfo(std::uint32_t id) const = 0;
     virtual void unloadModel(std::uint32_t id) = 0;
     virtual std::uint32_t loadSound(const std::string& name) = 0;
+    virtual std::uint32_t cloneSound(std::uint32_t id) = 0;
     virtual std::uint32_t loadMusic(const std::string& name) = 0;
     virtual std::uint32_t loadFont(const std::string& name, int size) = 0;
     virtual std::uint32_t createTextLayout(const std::string& text,const TextLayoutOptions& options) = 0;

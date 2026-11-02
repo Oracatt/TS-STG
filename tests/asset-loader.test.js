@@ -2,18 +2,44 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {AssetLoader} from '../packages/thlib/dist/asset-loader.js';
 import {TouhouApplication} from '../packages/thlib/dist/touhou/application.js';
+import {TouhouAudio} from '../packages/thlib/dist/touhou/audio.js';
 
 function fixture(delay=3){
-  let next=1,polls=0;const pending=new Map(),freed=[];
+  let next=1,polls=0;const pending=new Map(),freed=[],voices=new Map();
   const native={loadResourceAsync(kind,path){const id=next++;pending.set(id,{kind,path,delay});return id;},
     pollResourceLoad(id){polls++;const p=pending.get(id);assert.ok(p);if(p.delay-->0)return{state:'pending'};
       pending.delete(id);return p.path==='missing'?{state:'error',error:'missing file'}:{state:'ready',handle:id};},
     cancelResourceLoad(id){assert.ok(pending.delete(id));},
     loadTexture(){return next++;},unloadTexture:id=>freed.push(id),unloadModel:id=>freed.push(id),
-    unloadSound:id=>freed.push(id),unloadMusic:id=>freed.push(id)};
-  return{loader:new AssetLoader(native),pending,freed,get polls(){return polls;}};
+    cloneSound:source=>{const id=next++;voices.set(id,{source,playing:false});return id;},
+    playSound:id=>{voices.get(id).playing=true;},stopSound:id=>{voices.get(id).playing=false;},
+    unloadSound:id=>{freed.push(id);voices.delete(id);},unloadMusic:id=>freed.push(id)};
+  return{loader:new AssetLoader(native),pending,freed,voices,get polls(){return polls;}};
 }
 const texture={kind:'texture',path:'stage.png'};
+
+test('cached sound definitions share samples while keeping independent playback and lifetimes',()=>{
+  const f=fixture(0),asset={kind:'sound',path:'shared.wav'},batch=f.loader.preload([asset,asset]);
+  batch.update();assert.equal(batch.total,1);assert.equal(batch.done,true);
+  const host=f.loader.host,audio=new TouhouAudio({files:[{path:asset.path}],definitions:[
+    {id:21,fileIndex:0,volume:-2400,playFlags:0},{id:27,fileIndex:0,volume:-1100,playFlags:0},
+  ]},{load:path=>host.loadSound(path),play:id=>host.playSound(id),stop:id=>host.stopSound(id)});
+  audio.request(27);audio.flush();const explosion=audio.handles.get(27),source=f.voices.get(explosion).source;
+  audio.request(21);audio.flush();const emission=audio.handles.get(21);
+  assert.notEqual(explosion,emission);assert.equal(f.voices.get(emission).source,source);
+  audio.stop(21);audio.flush();assert.equal(f.voices.get(explosion).playing,true);assert.equal(f.voices.get(emission).playing,false);
+  assert.equal(f.loader.synchronousMisses,0,'voice creation never reads/decodes the WAV again');
+  f.loader.retainOnly([]);assert.deepEqual(f.freed,[],'active voices keep their samples resident');
+  host.unloadSound(emission);f.loader.retainOnly([]);assert.deepEqual(f.freed,[emission]);
+  host.unloadSound(explosion);f.loader.retainOnly([]);assert.deepEqual(f.freed,[emission,explosion,source]);
+  f.loader.dispose();assert.equal(f.freed.length,3);
+});
+
+test('loader disposal releases outstanding sound voices before the shared sample owner',()=>{
+  const f=fixture(0),batch=f.loader.preload([{kind:'sound',path:'shared.wav'}]);batch.update();
+  const a=f.loader.host.loadSound('shared.wav'),b=f.loader.host.loadSound('shared.wav'),source=f.voices.get(a).source;
+  f.loader.dispose();assert.deepEqual(f.freed,[a,b,source]);f.loader.dispose();assert.equal(f.freed.length,3);
+});
 test('decode delay never blocks a presentation tick; duplicate requests and ownership are shared',()=>{
   const f=fixture(),batch=f.loader.preload([texture,texture,{kind:'model',path:'road.glb'}]);
   assert.equal(batch.total,2);

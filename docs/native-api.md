@@ -57,7 +57,7 @@ Each load/create allocates a resource owned by the caller. Release it explicitly
 
 ## Audio and fonts
 
-`loadSound(path)` returns a decoded sound ID. `playSound(id,volume=1,pan=0.5,loop=false)` sets gain/pan and starts it. Raylib pan0 is right, pan1 is left. `stopSound(id)` stops playback and cancels looping; `unloadSound(id)` releases the buffer. Looping sounds restart at a display-frame boundary, so this is not a sample-exact mixer.
+`loadSound(path)` returns a decoded sound ID. `cloneSound(id)` returns a new voice sharing the decoded samples, with independent playback, volume, pan and looping. A clone may itself be cloned, and source/clone handles may be unloaded in any order; the samples remain alive until the last voice is released. `playSound(id,volume=1,pan=0.5,loop=false)` sets gain/pan and restarts that voice. Raylib pan0 is right, pan1 is left. `stopSound(id)` stops playback and cancels looping; `unloadSound(id)` stops and releases only that voice. Looping sounds restart at a display-frame boundary, so this is not a sample-exact mixer.
 
 `pauseSound(id)`/`resumeSound(id)` preserve the actual sound buffer's playback position. `isSoundPlaying(id)` reports active playback and returns false while paused or without an audio device. Paused looped sounds remain suspended until resumed; resume does not restart a stopped sound.
 

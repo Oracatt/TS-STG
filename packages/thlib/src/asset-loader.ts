@@ -7,11 +7,13 @@ const key=(a:AssetRequest)=>JSON.stringify([a.kind,a.path.replace(/\\/g,'/'),a.w
 /** Resource lifetime and a CPU-worker upload queue, independent of game clocks.
  * Use the decorated host for all consumers. preload() pins cache entries until
  * retainOnly()/dispose(); normal load/unload calls retain/release their handles.
+ * Sounds share decoded samples, but each acquisition owns a playback voice.
  * Mutable textures/render targets are deliberately never cached here. */
 export class AssetLoader {
   readonly host:NativeHost;
   private entries=new Map<string,Entry>();
   private handles=new Map<number,Entry>();
+  private soundVoices=new Map<number,Entry>();
   private active:AssetLoadBatch|null=null;
   private disposed=false;
   synchronousMisses=0;
@@ -38,9 +40,18 @@ export class AssetLoader {
       else if(asset.kind==='sound')handle=this.native.loadSound(asset.path);else handle=this.native.loadMusic(asset.path);
       entry={asset,handle,references:0};this.entries.set(id,entry);this.handles.set(handle,entry);
     }
+    if(asset.kind==='sound'){
+      const voice=this.native.cloneSound(entry.handle!);
+      entry.references++;this.soundVoices.set(voice,entry);return voice;
+    }
     entry.references++;return entry.handle!;
   }
   private release(kind:ResourceKind,handle:number){
+    const voice=this.soundVoices.get(handle);
+    if(voice){
+      if(kind!=='sound')throw new Error('Cached sound voice released as another resource kind');
+      this.native.unloadSound(handle);this.soundVoices.delete(handle);voice.references--;return;
+    }
     const entry=this.handles.get(handle);
     // Dynamically created surfaces remain owned by their original consumer.
     if(!entry){this.unload(kind,handle);return;}
@@ -65,6 +76,8 @@ export class AssetLoader {
   }
   dispose(){
     if(this.disposed)return;this.active?.cancel();
+    for(const handle of this.soundVoices.keys())this.native.unloadSound(handle);
+    this.soundVoices.clear();
     for(const entry of this.entries.values())if(entry.handle!==undefined)this.unload(entry.asset.kind,entry.handle);
     this.entries.clear();this.handles.clear();this.disposed=true;
   }

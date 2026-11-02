@@ -13,6 +13,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <stdexcept>
 #include <system_error>
@@ -72,6 +73,26 @@ void beginTexturedPrimitive(int mode, unsigned int texture) {
     rlBegin(mode);
     rlSetTexture(texture);
 }
+// A voice owns its playback cursor and mixer parameters. Aliases keep the
+// decoded sample buffer alive even when the caller releases the source handle.
+struct SoundResource {
+    std::shared_ptr<Sound> samples;
+    Sound sound{};
+    bool alias = false;
+    explicit SoundResource(Sound value) : samples(new Sound(value), [](Sound* source) {
+        if (source->stream.buffer) UnloadSound(*source);
+        delete source;
+    }), sound(value) {}
+    explicit SoundResource(std::shared_ptr<Sound> source) : samples(std::move(source)), alias(true) {
+        if (samples->stream.buffer) {
+            sound = LoadSoundAlias(*samples);
+            if (!IsSoundValid(sound)) throw std::runtime_error("Cannot create sound voice");
+        }
+    }
+    ~SoundResource() { if (alias && sound.stream.buffer) UnloadSoundAlias(sound); }
+    SoundResource(const SoundResource&) = delete;
+    SoundResource& operator=(const SoundResource&) = delete;
+};
 class Host final : public HostServices {
 public:
     explicit Host(const Options& options) : root_(fs::canonical(options.root)), headless_(options.headless), profiling_(options.profile.has_value()) {
@@ -110,7 +131,7 @@ public:
         for(const auto& entry:shaders_)if(!headless_&&entry.second.id)UnloadShader(entry.second);
         for (const auto& entry : fonts_) if (entry.second.font.texture.id) UnloadFont(entry.second.font);
         for (const auto& entry : music_) if (entry.second.stream.buffer) UnloadMusicStream(entry.second);
-        for (const auto& entry : sounds_) if (entry.second.stream.buffer) UnloadSound(entry.second);
+        sounds_.clear();
         for (const auto& entry : textures_) if (entry.second.id && !targets_.count(entry.first)) UnloadTexture(entry.second);
         for (const auto& entry : targets_) if (entry.second.id) UnloadRenderTexture(entry.second);
         if (audioReady_) CloseAudioDevice();
@@ -192,7 +213,7 @@ public:
                 else{texture=LoadTextureFromImage(p.image);if(!IsTextureValid(texture))throw std::runtime_error("Cannot upload texture");}
                 textures_[id]=texture;
             }else if(p.kind=="sound"){
-                Sound sound{};if(audioReady_){sound=LoadSoundFromWave(p.wave);if(!IsSoundValid(sound))throw std::runtime_error("Cannot create sound");}sounds_[id]=sound;
+                Sound sound{};if(audioReady_){sound=LoadSoundFromWave(p.wave);if(!IsSoundValid(sound))throw std::runtime_error("Cannot create sound");}sounds_[id]=std::make_unique<SoundResource>(sound);
             }else if(p.kind=="music"){
                 Music music{};if(audioReady_){music=LoadMusicStreamFromMemory(p.extension.c_str(),p.bytes.data(),static_cast<int>(p.bytes.size()));
                     if(!IsMusicValid(music))throw std::runtime_error("Cannot create music stream");music.looping=true;}
@@ -239,7 +260,15 @@ public:
         if (audioReady_) sound = LoadSoundFromWave(wave);
         UnloadWave(wave);
         if (audioReady_ && !IsSoundValid(sound)) throw std::runtime_error("Cannot load sound: " + name);
-        sounds_[id] = sound;
+        sounds_[id] = std::make_unique<SoundResource>(sound);
+        return id;
+    }
+    std::uint32_t cloneSound(std::uint32_t source) override {
+        const auto found = sounds_.find(source);
+        if (found == sounds_.end()) throw std::runtime_error("Unknown sound id: " + std::to_string(source));
+        auto voice = std::make_unique<SoundResource>(found->second->samples);
+        const auto id = nextId_++;
+        sounds_[id] = std::move(voice);
         return id;
     }
     std::uint32_t loadMusic(const std::string& name) override {
@@ -298,27 +327,27 @@ public:
     void playSound(std::uint32_t id, float volume, float pan, bool loop) override {
         auto found = sounds_.find(id);
         if (found == sounds_.end()) throw std::runtime_error("Unknown sound id: " + std::to_string(id));
-        if (audioReady_) { SetSoundVolume(found->second, volume); SetSoundPan(found->second, pan); ::PlaySound(found->second); }
+        if (audioReady_) { SetSoundVolume(found->second->sound, volume); SetSoundPan(found->second->sound, pan); ::PlaySound(found->second->sound); }
         pausedSounds_.erase(id);
         if(loop)loopingSounds_.insert(id);else loopingSounds_.erase(id);
     }
     void stopSound(std::uint32_t id) override {
         auto found = sounds_.find(id);
         if (found == sounds_.end()) throw std::runtime_error("Unknown sound id: " + std::to_string(id));
-        if (audioReady_) ::StopSound(found->second);
+        if (audioReady_) ::StopSound(found->second->sound);
         loopingSounds_.erase(id);pausedSounds_.erase(id);
     }
     void pauseSound(std::uint32_t id) override {
         auto found=sounds_.find(id);if(found==sounds_.end())throw std::runtime_error("Unknown sound id: "+std::to_string(id));
-        if(audioReady_)::PauseSound(found->second);pausedSounds_.insert(id);
+        if(audioReady_)::PauseSound(found->second->sound);pausedSounds_.insert(id);
     }
     void resumeSound(std::uint32_t id) override {
         auto found=sounds_.find(id);if(found==sounds_.end())throw std::runtime_error("Unknown sound id: "+std::to_string(id));
-        if(audioReady_)::ResumeSound(found->second);pausedSounds_.erase(id);
+        if(audioReady_)::ResumeSound(found->second->sound);pausedSounds_.erase(id);
     }
     bool isSoundPlaying(std::uint32_t id) const override {
         auto found=sounds_.find(id);if(found==sounds_.end())throw std::runtime_error("Unknown sound id: "+std::to_string(id));
-        return audioReady_&&::IsSoundPlaying(found->second);
+        return audioReady_&&::IsSoundPlaying(found->second->sound);
     }
     void playMusic(std::uint32_t id, float volume) override {
         auto found = music_.find(id);
@@ -436,7 +465,8 @@ public:
     }
     void unloadSound(std::uint32_t id) override {
         auto found=sounds_.find(id);if(found==sounds_.end())throw std::runtime_error("Unknown sound id: "+std::to_string(id));
-        if(audioReady_)UnloadSound(found->second);sounds_.erase(found);loopingSounds_.erase(id);pausedSounds_.erase(id);
+        if(audioReady_)::StopSound(found->second->sound);
+        sounds_.erase(found);loopingSounds_.erase(id);pausedSounds_.erase(id);
     }
     void unloadMusic(std::uint32_t id) override {
         auto found=music_.find(id);if(found==music_.end())throw std::runtime_error("Unknown music id: "+std::to_string(id));
@@ -697,7 +727,7 @@ public:
         const auto submitMs=elapsedMs(submitStart);const auto waitStart=ProfileClock::now();
         EndDrawing();
         const auto waitMs=elapsedMs(waitStart);const auto audioStart=ProfileClock::now();
-        if(audioReady_)for(auto id:loopingSounds_)if(!pausedSounds_.count(id)&&!IsSoundPlaying(sounds_.at(id)))::PlaySound(sounds_.at(id));
+        if(audioReady_)for(auto id:loopingSounds_)if(!pausedSounds_.count(id)&&!IsSoundPlaying(sounds_.at(id)->sound))::PlaySound(sounds_.at(id)->sound);
         if (audioReady_) for (auto& entry : music_) {
             if(!musicPlaying_[entry.first]||pausedMusic_.count(entry.first))continue;
             UpdateMusicStream(entry.second);
@@ -812,7 +842,7 @@ private:
     std::map<std::uint32_t,Shader> shaders_;
     std::map<std::uint32_t, std::vector<std::uint8_t>> pixels_;
     std::map<std::uint32_t, RenderTexture2D> targets_;
-    std::map<std::uint32_t, Sound> sounds_;
+    std::map<std::uint32_t, std::unique_ptr<SoundResource>> sounds_;
     std::set<std::uint32_t> loopingSounds_;
     std::set<std::uint32_t> pausedSounds_,pausedMusic_;
     std::map<std::uint32_t, Music> music_;

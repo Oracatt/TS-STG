@@ -15,6 +15,13 @@ hits acquire the preloaded handle without reading or decoding it again.
 `synchronousMisses` helps verify that gameplay never needs an unlisted file.
 Dynamic render targets and mutable text surfaces retain their normal ownership.
 
+Sound cache entries hold decoded samples, not shared playback state. Every
+`loader.host.loadSound(path)` returns an independent voice via `cloneSound`;
+different sound definitions may reuse one WAV without resetting each other's
+cursor, volume, pan or looping. Cloning requires no file read or decoding.
+Release voices with `unloadSound`; their sample cache remains pinned until
+trimming/disposal, and active voices prevent trimming it.
+
 System text can also avoid blocking the first visible frame:
 `host.loadTextTextureAsync(text, layoutOptions, rasterOptions)` returns a ticket
 for `pollResourceLoad` / `cancelResourceLoad`. Shaping, font discovery and RGBA

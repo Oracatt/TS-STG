@@ -433,7 +433,7 @@ public:
         return string(json);
     }
 private:
-    enum Operation { LoadTextTextureAsync, LoadResourceAsync, PollResourceLoad, CancelResourceLoad, LoadModel, GetModelInfo, UnloadModel, Quit, Log, ReadText, WriteText, LoadTexture, LoadSound, LoadMusic, PlaySound, StopSound, PlayMusic, StopMusic, SetMusicLoop, SeekMusic, GetMusicTime, LoadFont, CreateRenderTarget, CreateTexture, UpdateTexture, ReadTexturePixels, UnloadTexture, UnloadSound, UnloadMusic, UnloadFont, PauseSound, ResumeSound, IsSoundPlaying, PauseMusic, ResumeMusic, CreateShader, UnloadShader, CreateTextLayout, RasterizeTextLayout, DestroyTextLayout, HasSystemFont, EncodeText, RasterizeBitmapText, UpdateTextureRegion, SetMusicVolume };
+    enum Operation { LoadTextTextureAsync, LoadResourceAsync, PollResourceLoad, CancelResourceLoad, LoadModel, GetModelInfo, UnloadModel, Quit, Log, ReadText, WriteText, LoadTexture, LoadSound, CloneSound, LoadMusic, PlaySound, StopSound, PlayMusic, StopMusic, SetMusicLoop, SeekMusic, GetMusicTime, LoadFont, CreateRenderTarget, CreateTexture, UpdateTexture, ReadTexturePixels, UnloadTexture, UnloadSound, UnloadMusic, UnloadFont, PauseSound, ResumeSound, IsSoundPlaying, PauseMusic, ResumeMusic, CreateShader, UnloadShader, CreateTextLayout, RasterizeTextLayout, DestroyTextLayout, HasSystemFont, EncodeText, RasterizeBitmapText, UpdateTextureRegion, SetMusicVolume };
     HostServices& services_;
     v8::Isolate* isolate_=nullptr;
     JSContext bridge_{};
@@ -681,6 +681,7 @@ private:
                 return JS_NewUint32(context, self.services_.loadTexture(self.string(argument(0)),static_cast<int>(width),static_cast<int>(height)));
             }
             case LoadSound: return JS_NewUint32(context, self.services_.loadSound(self.string(argument(0))));
+            case CloneSound: return JS_NewUint32(context, self.services_.cloneSound(self.unsignedNumber(argument(0))));
             case LoadMusic: return JS_NewUint32(context, self.services_.loadMusic(self.string(argument(0))));
             case LoadFont: {
                 auto size = argc > 1 ? self.unsignedNumber(argv[1]) : 32;
@@ -870,7 +871,7 @@ private:
             {"quit",0,Quit},{"log",1,Log},{"readText",1,ReadText},{"writeText",2,WriteText},
             {"loadTextTextureAsync",1,LoadTextTextureAsync},{"loadResourceAsync",2,LoadResourceAsync},{"pollResourceLoad",1,PollResourceLoad},{"cancelResourceLoad",1,CancelResourceLoad},
             {"loadModel",1,LoadModel},{"modelInfo",1,GetModelInfo},{"unloadModel",1,UnloadModel},
-            {"loadTexture",1,LoadTexture},{"loadSound",1,LoadSound},{"loadMusic",1,LoadMusic},
+            {"loadTexture",1,LoadTexture},{"loadSound",1,LoadSound},{"cloneSound",1,CloneSound},{"loadMusic",1,LoadMusic},
             {"playSound",1,PlaySound},{"stopSound",1,StopSound},{"playMusic",1,PlayMusic},{"stopMusic",1,StopMusic},{"loadFont",1,LoadFont},{"createRenderTarget",2,CreateRenderTarget}
             ,{"setMusicLoop",3,SetMusicLoop},{"seekMusic",2,SeekMusic},{"getMusicTime",1,GetMusicTime},{"setMusicVolume",2,SetMusicVolume}
             ,{"createTexture",3,CreateTexture},{"updateTexture",2,UpdateTexture},{"readTexturePixels",0,ReadTexturePixels}

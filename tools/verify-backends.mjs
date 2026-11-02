@@ -82,7 +82,7 @@ function sameState(left,right,label){
 
 if(scope==='all'||scope==='host'){
   const cases=[
-    ['backend',8,16],['backend-dynamic-import',1],['smoke',4,16],['media',4],['audio-pause',15],['audio-volume',6],['pixels',2],['texture-region',2],
+    ['backend',8,16],['backend-dynamic-import',1],['smoke',4,16],['media',4],['audio-pause',15],['audio-volume',6],['audio-voices',4],['pixels',2],['texture-region',2],
     ['system-text',2],['bitmap-text',2],['mesh3d',2],['alpha-test',2],['quad',2],
     ['stateful-quad',2,1],['shader',2],
   ],failures=['invalid-command','script-error','traversal','unhandled-rejection','unbalanced-blend',
